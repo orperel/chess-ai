@@ -1,0 +1,7 @@
+load chess1.xml
+start
+move <d,7> to <d,5>
+save chess2.xml
+get_moves <c,5>
+move <c,5> to <c,4>
+move <b,7> to <b,3>

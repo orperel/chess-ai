@@ -1,0 +1,12 @@
+load chess1.xml
+start
+get_moves <g,2>
+get_moves <b,7>
+get_moves <d,7>
+get_moves <d,1>
+move <d,7> to <d,8>
+get_moves <f,2>
+get_moves <c,5>
+get_moves <e,3>
+quit
+
