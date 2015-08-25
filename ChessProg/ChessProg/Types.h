@@ -3,9 +3,7 @@
 
 #include "LinkedList.h"
 
-/* -- Type definitions -- */
-
-// Define bool for c language
+/* Define bool for c language. */
 typedef enum { false, true } bool;
 
 /* A position on the game board. */
@@ -21,9 +19,20 @@ typedef struct
 	LinkedList* nextPoses; // The list of positions the soldier moves during the move
 } Move;
 
-/** Represents a single game step done by a player.
-*  This struct contains the list of changes made to the game state in this step.
-*/
+typedef struct
+{
+	int pawns;
+	int bishops;
+	int rooks;
+	int knights;
+	int queens;
+	int kings;
+} Army;
+
+/* 
+ * Represents a single game step done by a player.
+ * This struct contains the list of changes made to the game state in this step.
+ */
 typedef struct
 {
 	char currSoldier;				// 'm', 'M', 'k' or 'K'.

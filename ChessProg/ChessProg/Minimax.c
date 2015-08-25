@@ -1,24 +1,26 @@
 #include <limits.h>
 #include "Minimax.h"
-#include "GameLogic.h"
 #include "GameSettings.h"
+#include "GameLogic.h"
 
-/** Compute the total score of the given board and player. */
+/* Compute the total score of the given board and player. */
 int getScore(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
 {
 	Army whiteArmy = getArmy(board, false);
-	int whiteScore = (whiteArmy.men * MAN_SCORE) + (whiteArmy.kings * KING_SCORE);
+	int whiteScore = (whiteArmy.pawns * PAWN_SCORE) + (whiteArmy.bishops * BISHOP_SCORE) + (whiteArmy.rooks * ROOK_SCORE)
+					 + (whiteArmy.knights * KNIGHT_SCORE) + (whiteArmy.queens * QUEEN_SCORE) + (whiteArmy.kings * KING_SCORE);
 	Army blackArmy = getArmy(board, true);
-	int blackScore = (blackArmy.men * MAN_SCORE) + (blackArmy.kings * KING_SCORE);
+	int blackScore = (blackArmy.pawns * PAWN_SCORE) + (blackArmy.bishops * BISHOP_SCORE) + (blackArmy.rooks * ROOK_SCORE)
+					 + (blackArmy.knights * KNIGHT_SCORE) + (blackArmy.queens * QUEEN_SCORE) + (blackArmy.kings * KING_SCORE);
 	
 	if (!isABlack)
 	{	// White turn
-		if ((blackArmy.men == 0) && (blackArmy.kings == 0))
+		if ((blackArmy.pawns == 0) && (blackArmy.kings == 0))
 		{	// No black soldiers left
 			return WINNING_SCORE;
 		}
 
-		if ((whiteArmy.men == 0) && (whiteArmy.kings == 0))
+		if ((whiteArmy.pawns == 0) && (whiteArmy.kings == 0))
 		{	// No white soldiers left
 			return LOOSING_SCORE;
 		}
@@ -27,12 +29,12 @@ int getScore(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
 	}
 	else
 	{	// Black turn
-		if ((whiteArmy.men == 0) && (whiteArmy.kings == 0))
+		if ((whiteArmy.pawns == 0) && (whiteArmy.kings == 0))
 		{	// No white soldiers left
 			return WINNING_SCORE;
 		}
 		
-		if ((blackArmy.men == 0) && (blackArmy.kings == 0))
+		if ((blackArmy.pawns == 0) && (blackArmy.kings == 0))
 		{	// No black soldiers left
 			return LOOSING_SCORE;
 		}
@@ -41,11 +43,10 @@ int getScore(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
 	}
 }
 
-/** 
+/* 
  * Implement the Alphabeta pruning algorithm to decrease the number of nodes that are evaluated by the Minimax.
  * If there was an error set g_memError to true and return INT_MIN. 
  */
-
 int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta, bool isABlack)
 {
 	// Reach Minimax depth (leaf)
@@ -166,7 +167,7 @@ int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta
 	return value;
 }
 
-/** 
+/* 
  * Implement the Minimax algorithm.
  * If there was an error set g_memError to true and return NULL. 
  */

@@ -65,8 +65,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Chess.h" />
+    <ClInclude Include="ConsoleMode.h" />
     <ClInclude Include="GameLogic.h" />
-    <ClInclude Include="GameManager.h" />
+    <ClInclude Include="BoardManager.h" />
     <ClInclude Include="GameSettings.h" />
     <ClInclude Include="LinkedList.h" />
     <ClInclude Include="Minimax.h" />
@@ -75,7 +76,7 @@
   <ItemGroup>
     <ClCompile Include="Chess.c" />
     <ClCompile Include="GameLogic.c" />
-    <ClCompile Include="GameManager.c" />
+    <ClCompile Include="BoardManager.c" />
     <ClCompile Include="LinkedList.c" />
     <ClCompile Include="Minimax.c" />
     <ClCompile Include="sdl_test.c" />

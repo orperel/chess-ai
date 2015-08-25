@@ -30,10 +30,13 @@
     <ClInclude Include="Types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GameManager.h">
+    <ClInclude Include="GameSettings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GameSettings.h">
+    <ClInclude Include="BoardManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConsoleMode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -50,10 +53,10 @@
     <ClCompile Include="sdl_test.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GameManager.c">
+    <ClCompile Include="Chess.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Chess.c">
+    <ClCompile Include="BoardManager.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

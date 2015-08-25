@@ -1,5 +1,5 @@
-#ifndef GAME_MANAGER_
-#define GAME_MANAGER_
+#ifndef BOARD_MANAGER_
+#define BOARD_MANAGER_
 
 #include <stdio.h>
 #include "Types.h"

@@ -1,6 +1,6 @@
-#include "GameManager.h"
-#include "Chess.h"
 #include "LinkedList.h"
+#include "Chess.h"
+#include "BoardManager.h"
 
 /* A constructor function for Position structs. */
 Position* createPosition(int x, int y)
@@ -67,7 +67,7 @@ Move* cloneMove(Move* original)
 	return clone;
 }
 
-/* A destructor function for Move structs */
+/* A destructor function for Move structs. */
 void deleteMove(void* move)
 {
 	deleteList(((Move*)move)->nextPoses);

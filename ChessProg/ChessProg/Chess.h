@@ -18,12 +18,10 @@
 #define BLACK_Q 'Q'
 #define BLACK_K 'K'
 
-
 #define EMPTY ' '
 
 #define BOARD_SIZE 8
 
-// board initialization
 #define ENTER_SETTINGS "Enter game settings:\n" 
 #define WRONG_GAME_MODE "Wrong game mode\n"
 #define TWO_PLAYERS_GAME_MODE "Running game in 2 players mode\n"
@@ -44,7 +42,6 @@
  
 #define perror_message(func_name) (perror("Error: standard function %s has failed", func_name));
 #define print_message(message) (printf("%s", message));
-
 
 /* -- Globals -- */
 

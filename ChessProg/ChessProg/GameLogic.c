@@ -1,7 +1,7 @@
+#include "BoardManager.h"
 #include "GameLogic.h"
-#include "GameManager.h"
 
-/* -- Forward declerations -- */
+/* -- Forward Declarations -- */
 
 void queryAdditionalEats(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
 						 bool isMovesForBlackPlayer, Move* currMove, int* minNumOfDisksRemoved, bool isSingleEatMode);
@@ -11,7 +11,7 @@ void queryAdditionalEats(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibl
 /* Returns if the square is on the board area. */
 bool isSquareOnBoard(int i, int j)
 {
-	// Check we're in the board index range and we're on a black square.
+	// Check we're in the board index range and we're on a black square
 	return (i >= 0) && (j >= 0) && (i < BOARD_SIZE) && (j < BOARD_SIZE) && (0 == ((i + j) % 2));
 }
 
@@ -53,16 +53,16 @@ bool isSquareVacant(char board[BOARD_SIZE][BOARD_SIZE], int i, int j)
 	return (board[i][j] == EMPTY);
 }
 
-/* Returns -- if the soldier goes to endPos, will it become a king. */
+/* Returns if the soldier goes to endPos, will it become a king. */
 bool isBecomeKing(char soldier, Position endPos)
 {
 	return ((soldier == BLACK_P) && (endPos.y == 0)) ||
 			((soldier == WHITE_P) && (endPos.y == BOARD_SIZE - 1));
 }
 
-/**
- *  Checks if the next square yields an eat move.
- *	Input --
+/*  
+ * Checks if the next square yields an eat move.
+ * Input:
  *		board ~ the game board.
  *		possibleMoves ~ a list of possible moves by the current player, we aggregate it as we check
  *						possible eat / position change moves. This list will always contain the best moves so far.
@@ -84,7 +84,7 @@ void queryEatNextSquare(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possible
 	int nextDiagX = nextDiag.x;
 	int nextDiagY = nextDiag.y;
 
-	// Treat the edge case of cyclic move: we return to the starting point.
+	// Treat the edge case of cyclic move: we return to the starting point
 	bool isCyclicMove = (nextDiagX == currMove->initPos.x) && (nextDiagY == currMove->initPos.y);
 
 	// Can we eat a nearby enemy
@@ -110,14 +110,14 @@ void queryEatNextSquare(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possible
 			return;
 		}
 
-		Move* newMoveForList = NULL; // Will contain the clone we add to possibleMoves, in case we add the new move.
+		Move* newMoveForList = NULL; // Will contain the clone we add to possibleMoves, in case we add the new move
 
 		// Move has same eat count as new move we counted
 		if (*minNumOfDisksRemoved == newMove->nextPoses->length)
 		{
 			// Clone and save to list of possible moves.
 			// We clone here to avoid the case where the list gets deleted, but we still want to maintain
-			// the pointer to newMove somewhere deeper in the recurssion tree.
+			// the pointer to newMove somewhere deeper in the recursion tree.
 			newMoveForList = cloneMove(newMove);
 			if (g_memError)
 			{
@@ -135,7 +135,7 @@ void queryEatNextSquare(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possible
 
 			// Clone and save to list of possible moves.
 			// We clone here to avoid the case where the list gets deleted, but we still want to maintain
-			// the pointer to newMove somewhere deeper in the recurssion tree.
+			// the pointer to newMove somewhere deeper in the recursion tree.
 			newMoveForList = cloneMove(newMove);
 			if (g_memError)
 			{
@@ -155,15 +155,15 @@ void queryEatNextSquare(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possible
 			return;
 		}
 
-		// We don't change the location of the original soldier during this calculation..
+		// We don't change the location of the original soldier during this calculation.
 		// Only eaten soldiers.
 		char soldier = board[newMove->initPos.x][newMove->initPos.y];
 
 		// We don't recurse in single eat mode (where we want only the first eat).
-		// Also - becoming a king stops any additional actions during this move
+		// Also - becoming a king stops any additional actions during this move.
 		if ((!isSingleEatMode) && (!isBecomeKing(soldier, *targetPos)))
 		{
-			// Temporarily remove eaten soldier so we don't calculate it again for recursive moves..
+			// Temporarily remove eaten soldier so we don't calculate it again for recursive moves
 			char eatenEnemy = board[enemyDiagX][enemyDiagY];
 			board[enemyDiagX][enemyDiagY] = EMPTY;
 
@@ -178,10 +178,10 @@ void queryEatNextSquare(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possible
 	}
 }
 
-/**
- *  Checks if we can chain additional eats from the current move.
- *  Note: a current move may also be "an empty move", meaning, the soldier is just standing at the initial position.
- *	Input --
+/*  
+ * Checks if we can chain additional eats from the current move.
+ * Note: a current move may also be "an empty move", meaning, the soldier is just standing at the initial position.
+ * Input:
  *		board ~ the game board.
  *		possibleMoves ~ a list of possible moves by the current player, we aggregate it as we check
  *						possible eat / position change moves. This list will always contain the best moves so far.
@@ -249,9 +249,9 @@ void queryAdditionalEats(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibl
 					   minNumOfDisksRemoved, enemyDiag, nextDiag, isSingleEatMode);
 }
 
-/**
- *  Checks if a man can move to the current square.
- *	Input --
+/* 
+ * Checks if a man can move to the current square.
+ * Input:
  *		board ~ the game board.
  *		possibleMoves ~ a list of possible moves by the current player, we aggregate it as we check
  *						possible eat / position change moves. This list will always contain the best moves so far.
@@ -298,9 +298,10 @@ void queryManMoveSquare(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possible
 	}
 }
 
-/**
- *  Get all possible position / eat moves of a man soldier.
- *	Input --
+
+/*
+ * Get all possible position / eat moves of a man soldier.
+ * Input:
  *		board ~ the game board.
  *		possibleMoves ~ a list of possible moves by the current player, we aggregate it as we check
  *						possible eat / position change moves. This list will always contain the best moves so far.
@@ -346,9 +347,9 @@ void getLegalManMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMov
 	deleteMove((void*)baseMove);
 }
 
-/**
- *  Checks if a king can move / eat in the given direction.
- *	Input --
+/* 
+ * Checks if a king can move / eat in the given direction.
+ * Input:
  *		board ~ the game board.
  *		possibleMoves ~ a list of possible moves by the current player, we aggregate it as we check
  *						possible eat / position change moves. This list will always contain the best moves so far.
@@ -424,9 +425,9 @@ void queryKingDirection(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possible
 	deleteMove((void*)baseMove);
 }
 
-/**
- *  Get all possible position / eat moves of a king soldier.
- *	Input --
+/*
+ * Get all possible position / eat moves of a king soldier.
+ * Input:
  *		board ~ the game board.
  *		possibleMoves ~ a list of possible moves by the current player, we aggregate it as we check
  *						possible eat / position change moves. This list will always contain the best moves so far.
@@ -434,7 +435,7 @@ void queryKingDirection(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possible
  *		startPos ~ Where the soldier is currently located.
  *		minNumOfDisksRemoved ~ The minimum number of disks removed by the current eat chain for this move to count.
  *							   This helps us determine we return only the best moves possible for the player.
-  *     isSingleEatMode ~ Determines if we should recurse and keep looking for chained eats.
+ *      isSingleEatMode ~ Determines if we should recurse and keep looking for chained eats.
  *						  This parameter can be true and then the function doesn't recurse (and returns only the first eat).
  */
 void getLegalKingMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
@@ -449,7 +450,7 @@ void getLegalKingMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMo
 		return;
 
 	if (isSingleEatMode && (possibleMoves->length > 0))
-		return; // Optimization -- if we've found possible moves, no need to keep checking.
+		return; // Optimization - if we've found possible moves, no need to keep checking
 
 	diagX = 1;
 	diagY = 1;
@@ -459,7 +460,7 @@ void getLegalKingMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMo
 		return;
 
 	if (isSingleEatMode && (possibleMoves->length > 0))
-		return; // Optimization -- if we've found possible moves, no need to keep checking.
+		return; // Optimization - if we've found possible moves, no need to keep checking
 
 	diagX = 1;
 	diagY = -1;
@@ -469,7 +470,7 @@ void getLegalKingMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMo
 		return;
 
 	if (isSingleEatMode && (possibleMoves->length > 0))
-		return; // Optimization -- if we've found possible moves, no need to keep checking.
+		return; // Optimization - if we've found possible moves, no need to keep checking
 
 	diagX = -1;
 	diagY = -1;
@@ -477,9 +478,9 @@ void getLegalKingMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMo
 						startPos, minNumOfDisksRemoved, diagX, diagY, isSingleEatMode);
 }
 
-/**
- *  Get all possible position / eat moves of any soldier.
- *	Input --
+/*
+ * Get all possible position / eat moves of any soldier.
+ * Input:
  *		board ~ the game board.
  *		possibleMoves ~ a list of possible moves by the current player, we aggregate it as we check
  *						possible eat / position change moves. This list will always contain the best moves so far.
@@ -508,11 +509,12 @@ void getLegalPieceMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleM
 	}
 }
 
-/* Iterates the board and returns a list of moves the player can make with each soldier
+/* 
+ * Iterates the board and returns a list of moves the player can make with each soldier
  * Input:
- *		board - The game board.
- *	    isMovesForBlackPlayer - True if the function returns moves for the black player.
- *								False if the function returns moves for the white player.
+ *		board ~ The game board.
+ *		isMovesForBlackPlayer ~ True if the function returns moves for the black player.
+ *							    False if the function returns moves for the white player.
  */
 LinkedList* getMoves(char board[BOARD_SIZE][BOARD_SIZE], bool isMovesForBlackPlayer)
 {
@@ -555,13 +557,14 @@ LinkedList* getMoves(char board[BOARD_SIZE][BOARD_SIZE], bool isMovesForBlackPla
 	return possibleMoves;
 }
 
-/* Iterates the board and returns whether the player can make any more move (false) or he is stuck (true).
+/* 
+ * Iterates the board and returns whether the player can make any more move (false) or he is stuck (true).
  * This function is more optimized than getMoves() - it will stop as soon as possible moves are found.
  * Also - chained eats won't be checked.
  * Input:
- *		board - The game board.
- *	    isBlackPlayer - True if the function checks moves for the black player.
- *						False if the function checks moves for the white player.
+ *		board ~ The game board.
+ *		isBlackPlayer ~ True if the function checks moves for the black player.
+ *					    False if the function checks moves for the white player.
  */
 bool isPlayerStuck(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPlayer)
 {
@@ -570,8 +573,8 @@ bool isPlayerStuck(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPlayer)
 	if (g_memError)
 		return false;
 
-	int minNumOfDisksRemoved = 0; // We don't really need to calculate the best eats available..
-								  // but the service functions we use require this parameter so we supply it.
+	int minNumOfDisksRemoved = 0; // We don't really need to calculate the best eats available,
+								  // but the service functions we use require this parameter so we supply it
 
 	int i, j; // i = column, j = row
 	bool isMovesFound = false;
@@ -725,7 +728,7 @@ GameStep* createGameStep(char board[BOARD_SIZE][BOARD_SIZE], Move* move)
 	return step;
 }
 
-/* A destructor function for GameStep structs */
+/* A destructor function for GameStep structs. */
 void deleteGameStep(GameStep* step)
 {
 	deleteList(step->removedPositions);
@@ -733,7 +736,7 @@ void deleteGameStep(GameStep* step)
 	free(step);
 }
 
-/** Execute game step on the board. */
+/* Execute game step on the board. */
 void doStep(char board[BOARD_SIZE][BOARD_SIZE], GameStep* step)
 {
 	// Remove start position
@@ -769,7 +772,7 @@ void doStep(char board[BOARD_SIZE][BOARD_SIZE], GameStep* step)
 	}
 }
 
-/** Undo game step on the board. */
+/* Undo game step on the board. */
 void undoStep(char board[BOARD_SIZE][BOARD_SIZE], GameStep* step)
 {
 	// Remove end position
@@ -793,13 +796,14 @@ void undoStep(char board[BOARD_SIZE][BOARD_SIZE], GameStep* step)
 	}
 }
 
-/* Returns the size of the army of the black / white player (according to the input isBlackSoldiers parameter).
+/* 
+ * Returns the size of the army of the black / white player (according to the input isBlackSoldiers parameter).
  * Results detail how many kings and men remain.
  */
 Army getArmy(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackSoldiers)
 {
 	Army army;
-	army.men = 0;
+	army.pawns = 0;
 	army.kings = 0;
 
 	int i, j; // i = column, j = row
@@ -814,14 +818,14 @@ Army getArmy(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackSoldiers)
 			if (isBlackSoldiers)
 			{
 				if (soldier == BLACK_P)
-					army.men++;
+					army.pawns++;
 				else if (soldier == BLACK_K)
 					army.kings++;
 			}
 			else
 			{
 				if (soldier == WHITE_P)
-					army.men++;
+					army.pawns++;
 				else if (soldier == WHITE_K)
 					army.kings++;
 			}
@@ -831,16 +835,17 @@ Army getArmy(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackSoldiers)
 	return army;
 }
 
-/* Checks the board to see if the black / white player has won.
- *  Input:
- *		board - The game board.
+/* 
+ * Checks the board to see if the black / white player has won.
+ * Input:
+ *		board ~ The game board.
  *		isPlayerBlack ~ Check if the black player has won (true) or if the white player has won (false).
  */
 bool isPlayerVictor(char board[BOARD_SIZE][BOARD_SIZE], bool isPlayerBlack)
 {
 	// Check if the other player's army is gone
 	Army enemyArmy = isPlayerBlack ? getArmy(board, false) : getArmy(board, true);
-	if ((enemyArmy.men == 0) && (enemyArmy.kings == 0))
+	if ((enemyArmy.pawns == 0) && (enemyArmy.kings == 0))
 		return true;
 
 	// Check if the enemy can make any more moves

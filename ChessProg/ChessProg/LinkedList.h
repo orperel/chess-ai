@@ -1,7 +1,7 @@
-#ifndef LINKEDLIST_
-#define LINKEDLIST_
+#ifndef LINKED_LIST_
+#define LINKED_LIST_
 
-// The node struct
+/* The node struct */
 struct Node
 {
 	void* data;
@@ -10,10 +10,10 @@ struct Node
 
 typedef struct Node Node;
 
-// Pointer to function that destructs the data of the nodes
+/* Pointer to function that destructs the data of the nodes. */ 
 typedef void(*destructor)(void*);
 
-// The linked list
+/* The linked list */
 typedef struct
 {
 	int length;
@@ -22,7 +22,7 @@ typedef struct
 	destructor freeData;
 } LinkedList;
 
-// Linked list operations
+/* Linked list operations */
 LinkedList* createList(destructor freeData);
 
 void deleteList(LinkedList* list);

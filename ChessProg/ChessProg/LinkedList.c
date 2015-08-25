@@ -3,7 +3,7 @@
 #include "LinkedList.h"
 #include "Chess.h"
 
-/** 
+/* 
  * Create a new empty linked list. If failed to allocate memory return NULL. 
  * "freeData" is a pointer to function that destructs the data of the nodes. If freeData is NULL do regular free.
  * If malloc has failed set g_memError to true and return NULL.
@@ -26,7 +26,7 @@ LinkedList* createList(destructor freeData)
 	return list;
 }
 
-/** Recursively delete the list nodes when deleting all nodes. */
+/* Recursively delete the list nodes when deleting all nodes. */
 void deleteListRecursive(Node* node, destructor freeData)
 {
 	if (node == NULL)
@@ -47,7 +47,7 @@ void deleteListRecursive(Node* node, destructor freeData)
 	free(node);
 }
 
-/** Delete all nodes but leave the list itself. */
+/* Delete all nodes but leave the list itself. */
 void deleteAllNodes(LinkedList* list)
 {
 	deleteListRecursive(list->head, list->freeData);
@@ -55,14 +55,14 @@ void deleteAllNodes(LinkedList* list)
 	list->length = 0;
 }
 
-/** Delete the entire linked list. */
+/* Delete the entire linked list. */
 void deleteList(LinkedList* list)
 {
 	deleteAllNodes(list);
 	free(list);
 }
 
-/** 
+/*
  * Insert a new node to the end of the list with the data "data".
  * Set g_memError to true if malloc has failed.
  */
@@ -94,7 +94,7 @@ void insertLast(LinkedList* list, void* data)
 	list->length++;
 }
 
-/** Delete the node "node" from the list. If the node doesn't exist do nothing. */
+/* Delete the node "node" from the list. If the node doesn't exist do nothing. */
 void deleteNode(LinkedList* list, Node* node)
 {
 	Node* curr = list->head;
@@ -149,7 +149,7 @@ void deleteNode(LinkedList* list, Node* node)
 	free(node);
 }
 
-/** Concatenate list2 after list1, the result will be in list1. */
+/* Concatenate list2 after list1, the result will be in list1. */
 void concat(LinkedList* list1, LinkedList* list2)
 {
 	if (list2->length == 0)
