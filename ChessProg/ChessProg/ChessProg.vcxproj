@@ -65,10 +65,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Chess.h" />
-    <ClInclude Include="ConsoleMode.h" />
     <ClInclude Include="GameLogic.h" />
     <ClInclude Include="BoardManager.h" />
-    <ClInclude Include="GameSettings.h" />
     <ClInclude Include="LinkedList.h" />
     <ClInclude Include="Minimax.h" />
     <ClInclude Include="Types.h" />

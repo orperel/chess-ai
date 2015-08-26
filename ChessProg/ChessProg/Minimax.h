@@ -4,14 +4,15 @@
 #include "Types.h"
 #include "Chess.h"
 
-#define WINNING_SCORE 100
-#define LOOSING_SCORE -100
 #define PAWN_SCORE 1
 #define BISHOP_SCORE 3
 #define ROOK_SCORE 5
 #define KNIGHT_SCORE 3
 #define QUEEN_SCORE 9
 #define KING_SCORE 400
+#define WINNING_SCORE 1000
+#define LOOSING_SCORE -1000
+#define TIE_SCORE_ABS 200
 
 int getScore(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack);
 

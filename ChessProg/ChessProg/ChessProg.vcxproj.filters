@@ -30,13 +30,7 @@
     <ClInclude Include="Types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GameSettings.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="BoardManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ConsoleMode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

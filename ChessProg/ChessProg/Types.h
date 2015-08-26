@@ -6,6 +6,9 @@
 /* Define bool for c language. */
 typedef enum { false, true } bool;
 
+// Results of a user command
+typedef enum { SUCCESS, RETRY, QUIT } COMMAND_RESULT;
+
 /* A position on the game board. */
 typedef struct
 {
@@ -19,6 +22,7 @@ typedef struct
 	LinkedList* nextPoses; // The list of positions the soldier moves during the move
 } Move;
 
+/* Capacity of soldiers of a player. */
 typedef struct
 {
 	int pawns;
@@ -35,7 +39,7 @@ typedef struct
  */
 typedef struct
 {
-	char currSoldier;				// 'm', 'M', 'k' or 'K'.
+	char currSoldier;				// 'm', 'M', 'b', 'B', 'r', 'R', 'n', 'N', 'q', 'Q', 'k' or 'K'.
 	Position startPos;				// Where the soldier was located at beginning of step.
 	Position endPos;				// Where the soldier was located at the end of the step.
 	bool isBecomeKing;				// True if the soldier became a king during this step.

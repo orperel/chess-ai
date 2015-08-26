@@ -1,7 +1,8 @@
 #include <limits.h>
-#include "Minimax.h"
-#include "GameSettings.h"
+#include "Chess.h"
+#include "BoardManager.h"
 #include "GameLogic.h"
+#include "Minimax.h"
 
 /* Compute the total score of the given board and player. */
 int getScore(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
@@ -15,30 +16,10 @@ int getScore(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
 	
 	if (!isABlack)
 	{	// White turn
-		if ((blackArmy.pawns == 0) && (blackArmy.kings == 0))
-		{	// No black soldiers left
-			return WINNING_SCORE;
-		}
-
-		if ((whiteArmy.pawns == 0) && (whiteArmy.kings == 0))
-		{	// No white soldiers left
-			return LOOSING_SCORE;
-		}
-
 		return (whiteScore - blackScore);
 	}
 	else
 	{	// Black turn
-		if ((whiteArmy.pawns == 0) && (whiteArmy.kings == 0))
-		{	// No white soldiers left
-			return WINNING_SCORE;
-		}
-		
-		if ((blackArmy.pawns == 0) && (blackArmy.kings == 0))
-		{	// No black soldiers left
-			return LOOSING_SCORE;
-		}
-
 		return (blackScore - whiteScore);
 	}
 }
@@ -50,7 +31,7 @@ int getScore(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
 int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta, bool isABlack)
 {
 	// Reach Minimax depth (leaf)
-	if (level == g_miniMaxDepth)
+	if (level == g_minimaxDepth)
 	{
 		return getScore(board, !isABlack); // Return score as for the parent level in the tree
 	}
@@ -61,11 +42,19 @@ int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta
 		return INT_MIN;
 	}
 
-	// Winning or loosing move, no more optional moves (leaf)
+	// Tie move (leaf). Return worst score, except for loosing, for the parent.
 	if (moves->length == 0)
 	{
 		deleteList(moves);
-		return getScore(board, isABlack);
+		
+		if ((level % 2) == 0)
+		{	// Max turn
+			return TIE_SCORE_ABS;
+		}
+		else
+		{	// Min turn
+			return -TIE_SCORE_ABS;
+		}
 	}
 
 	int value;
