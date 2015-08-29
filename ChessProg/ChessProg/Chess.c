@@ -8,11 +8,17 @@
 
 /* -- Globals Definition -- */
 
+/* The game mode. There are two possible values: 1 - two players mode, and 2 - player vs. AI mode. Default to 1. */
+int g_gameMode = 1;
+
 /* Configuration for mini-max algorithm. Maximum depth of recursion. Default to 1. */
 int g_minimaxDepth = 1;
 
-/* Is the user the black color (true) or white color (false). Default to White. */
+/* Is the user the black color (true) or white color (false). Default to white. */
 bool g_isUserBlack = false;
+
+/* Is the next player the black color (true) or white color (false). Default to white. */
+bool g_isNextPlayerBlack = false;
 
 /* A buffer allocated for reading user input. The user's command will not exceed 50 characters. */
 char g_inputLine[LINE_LENGTH] = { 0 };
@@ -150,14 +156,16 @@ bool validStart(char board[BOARD_SIZE][BOARD_SIZE])
 {
 	// Count white and black soldiers
 	Army whiteArmy = getArmy(board, false);
-	int totalWhite = whiteArmy.pawns + whiteArmy.kings;
+	int totalWhite = whiteArmy.pawns + whiteArmy.bishops + whiteArmy.rooks
+					 + whiteArmy.knights + whiteArmy.queens + whiteArmy.kings;
 	Army blackArmy = getArmy(board, true);
-	int totalBlack = blackArmy.pawns + blackArmy.kings;
+	int totalBlack = blackArmy.pawns + blackArmy.bishops + blackArmy.rooks
+					 + blackArmy.knights + blackArmy.queens + blackArmy.kings;
 
-	if (((whiteArmy.pawns == 0) && (whiteArmy.kings == 0)) 	// The board is empty
-		|| ((blackArmy.pawns == 0) && (blackArmy.kings == 0))	// or there are discs of only one color
-		|| (totalWhite > MAX_SOLDIERS) || (totalBlack > MAX_SOLDIERS)	// There are more than 20 discs of the same color
-		|| (!validEdges(board)))	// There is a man in the opponent edge
+	if ((totalWhite == 0) || (totalBlack == 0)	// The board is empty or there are pieces of only one color
+		|| (whiteArmy.kings == 0) || (blackArmy.kings == 0)	// One of the kings is missing
+		|| (totalWhite > MAX_SOLDIERS) || (totalBlack > MAX_SOLDIERS)	// There are more than 16 pieces of the same color
+		|| (!validEdges(board)))	// There is a pawn in the opponent edge
 	{	// Invalid start
 		return false;
 	}
@@ -181,36 +189,97 @@ COMMAND_RESULT parseUserSettings(char board[BOARD_SIZE][BOARD_SIZE])
 
 	if (argc > 0)
 	{
-		if (0 == strcmp(DIFFICULTY_DEPTH_COMMAND, args[0]))
-		{	// Minimax depth
-			int depth = atoi(args[1]);
-			if ((depth >= 1) && (depth <= MAX_DEPTH))
-			{
-				g_minimaxDepth = depth;
+		if (0 == strcmp(GAME_MODE_COMMAND, args[0]))
+		{	// Game mode
+			int mode = atoi(args[1]);
+			if (mode == 1)
+			{	// Two players mode
+				g_gameMode = mode;
+				printf(TWO_PLAYERS_GAME_MODE);
+			}
+			else if (mode == 2)
+			{	// Player vs. AI mode
+				g_gameMode = mode;
+				printf(PLAYER_VS_AI_GAME_MODE);
 			}
 			else
-			{	// Illegal depth
-				printf(WRONG_MINIMAX_DEPTH);
+			{	// Illegal mode
+				printf(WRONG_GAME_MODE);
+			}
+
+			commandResult = RETRY;
+		}
+		else if (0 == strcmp(DIFFICULTY_COMMAND, args[0]))
+		{	// Minimax depth
+			if (g_gameMode == 2)
+			{
+				if (0 == strcmp(DIFFICULTY_DEPTH, args[1]))
+				{
+					int depth = atoi(args[2]);
+					if ((depth >= 1) && (depth <= MAX_DEPTH))
+					{
+						g_minimaxDepth = depth;
+					}
+					else
+					{	// Illegal depth
+						printf(WRONG_MINIMAX_DEPTH);
+					}
+				}
+				else if (0 == strcmp(DIFFICULTY_BEST, args[1]))
+				{	// Set difficulty best to MAX_DEPTH
+					g_minimaxDepth = MAX_DEPTH;
+				}
+			}
+			else
+			{
+				printf(ILLEGAL_COMMAND);
 			}
 
 			commandResult = RETRY;
 		}
 		else if (0 == strcmp(USER_COLOR_COMMAND, args[0]))
 		{	// User color
-			if (0 == strcmp("white", args[1]))
+			if (g_gameMode == 2)
 			{
-				g_isUserBlack = false;
+				if (0 == strcmp("white", args[1]))
+				{
+					g_isUserBlack = false;
+				}
+				else if (0 == strcmp("black", args[1]))
+				{
+					g_isUserBlack = true;
+				}
 			}
-			else if (0 == strcmp("black", args[1]))
+			else
 			{
-				g_isUserBlack = true;
+				printf(ILLEGAL_COMMAND);
 			}
+			
+			commandResult = RETRY;
+		}
+		else if (0 == strcmp(LOAD_COMMAND, args[0]))
+		{	// Load
+			// TO DO
+			print_board(board);
 
 			commandResult = RETRY;
 		}
 		else if (0 == strcmp(CLEAR_COMMAND, args[0]))
 		{	// Clear
 			clearBoard(board);
+			commandResult = RETRY;
+		}
+		else if (0 == strcmp(NEXT_PLAYER_COMMAND, args[0]))
+		{	// Next player
+			if (0 == strcmp("white", args[1]))
+			{
+				g_isNextPlayerBlack = false;
+			}
+			else if (0 == strcmp("black", args[1]))
+			{
+				g_isNextPlayerBlack = true;
+			}
+
 			commandResult = RETRY;
 		}
 		else if (0 == strcmp(REMOVE_COMMAND, args[0]))
@@ -236,24 +305,96 @@ COMMAND_RESULT parseUserSettings(char board[BOARD_SIZE][BOARD_SIZE])
 			{
 				if (0 == strcmp("white", args[2]))
 				{	// Set white
-					if (WHITE_P == *args[3])
-					{	// Man
-						board[pos.x][pos.y] = WHITE_P;
+					Army whiteArmy = getArmy(board, false);
+
+					if (0 == strcmp("pawn", args[3]))
+					{	// Pawn
+						if (whiteArmy.pawns < 8)
+							board[pos.x][pos.y] = WHITE_P;
+						else
+							printf(WRONG_SET);
 					}
-					else if (WHITE_K == *args[3])
+					else if (0 == strcmp("bishop", args[3]))
+					{	// Bishop
+						if (whiteArmy.bishops < 2)
+							board[pos.x][pos.y] = WHITE_B;
+						else
+							printf(WRONG_SET);
+					}
+					else if (0 == strcmp("rook", args[3]))
+					{	// Rook
+						if (whiteArmy.rooks < 2)
+							board[pos.x][pos.y] = WHITE_R;
+						else
+							printf(WRONG_SET);
+					}
+					else if (0 == strcmp("knight", args[3]))
+					{	// Knight
+						if (whiteArmy.knights < 2)
+							board[pos.x][pos.y] = WHITE_N;
+						else
+							printf(WRONG_SET);
+					}
+					else if (0 == strcmp("queen", args[3]))
+					{	// Queen
+						if (whiteArmy.queens < 1)
+							board[pos.x][pos.y] = WHITE_Q;
+						else
+							printf(WRONG_SET);
+					}
+					else if (0 == strcmp("king", args[3]))
 					{	// King
-						board[pos.x][pos.y] = WHITE_K;
+						if (whiteArmy.kings < 1)
+							board[pos.x][pos.y] = WHITE_K;
+						else
+							printf(WRONG_SET);
 					}
 				}
 				else if (0 == strcmp("black", args[2]))
 				{	// Set black
-					if (WHITE_P == *args[3])
-					{	// Man
-						board[pos.x][pos.y] = BLACK_P;
+					Army blackArmy = getArmy(board, true);
+
+					if (0 == strcmp("pawn", args[3]))
+					{	// Pawn
+						if (blackArmy.pawns < 8)
+							board[pos.x][pos.y] = BLACK_P;
+						else
+							printf(WRONG_SET);
 					}
-					else if (WHITE_K == *args[3])
+					else if (0 == strcmp("bishop", args[3]))
+					{	// Bishop
+						if (blackArmy.bishops < 2)
+							board[pos.x][pos.y] = BLACK_B;
+						else
+							printf(WRONG_SET);
+					}
+					else if (0 == strcmp("rook", args[3]))
+					{	// Rook
+						if (blackArmy.rooks < 2)
+							board[pos.x][pos.y] = BLACK_R;
+						else
+							printf(WRONG_SET);
+					}
+					else if (0 == strcmp("knight", args[3]))
+					{	// Knight
+						if (blackArmy.knights < 2)
+							board[pos.x][pos.y] = BLACK_N;
+						else
+							printf(WRONG_SET);
+					}
+					else if (0 == strcmp("queen", args[3]))
+					{	// Queen
+						if (blackArmy.queens < 1)
+							board[pos.x][pos.y] = BLACK_Q;
+						else
+							printf(WRONG_SET);
+					}
+					else if (0 == strcmp("king", args[3]))
 					{	// King
-						board[pos.x][pos.y] = BLACK_K;
+						if (blackArmy.kings < 1)
+							board[pos.x][pos.y] = BLACK_K;
+						else
+							printf(WRONG_SET);
 					}
 				}
 			}
@@ -473,7 +614,7 @@ void executeGetMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isPlayerBla
 }
 
 /* Parse next user command during chess game and execute it. Return true if the game should end, false if not. */
-COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isPlayerBlack)
+COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack)
 {
 	if (NULL == g_inputLine) // Avoid illegal NULL input
 	{
@@ -493,12 +634,12 @@ COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isPlaye
 		}
 		else if (0 == strcmp(GETMOVES_COMMAND, args[0]))
 		{ // Get Moves
-			executeGetMovesCommand(board, isPlayerBlack);
+			executeGetMovesCommand(board, isUserBlack);
 			commandResult = RETRY;
 		}
 		else if (0 == strcmp(MOVE_COMMAND, args[0]))
 		{ // Move
-			bool isMoveExecuted = executeMoveCommand(board, isPlayerBlack, args);
+			bool isMoveExecuted = executeMoveCommand(board, isUserBlack, args);
 
 			if (!isMoveExecuted)
 				commandResult = RETRY;
@@ -569,7 +710,7 @@ bool determineGameSettings(char board[BOARD_SIZE][BOARD_SIZE])
  * This function will repeat until the user executes a legal move.
  * Return true if the user quits the game. False if the game continues.
  */
-bool executeUserTurn(char board[BOARD_SIZE][BOARD_SIZE], bool isPlayerBlack)
+bool executeUserTurn(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack)
 {
 	COMMAND_RESULT command = RETRY;
 
@@ -578,18 +719,18 @@ bool executeUserTurn(char board[BOARD_SIZE][BOARD_SIZE], bool isPlayerBlack)
 		printf(ENTER_YOUR_MOVE);
 		
 		getUserInput();
-
-		command = parseUserCommand(board, isPlayerBlack);
+		
+		command = parseUserCommand(board, isUserBlack);
 	}
 
 	return (QUIT == command);
 }
 
 /* Executes the next turn done by the computer. */
-void executeComputerTurn(char board[BOARD_SIZE][BOARD_SIZE], bool isPlayerBlack)
+void executeComputerTurn(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack)
 {
 	// Compute next move by computer using the minimax algorithm
-	bool isComputerBlack = !isPlayerBlack;
+	bool isComputerBlack = !isUserBlack;
 	Move* nextMove = minimax(board, isComputerBlack);
 	if (g_memError)
 		return;
@@ -605,29 +746,21 @@ void executeComputerTurn(char board[BOARD_SIZE][BOARD_SIZE], bool isPlayerBlack)
 
 /*
  * Executes the game loop.
- * The user and the computer each take turns until one of them wins or the user quits.
+ * The two users, or the computer in Player Vs. AI mode, each take turns until one of them wins or the user quits.
  * This function runs an entire single Chess game.
  * Input:
  *		board ~ The initial game board.
- *		isUserBlack ~ Whether the user is black (True) or white (False).
+ *		isUserBlack ~ Applicable only in Player Vs. AI mode, whether the user is black (true) or white (false).
  */
-void executeGameLoop(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack)
+void executeGameLoop(char board[BOARD_SIZE][BOARD_SIZE], int gameMode, bool isNextPlayerBlack, bool isUserBlack)
 {
-	bool isUserTurn = !isUserBlack;
-	bool isBlackTurn = false;
+	bool isUserTurn = true;	// By default the game mode is Two Players mode, so it is always the user turn
+	if (gameMode == 2)
+	{	// Player Vs. AI mode
+		isUserTurn = (isUserBlack && isNextPlayerBlack) || (!isUserBlack && !isNextPlayerBlack);
+	}
+	bool isBlackTurn = isNextPlayerBlack;
 	bool isQuit = false;
-
-	// Treat the edge case of a game board where one player immediately loses due to a non-fair game setting
-	if (isPlayerVictor(board, true))
-	{ // Black wins
-		printf(WIN_MSG, BLACK_STR);
-		return;
-	}
-	if (isPlayerVictor(board, false))
-	{ // White wins
-		printf(WIN_MSG, WHITE_STR);
-		return;
-	}
 
 	// Game loops while the user doesn't quit and there's no victor
 	while (!isQuit)
@@ -635,7 +768,7 @@ void executeGameLoop(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack)
 		// Game continues, execute next turn
 		if (isUserTurn)
 		{
-			isQuit = executeUserTurn(board, isUserBlack);
+			isQuit = executeUserTurn(board, isBlackTurn);
 		}
 		else
 		{
@@ -656,10 +789,12 @@ void executeGameLoop(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack)
 				isQuit = true;
 			}
 			else
-			{
-				// Change turns
+			{	// Change turns. In Two Players mode we don't change the flag isUserTurn
+				if (gameMode == 2)
+				{
+					isUserTurn = !isUserTurn;
+				}
 				isBlackTurn = !isBlackTurn;
-				isUserTurn = !isUserTurn;
 			}
 		}
 	}
@@ -667,18 +802,32 @@ void executeGameLoop(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack)
 
 int main(int argc, char *argv[])
 {
+	printf(WELCOME_TO_CHESS);
+
 	char board[BOARD_SIZE][BOARD_SIZE];
 	init_board(board);
 	print_board(board);
-
-	printf(WELCOME_TO_CHESS);
+	printf("\n");
 
 	// Start game settings mode.
 	// If the user doesn't quit, we start the game (determineGameSettings returns true).
 	if (determineGameSettings(board))
 	{
-		executeGameLoop(board, g_isUserBlack);
+		// Treat the edge case of a game board where one player immediately loses due to a non-fair game setting
+		//if (isPlayerVictor(board, true))
+		//{ // Black wins
+		//	printf(WIN_MSG, BLACK_STR);
+		//	return;
+		//}
+		//if (isPlayerVictor(board, false))
+		//{ // White wins
+		//	printf(WIN_MSG, WHITE_STR);
+		//	return;
+		//}
+		
+		executeGameLoop(board, g_gameMode, g_isNextPlayerBlack, g_isUserBlack);
 	}
-
+	
+	getchar();
 	return 0;
 }

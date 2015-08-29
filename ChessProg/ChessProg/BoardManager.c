@@ -4,25 +4,53 @@
 #include "BoardManager.h"
 
 void init_board(char board[BOARD_SIZE][BOARD_SIZE]){
-	int i, j;
-	for (i = 0; i < BOARD_SIZE; i++){
-		for (j = 0; j < BOARD_SIZE; j++){
-			if ((i + j) % 2 == 0){
-				if (j <= 3){
-					board[i][j] = WHITE_P;
-				}
-				else if (j >= 6){
-					board[i][j] = BLACK_P;
-				}
-				else{
-					board[i][j] = EMPTY;
-				}
-			}
-			else{
-				board[i][j] = EMPTY;
-			}
+	int i, j;	// i = column, j = row
+	for (i = 0; i < BOARD_SIZE; ++i)
+	{	
+		// Init rooks
+		if ((i == 0) || (i == 7))
+		{
+			board[i][0] = WHITE_R;
+			board[i][7] = BLACK_R;
 		}
+
+		// Init knights
+		if ((i == 1) || (i == 6))
+		{
+			board[i][0] = WHITE_N;
+			board[i][7] = BLACK_N;
+		}
+
+		// Init bishops
+		if ((i == 2) || (i == 5))
+		{
+			board[i][0] = WHITE_B;
+			board[i][7] = BLACK_B;
+		}
+
+		// Init kings
+		if (i == 3)
+		{
+			board[i][0] = WHITE_K;
+			board[i][7] = BLACK_K;
+		}
+
+		// Init queens
+		if (i == 4)
+		{
+			board[i][0] = WHITE_Q;
+			board[i][7] = BLACK_Q;
+		}
+
+		// Init pawns
+		board[i][1] = WHITE_P;
+		board[i][6] = BLACK_P;
 	}
+
+	// Init empty squares
+	for (i = 0; i < BOARD_SIZE; ++i)
+		for (j = 2; j < BOARD_SIZE-2; ++j)
+			board[i][j] = EMPTY;
 }
 
 void print_line(){
@@ -332,8 +360,7 @@ void undoStep(char board[BOARD_SIZE][BOARD_SIZE], GameStep* step)
 /* Returns if the square is on the board area. */
 bool isSquareOnBoard(int i, int j)
 {
-	// Check we're in the board index range and we're on a black square
-	return (i >= 0) && (j >= 0) && (i < BOARD_SIZE) && (j < BOARD_SIZE) && (0 == ((i + j) % 2));
+	return ((i >= 0) && (j >= 0) && (i < BOARD_SIZE) && (j < BOARD_SIZE));
 }
 
 /* Returns if the square is on the board and has no soldiers on it. */
@@ -391,11 +418,11 @@ Army getArmy(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackSoldiers)
 
 	int i, j; // i = column, j = row
 
-	for (j = 0; j < BOARD_SIZE; j++)
+	for (i = 0; i < BOARD_SIZE; i++)
 	{
-		for (i = 0; i < BOARD_SIZE; i++)
+		for (j = 0; j < BOARD_SIZE; j++)
 		{
-			char soldier = board[j][i];
+			char soldier = board[i][j];
 
 			if (isBlackSoldiers)
 			{
@@ -451,18 +478,18 @@ Army getArmy(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackSoldiers)
 	return army;
 }
 
-/* Validate that there are no men in the opponent edge. */
+/* Validate that there are no pawns in the opponent edge. */
 bool validEdges(char board[BOARD_SIZE][BOARD_SIZE])
 {
 	int i;
-	for (i = 0; i < BOARD_SIZE; i += 2)
+	for (i = 0; i < BOARD_SIZE; ++i)
 	{
-		if (board[BOARD_SIZE - 1][i] == BLACK_P)
+		if (board[i][0] == BLACK_P)
 		{	// Bottom edge
 			return false;
 		}
 
-		if (board[0][i + 1] == WHITE_P)
+		if (board[i][7] == WHITE_P)
 		{	// Top edge
 			return false;
 		}
