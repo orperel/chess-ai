@@ -16,7 +16,7 @@ void clearBoard(char board[BOARD_SIZE][BOARD_SIZE]);
 Position* createPosition();
 
 /* A constructor function for Move structs. */
-Move* createMove(Position startPos);
+Move* createMove(Position* startPos, Position* targetPos);
 
 /* A deep copy constructor function for Move structs. */
 Move* cloneMove(Move* original);

@@ -83,7 +83,7 @@ Position* createPosition(int x, int y)
 }
 
 /* A constructor function for Move structs. */
-Move* createMove(Position startPos)
+Move* createMove(Position* startPos, Position* targetPos)
 {
 	Move* newMove = (Move*)malloc(sizeof(Move));
 	if (newMove == NULL)
@@ -93,9 +93,10 @@ Move* createMove(Position startPos)
 		return NULL;
 	}
 
-	newMove->initPos.x = startPos.x;
-	newMove->initPos.y = startPos.y;
-	newMove->nextPoses = createList(NULL);
+	newMove->initPos.x = startPos->x;
+	newMove->initPos.y = startPos->y;
+	newMove->nextPos.x = targetPos->x;
+	newMove->nextPos.y = targetPos->y;
 
 	if (g_memError)
 		return NULL;
