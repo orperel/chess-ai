@@ -19,7 +19,7 @@ typedef struct
 typedef struct
 {
 	Position initPos;	   // Initial position in beginning of move
-	LinkedList* nextPoses; // The list of positions the soldier moves during the move
+	Position nextPos;      // The next position the soldier moves to during the move
 } Move;
 
 /* Capacity of soldiers of a player. */
