@@ -79,6 +79,7 @@ int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta
 			stuckResult = isPlayerStuck(board, !isABlack);
 			if (g_memError)
 			{
+				undoStep(board, currGameStep);
 				deleteGameStep(currGameStep);
 				deleteList(moves);
 				return INT_MIN;
@@ -125,6 +126,7 @@ int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta
 			stuckResult = isPlayerStuck(board, !isABlack);
 			if (g_memError)
 			{
+				undoStep(board, currGameStep);
 				deleteGameStep(currGameStep);
 				deleteList(moves);
 				return INT_MIN;
@@ -192,6 +194,7 @@ Move* minimax(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
 		stuckResult = isPlayerStuck(board, !isABlack);
 		if (g_memError)
 		{
+			undoStep(board, currGameStep);
 			deleteGameStep(currGameStep);
 			deleteList(moves);
 			return NULL;
@@ -207,6 +210,14 @@ Move* minimax(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
 	
 		// Call alphabeta algorithm on the current move (child)
 		value = alphabeta(board, 1, alpha, beta, !isABlack);
+		if (g_memError)
+		{
+			undoStep(board, currGameStep);
+			deleteGameStep(currGameStep);
+			deleteList(moves);
+			return NULL;
+		}
+
 		// Check if the current value is greater than the previous ones (the root is max turn)
 		if (value > maxValue)
 		{

@@ -166,6 +166,20 @@ void deleteMove(void* move)
 	free(move);
 }
 
+/* Execute move on the board. In the end of this function the move is deleted. */
+bool executeMove(char board[BOARD_SIZE][BOARD_SIZE], Move* move)
+{
+	GameStep* nextStep = createGameStep(board, move);
+	if (g_memError)
+		return false;
+
+	doStep(board, nextStep);
+
+	deleteGameStep(nextStep);
+	deleteMove((void*)move);
+	return true;
+}
+
 /* A constructor function for GameStep structs. */
 GameStep* createGameStep(char board[BOARD_SIZE][BOARD_SIZE], Move* move)
 {

@@ -24,6 +24,9 @@ Move* cloneMove(Move* original);
 /* A destructor function for Move structs */
 void deleteMove(void* move);
 
+/* Execute move on the board. In the end of this function the move is deleted. */
+bool executeMove(char board[BOARD_SIZE][BOARD_SIZE], Move* move);
+
 /* A constructor function for GameStep structs. */
 GameStep* createGameStep(char board[BOARD_SIZE][BOARD_SIZE], Move* move);
 
