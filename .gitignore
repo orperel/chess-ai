@@ -32,3 +32,14 @@
 *.dSYM/
 *.log
 ChessProg/ChessProg/Debug/ChessProg.tlog/ChessProg.lastbuildstate
+*.sdf
+ChessProg/ChessProg.opensdf
+*.sdf
+*.tlog
+ChessProg/ChessProg/Debug/ChessProg.tlog/CL.read.1.tlog
+*.idb
+ChessProg/ChessProg/Debug/vc120.pdb
+*.pdb
+ChessProg/ChessProg/Debug/vc120.pdb
+~$Features_Status.xlsx
+*.sdf
