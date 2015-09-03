@@ -48,9 +48,6 @@ bool isSquareOccupiedByCurrPlayer(char board[BOARD_SIZE][BOARD_SIZE], bool isMov
 /* Returns if the square is on the board and occupied by the enemy. */
 bool isSquareOccupiedByEnemy(char board[BOARD_SIZE][BOARD_SIZE], bool isMovesForBlackPlayer, int i, int j);
 
-/* Returns if the square is on the board and occupied any king. */
-bool isSquareOccupiedByKing(char board[BOARD_SIZE][BOARD_SIZE], int i, int j);
-
 /* Returns if the soldier goes to endPos, will it become a king. */
 bool isBecomeKing(char soldier, Position endPos);
 
@@ -59,5 +56,29 @@ Army getArmy(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackSoldiers);
 
 /* Validate that there are no men in the opponent edge. */
 bool validEdges(char board[BOARD_SIZE][BOARD_SIZE]);
+
+/* Returns the white / black king's position. */
+Position getKingPosition(char board[BOARD_SIZE][BOARD_SIZE], bool isSearchBlackKing);
+
+/* Returns if the square is on the board and occupied by the a pawn of the given color. */
+bool isSquareOccupiedByPawn(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPiece, int i, int j);
+
+/* Returns if the square is on the board and occupied by the a bishop of the given color. */
+bool isSquareOccupiedByBishop(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPiece, int i, int j);
+
+/* Returns if the square is on the board and occupied by the a rook of the given color. */
+bool isSquareOccupiedByRook(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPiece, int i, int j);
+
+/* Returns if the square is on the board and occupied by the a knight of the given color. */
+bool isSquareOccupiedByKnight(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPiece, int i, int j);
+
+/* Returns if the square is on the board and occupied by the a queen of the given color. */
+bool isSquareOccupiedByQueen(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPiece, int i, int j);
+
+/* Returns if the square is on the board and occupied by the a king of the given color. */
+bool isSquareOccupiedByKing(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPiece, int i, int j);
+
+/* Returns if the square is on the edge of the board on the "enemy's side" (bottom for black, top for white). */
+bool isSquareOnOppositeEdge(bool isBlackPiece, int row)
 
 #endif

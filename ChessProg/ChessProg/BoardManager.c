@@ -98,6 +98,8 @@ Move* createMove(Position* startPos, Position* targetPos)
 	newMove->nextPos.x = targetPos->x;
 	newMove->nextPos.y = targetPos->y;
 
+	newMove->promotion = EMPTY; // By default in the general case - no promotion
+
 	if (g_memError)
 		return NULL;
 
@@ -365,15 +367,6 @@ bool isSquareOccupiedByEnemy(char board[BOARD_SIZE][BOARD_SIZE], bool isMovesFor
 		(!isMovesForBlackPlayer && ((board[i][j] == BLACK_K) || (board[i][j] == BLACK_P)));
 }
 
-/* Returns if the square is on the board and occupied any king. */
-bool isSquareOccupiedByKing(char board[BOARD_SIZE][BOARD_SIZE], int i, int j)
-{
-	if (!isSquareOnBoard(i, j))
-		return false;
-
-	return ((board[i][j] == WHITE_K) || (board[i][j] == BLACK_K));
-}
-
 /* Returns if the soldier goes to endPos, will it become a king. */
 bool isBecomeKing(char soldier, Position endPos)
 {
@@ -469,4 +462,84 @@ bool validEdges(char board[BOARD_SIZE][BOARD_SIZE])
 	}
 
 	return true;
+}
+
+/* Returns the white / black king's position. */
+Position getKingPosition(char board[BOARD_SIZE][BOARD_SIZE], bool isSearchBlackKing)
+{
+	int i, j; // i = column, j = row
+
+	for (j = 0; j < BOARD_SIZE; j++)
+	{
+		for (i = 0; i < BOARD_SIZE; i++)
+		{
+			char soldier = board[j][i];
+
+			if ((isSearchBlackKing && (soldier == BLACK_K)) || (!isSearchBlackKing && (soldier == WHITE_K)))
+			{
+				Position kingPos = { i, j };
+				return kingPos;
+			}
+		}
+	}
+}
+
+/* Returns if the square is on the board and occupied by the a pawn of the given color. */
+bool isSquareOccupiedByPawn(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPiece, int i, int j)
+{
+	if (!isSquareOnBoard(i, j))
+		return false;
+
+	return (isBlackPiece && (board[i][j] == BLACK_P)) || (!isBlackPiece && (board[i][j] == WHITE_P));
+}
+
+/* Returns if the square is on the board and occupied by the a bishop of the given color. */
+bool isSquareOccupiedByBishop(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPiece, int i, int j)
+{
+	if (!isSquareOnBoard(i, j))
+		return false;
+
+	return (isBlackPiece && (board[i][j] == BLACK_B)) || (!isBlackPiece && (board[i][j] == WHITE_B));
+}
+
+/* Returns if the square is on the board and occupied by the a rook of the given color. */
+bool isSquareOccupiedByRook(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPiece, int i, int j)
+{
+	if (!isSquareOnBoard(i, j))
+		return false;
+
+	return (isBlackPiece && (board[i][j] == BLACK_R)) || (!isBlackPiece && (board[i][j] == WHITE_R));
+}
+
+/* Returns if the square is on the board and occupied by the a knight of the given color. */
+bool isSquareOccupiedByKnight(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPiece, int i, int j)
+{
+	if (!isSquareOnBoard(i, j))
+		return false;
+
+	return (isBlackPiece && (board[i][j] == BLACK_N)) || (!isBlackPiece && (board[i][j] == WHITE_N));
+}
+
+/* Returns if the square is on the board and occupied by the a queen of the given color. */
+bool isSquareOccupiedByQueen(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPiece, int i, int j)
+{
+	if (!isSquareOnBoard(i, j))
+		return false;
+
+	return (isBlackPiece && (board[i][j] == BLACK_Q)) || (!isBlackPiece && (board[i][j] == WHITE_Q));
+}
+
+/* Returns if the square is on the board and occupied by the a king of the given color. */
+bool isSquareOccupiedByKing(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPiece, int i, int j)
+{
+	if (!isSquareOnBoard(i, j))
+		return false;
+
+	return (isBlackPiece && (board[i][j] == BLACK_K)) || (!isBlackPiece && (board[i][j] == WHITE_K));
+}
+
+/* Returns if the square is on the edge of the board on the "enemy's side". */
+bool isSquareOnOppositeEdge(bool isBlackPiece, int row)
+{
+	return (isBlackPiece && (row == (BOARD_SIZE - 1))) || (!isBlackPiece && (row == 0));
 }

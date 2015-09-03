@@ -6,32 +6,42 @@
 #include "Types.h"
 #include "Chess.h"
 
-/* 
- * Iterates the board and returns a list of moves the player can make with each soldier
+/*
+ * Get all possible moves for the given square.
+ * If the square is illegal or vacant, empty list is returned.
+ * Otherwise we query the square to find out which player occupies the square, and returns the possible moves for that
+ * player's piece.
  * Input:
  *		board ~ The game board.
- *	    isMovesForBlackPlayer ~ True if the function returns moves for the black player.
- *								False if the function returns moves for the white player.
+ *		x, y ~ The position on board to search for moves.
+ */
+LinkedList* getMovesForSquare(char board[BOARD_SIZE][BOARD_SIZE], int x, int y);
+
+/*
+ * Iterates the board and returns a list of moves the player can make with each piece
+ * Input:
+ *		board ~ The game board.
+ *		isMovesForBlackPlayer ~ True if the function returns moves for the black player.
+ *							    False if the function returns moves for the white player.
  */
 LinkedList* getMoves(char board[BOARD_SIZE][BOARD_SIZE], bool isMovesForBlackPlayer);
 
-/* 
- * Iterates the board and returns whether the player can make any more move (false) or he is stuck (true).
- * This function is more optimized than getMoves() - it will stop as soon as possible moves are found.
- * Also - chained eats won't be checked.
- * Input:
- *		board ~ The game board.
- *	    isBlackPlayer ~ True if the function checks moves for the black player.
- *						False if the function checks moves for the white player.
- */
-bool isPlayerStuck(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPlayer);
-
 /*
-* Checks the board to see if the black / white player has won.
-* Input:
-*		board ~ The game board.
-*		isPlayerBlack ~ Check if the black player has won (true) or if the white player has won (false).
-*/
-bool isPlayerVictor(char board[BOARD_SIZE][BOARD_SIZE], bool isPlayerBlack);
+ * Returns either whether the black player (isTestForBlackPlayer == true) is in check,
+ * or the white player (isTestForBlackPlayer == false) is in check.
+ */
+bool isCheck(char board[BOARD_SIZE][BOARD_SIZE], bool isTestForBlackPlayer);
+
+/* Returns if the black player (isTestForBlackPlayer-true) or white player (isTestForBlackPlayer=false)
+ *	are in Matt (their king is in danger and cannot be saved).
+ *	To optimize, this method accepts possibleMoves for the given player, to avoid calculating them all over again.
+ */
+bool isMatt(char board[BOARD_SIZE][BOARD_SIZE], bool isTestForBlackPlayer, LinkedList* possibleMoves);
+
+/* Returns if the black player (isTestForBlackPlayer-true) or white player (isTestForBlackPlayer=false)
+ *	are in tie (their king is not in danger but no additional moves can be made).
+ *	To optimize, this method accepts possibleMoves for the given player, to avoid calculating them all over again.
+ */
+bool isTie(char board[BOARD_SIZE][BOARD_SIZE], bool isTestForBlackPlayer, LinkedList* possibleMoves);
 
 #endif

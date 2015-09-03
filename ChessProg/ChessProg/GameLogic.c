@@ -2,463 +2,583 @@
 #include "BoardManager.h"
 #include "GameLogic.h"
 
-/* -- Forward Declarations -- */
-
-void queryAdditionalEats(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
-						 bool isMovesForBlackPlayer, Move* currMove, int* minNumOfDisksRemoved, bool isSingleEatMode);
-
 /* -- Functions -- */
 
 /*
-* Checks if a man can move to the current square.
+* Returns true / false if a pawn is threatning the given king
 * Input:
-*		board ~ The game board.
-*		possibleMoves ~ A list of possible moves by the current player, we aggregate it as we check
-*						possible eat / position change moves. This list will always contain the best moves so far.
-*		isMovesForBlackPlayer ~ True if current player is black. False if white.
-*		startPos ~ Where the soldier is currently located.
-*		minNumOfDisksRemoved ~ The minimum number of disks removed by the current eat chain for this move to count.
-*							   This helps us determine we return only the best moves possible for the player.
-*		diagX, diagY ~ The target square the man wants to move to (x,y).
+*		board ~ The chess game board.
+*		isTestForBlackPlayer ~ True if check if black king is under check. False for white king.
+*		kingPos ~ Where the king piece is currently located.
 */
-void queryManMoveSquare(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
-	bool isMovesForBlackPlayer, Position startPos, int* minNumOfDisksRemoved,
-	int diagX, int diagY)
+bool isPawnThreatningKing(char board[BOARD_SIZE][BOARD_SIZE], bool isTestForBlackPlayer, Position* kingPos)
 {
-	// Man move counts only if:
-	// 1) The next square is vacant.
-	// 2) There are no eat moves available.
-	if ((isSquareVacant(board, diagX, diagY)) && (*minNumOfDisksRemoved == 0))
-	{
-		Move* newMove = createMove(startPos);
-		if (g_memError)
-			return;
+	// Test for threatning pawns
+	// Check forward move
+	int threatX = kingPos->x;
+	int threatY = kingPos->y;
 
-		Position* targetPos = createPosition(diagX, diagY);
-		if (g_memError)
-		{
-			deleteMove((void*)newMove);
-			return;
-		}
-
-		insertLast(newMove->nextPoses, targetPos);
-		if (g_memError)
-		{
-			free(targetPos);
-			deleteMove((void*)newMove);
-			return;
-		}
-
-		insertLast(possibleMoves, newMove);
-		if (g_memError)
-		{
-			deleteMove((void*)newMove);
-			return;
-		}
-	}
-}
-
-/*  
- * Checks if the next square yields an eat move.
- * Input:
- *		board ~ The game board.
- *		possibleMoves ~ A list of possible moves by the current player, we aggregate it as we check
- *						possible eat / position change moves. This list will always contain the best moves so far.
- *		isMovesForBlackPlayer ~ True if current player is black. False if white.
- *		currMove ~ Contains the last move done by the current soldier (in case of a chain eat),
- *				   or simply where it is located (first eat).
- *		minNumOfDisksRemoved ~ The minimum number of disks removed by the current eat chain for this move to count.
- *							   This helps us determine we return only the best moves possible for the player.
- *		enemyDiag, nextDiag ~ The square on which the next enemy *might* reside, and the square following it.
- *      isSingleEatMode ~ Determines if we should recurse and keep looking for chained eats.
- *						  This parameter can be true and then the function doesn't recurse (and returns only the first eat).
- */
-void queryEatNextSquare(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
-						 bool isMovesForBlackPlayer, Move* currMove, int* minNumOfDisksRemoved,
-						 Position enemyDiag, Position nextDiag, bool isSingleEatMode)
-{
-	int enemyDiagX = enemyDiag.x;
-	int enemyDiagY = enemyDiag.y;
-	int nextDiagX = nextDiag.x;
-	int nextDiagY = nextDiag.y;
-
-	// Treat the edge case of cyclic move: we return to the starting point
-	bool isCyclicMove = (nextDiagX == currMove->initPos.x) && (nextDiagY == currMove->initPos.y);
-
-	// Can we eat a nearby enemy
-	if (isSquareOccupiedByEnemy(board, isMovesForBlackPlayer, enemyDiagX, enemyDiagY) &&
-		(isSquareVacant(board, nextDiagX, nextDiagY) || isCyclicMove))
-	{
-		Move* newMove = cloneMove(currMove);
-		if (g_memError)
-			return;
-
-		Position* targetPos = createPosition(nextDiagX, nextDiagY);
-		if (g_memError)
-		{
-			deleteMove((void*)newMove);
-			return;
-		}
-
-		insertLast(newMove->nextPoses, targetPos);
-		if (g_memError)
-		{
-			deleteMove((void*)newMove);
-			free(targetPos);
-			return;
-		}
-
-		Move* newMoveForList = NULL; // Will contain the clone we add to possibleMoves, in case we add the new move
-
-		// Move has same eat count as new move we counted
-		if (*minNumOfDisksRemoved == newMove->nextPoses->length)
-		{
-			// Clone and save to list of possible moves.
-			// We clone here to avoid the case where the list gets deleted, but we still want to maintain
-			// the pointer to newMove somewhere deeper in the recursion tree.
-			newMoveForList = cloneMove(newMove);
-			if (g_memError)
-			{
-				deleteMove((void*)newMove);
-				return;
-			}
-
-			insertLast(possibleMoves, newMoveForList); // Concat move to moves list
-		}
-		else if (*minNumOfDisksRemoved < newMove->nextPoses->length)
-		{ // New best move
-			// This new move is better than all the old moves so it overrides them
-			*minNumOfDisksRemoved = newMove->nextPoses->length;
-			deleteAllNodes(possibleMoves);
-
-			// Clone and save to list of possible moves.
-			// We clone here to avoid the case where the list gets deleted, but we still want to maintain
-			// the pointer to newMove somewhere deeper in the recursion tree.
-			newMoveForList = cloneMove(newMove);
-			if (g_memError)
-			{
-				deleteMove((void*)newMove);
-				return;
-			}
-
-			insertLast(possibleMoves, newMoveForList); // Add move to moves list, this is the single current move
-		}
-
-		if (g_memError)
-		{
-			if (newMoveForList != NULL)
-				deleteMove(newMoveForList);
-
-			deleteMove((void*)newMove);
-			return;
-		}
-
-		// We don't change the location of the original soldier during this calculation.
-		// Only eaten soldiers.
-		char soldier = board[newMove->initPos.x][newMove->initPos.y];
-
-		// We don't recurse in single eat mode (where we want only the first eat).
-		// Also - becoming a king stops any additional actions during this move.
-		if ((!isSingleEatMode) && (!isBecomeKing(soldier, *targetPos)))
-		{
-			// Temporarily remove eaten soldier so we don't calculate it again for recursive moves
-			char eatenEnemy = board[enemyDiagX][enemyDiagY];
-			board[enemyDiagX][enemyDiagY] = EMPTY;
-
-			// Checks is we can chain additional eats
-			queryAdditionalEats(board, possibleMoves, isMovesForBlackPlayer, newMove,
-								minNumOfDisksRemoved, isSingleEatMode);
-
-			board[enemyDiagX][enemyDiagY] = eatenEnemy;
-		}
-
-		deleteMove((void*)newMove);
-	}
-}
-
-/*  
- * Checks if we can chain additional eats from the current move.
- * Note: a current move may also be "an empty move", meaning, the soldier is just standing at the initial position.
- * Input:
- *		board ~ The game board.
- *		possibleMoves ~ A list of possible moves by the current player, we aggregate it as we check
- *						possible eat / position change moves. This list will always contain the best moves so far.
- *		isMovesForBlackPlayer ~ True if current player is black. False if white.
- *		currMove ~ Contains the last move done by the current soldier (in case of a chain eat),
- *				   or simply where it is located (first eat).
- *		minNumOfDisksRemoved ~ The minimum number of disks removed by the current eat chain for this move to count.
- *							   This helps us determine we return only the best moves possible for the player.
- *      isSingleEatMode ~ Determines if we should recurse and keep looking for chained eats.
- *						  This parameter can be true and then the function doesn't recurse (and returns only the first eat).
- */
-void queryAdditionalEats(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves, 
-						 bool isMovesForBlackPlayer, Move* currMove, int* minNumOfDisksRemoved, bool isSingleEatMode)
-{
-	// The last square the soldier is on
-	Position currSquare;
-	
-	if (currMove->nextPoses->length > 0)
-	{
-		Position* lastPos = (Position*)currMove->nextPoses->tail->data;
-		currSquare.x = lastPos->x;
-		currSquare.y = lastPos->y;
-	}
+	if (isTestForBlackPlayer)
+		threatY -= 1; // Black king is threatened by pawns below
 	else
-	{
-		currSquare.x = currMove->initPos.x;
-		currSquare.y = currMove->initPos.y;
-	}
+		threatY += 1; // Black king is threatened by pawns above
 
-	// Check the 4 possible directions
-	Position enemyDiag;
-	Position nextDiag;
-	enemyDiag.x = currSquare.x - 1;
-	enemyDiag.y = currSquare.y + 1;
-	nextDiag.x = currSquare.x - 2;
-	nextDiag.y = currSquare.y + 2;
-	queryEatNextSquare(board, possibleMoves, isMovesForBlackPlayer, currMove,
-					   minNumOfDisksRemoved, enemyDiag, nextDiag, isSingleEatMode);
-	if (g_memError)
-		return;
-
-	enemyDiag.x = currSquare.x + 1;
-	enemyDiag.y = currSquare.y + 1;
-	nextDiag.x = currSquare.x + 2;
-	nextDiag.y = currSquare.y + 2;
-	queryEatNextSquare(board, possibleMoves, isMovesForBlackPlayer, currMove,
-					   minNumOfDisksRemoved, enemyDiag, nextDiag, isSingleEatMode);
-	if (g_memError)
-		return;
-
-	enemyDiag.x = currSquare.x - 1;
-	enemyDiag.y = currSquare.y - 1;
-	nextDiag.x = currSquare.x - 2;
-	nextDiag.y = currSquare.y - 2;
-	queryEatNextSquare(board, possibleMoves, isMovesForBlackPlayer, currMove,
-					   minNumOfDisksRemoved, enemyDiag, nextDiag, isSingleEatMode);
-	if (g_memError)
-		return;
-
-	enemyDiag.x = currSquare.x + 1;
-	enemyDiag.y = currSquare.y - 1;
-	nextDiag.x = currSquare.x + 2;
-	nextDiag.y = currSquare.y - 2;
-	queryEatNextSquare(board, possibleMoves, isMovesForBlackPlayer, currMove,
-					   minNumOfDisksRemoved, enemyDiag, nextDiag, isSingleEatMode);
+	return isSquareOccupiedByPawn(board, !isTestForBlackPlayer, threatX + 1, threatY) ||
+		   isSquareOccupiedByPawn(board, !isTestForBlackPlayer, threatX - 1, threatY);
 }
 
 /*
- * Get all possible position / eat moves of a man soldier.
- * Input:
- *		board ~ The game board.
- *		possibleMoves ~ A list of possible moves by the current player, we aggregate it as we check
- *						possible eat / position change moves. This list will always contain the best moves so far.
- *		isMovesForBlackPlayer ~ True if current player is black. False if white.
- *		startPos ~ Where the soldier is currently located.
- *		minNumOfDisksRemoved ~ The minimum number of disks removed by the current eat chain for this move to count.
- *							   This helps us determine we return only the best moves possible for the player.
- *      isSingleEatMode ~ Determines if we should recurse and keep looking for chained eats.
- *						  This parameter can be true and then the function doesn't recurse (and returns only the first eat).
- */
-void getLegalManMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
-					 bool isMovesForBlackPlayer, Position startPos, int* minNumOfDisksRemoved, bool isSingleEatMode)
+* Returns true / false if a queen, rook or bishop threatens the king from the given direction
+* Input:
+*		board ~ The game board.
+*		isTestForBlackPlayer ~ True if check if black king is under check. False for white king.
+*		kingPos ~ Where the king piece is currently located.
+*		deltaX, deltaY ~ The direction the threat advances in.
+*/
+bool isDirectionThreat(char board[BOARD_SIZE][BOARD_SIZE],
+					   bool isTestForBlackPlayer, Position* kingPos, int deltaX, int deltaY)
 {
-	// Check 2 forward move directions
-	int diagX;
-	int diagY;
+	// First square on the diagonal / row / column
+	Position currentSquare = { kingPos->x + deltaX, kingPos->y + deltaY };
 
-	if (isMovesForBlackPlayer)
-		diagY = startPos.y - 1; // Black player advances downwards
-	else
-		diagY = startPos.y + 1; // White player advances upwards
-
-	diagX = startPos.x - 1;
-
-	queryManMoveSquare(board, possibleMoves, isMovesForBlackPlayer,
-					   startPos, minNumOfDisksRemoved, diagX, diagY);
-	if (g_memError)
-		return;
-
-	diagX = startPos.x + 1;
-
-	queryManMoveSquare(board, possibleMoves, isMovesForBlackPlayer,
-						 startPos, minNumOfDisksRemoved, diagX, diagY);
-	if (g_memError)
-		return;
-
-	// Check possible eats as well
-	Move* baseMove = createMove(startPos);
-	if (g_memError)
-		return;
-
-	queryAdditionalEats(board, possibleMoves, isMovesForBlackPlayer, baseMove, minNumOfDisksRemoved, isSingleEatMode);
-	deleteMove((void*)baseMove);
-}
-
-/* 
- * Checks if a king can move / eat in the given direction.
- * Input:
- *		board ~ The game board.
- *		possibleMoves ~ A list of possible moves by the current player, we aggregate it as we check
- *						possible eat / position change moves. This list will always contain the best moves so far.
- *		isMovesForBlackPlayer ~ True if current player is black. False if white.
- *		startPos ~ Where the soldier is currently located.
- *		minNumOfDisksRemoved ~ The minimum number of disks removed by the current eat chain for this move to count.
- *							   This helps us determine we return only the best moves possible for the player.
- *		deltaX, deltaY ~ The direction the king advances in (|deltaX|=|deltaY|=1, sign determines direction).
- *      isSingleEatMode ~ Determines if we should recurse and keep looking for chained eats.
- *						  This parameter can be true and then the function doesn't recurse (and returns only the first eat).
- */
-void queryKingDirection(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
-						 bool isMovesForBlackPlayer, Position startPos, int* minNumOfDisksRemoved,
-						 int deltaX, int deltaY, bool isSingleEatMode)
-{
-	Position currentSquare = startPos;
-	currentSquare.x += deltaX;
-	currentSquare.y += deltaY;
-
-	// We advance along the diagonal, advancing by deltaX, Y each iteration.
+	// We advance along the direction, advancing by deltaX, Y each iteration.
 	// We will stop once we no longer hit an empty square.
 	while (isSquareVacant(board, currentSquare.x, currentSquare.y))
 	{
-		// If we can get eat moves for the current turn, we don't bother with position moves
-		if ((*minNumOfDisksRemoved == 0))
-		{
-			Move* newMove = createMove(startPos);
-			if (g_memError)
-				return;
+		currentSquare.x += deltaX;
+		currentSquare.y += deltaY;
+	}
 
-			Position* targetPos = createPosition(currentSquare.x, currentSquare.y);
-			if (g_memError)
-			{
-				deleteMove((void*)newMove);
-				return;
-			}
+	// If the reason we stopped iterating was we encountered an enemy piece,
+	// we check if that enemy piece is a threat.
+	// Note the queen threatens from all directions, bishop only from diagonal and rook from vertical & horizontal lines
+	bool isBishopThreating = isSquareOccupiedByBishop(board, !isTestForBlackPlayer, currentSquare.x, currentSquare.y);
+	bool isRookThreating = isSquareOccupiedByRook(board, !isTestForBlackPlayer, currentSquare.x, currentSquare.y);
+	bool isQueenThreating = isSquareOccupiedByQueen(board, !isTestForBlackPlayer, currentSquare.x, currentSquare.y);
+	bool isHorVertThreat = ((deltaX == 0) || (deltaY == 0));
+	bool isDiagonalThreat = (abs(deltaX) == abs(deltaY));
 
-			insertLast(newMove->nextPoses, targetPos);
-			if (g_memError)
-			{
-				free(targetPos);
-				deleteMove((void*)newMove);
-				return;
-			}
+	return ((isQueenThreating && (isHorVertThreat || isDiagonalThreat )) ||
+		    (isBishopThreating && isDiagonalThreat) ||
+			(isRookThreating && isHorVertThreat));
+}
 
-			insertLast(possibleMoves, newMove);
-			if (g_memError)
-			{
-				deleteMove((void*)newMove);
-				return;
-			}
-		}
+/*
+* Returns true / false if a bishop or queen (diagonal) is threatning the given king
+* Input:
+*		board ~ The chess game board.
+*		isTestForBlackPlayer ~ True if check if black king is under check. False for white king.
+*		kingPos ~ Where the king piece is currently located.
+*/
+bool isBishopQueenThreatningKing(char board[BOARD_SIZE][BOARD_SIZE], bool isTestForBlackPlayer, Position* kingPos)
+{
+	return isDirectionThreat(board, isTestForBlackPlayer, kingPos, -1,  1)  ||
+		   isDirectionThreat(board, isTestForBlackPlayer, kingPos,  1, -1)  ||
+		   isDirectionThreat(board, isTestForBlackPlayer, kingPos,  1,  1)  ||
+		   isDirectionThreat(board, isTestForBlackPlayer, kingPos, -1, -1);
+}
+
+/*
+* Returns true / false if a rook or queen (diagonal) is threatning the given king
+* Input:
+*		board ~ The chess game board.
+*		isTestForBlackPlayer ~ True if check if black king is under check. False for white king.
+*		kingPos ~ Where the king piece is currently located.
+*/
+bool isRookQueenThreatningKing(char board[BOARD_SIZE][BOARD_SIZE], bool isTestForBlackPlayer, Position* kingPos)
+{
+	return isDirectionThreat(board, isTestForBlackPlayer, kingPos,  0,  1) ||
+		   isDirectionThreat(board, isTestForBlackPlayer, kingPos,  1,  0) ||
+		   isDirectionThreat(board, isTestForBlackPlayer, kingPos,  0, -1) ||
+		   isDirectionThreat(board, isTestForBlackPlayer, kingPos, -1,  0);
+}
+
+/*
+* Returns true / false if a knight is threatning the given king
+* Input:
+*		board ~ The chess game board.
+*		isTestForBlackPlayer ~ True if check if black king is under check. False for white king.
+*		kingPos ~ Where the king piece is currently located.
+*/
+bool isKnightThreatningKing(char board[BOARD_SIZE][BOARD_SIZE], bool isTestForBlackPlayer, Position* kingPos)
+{
+	// The knight leaps forward in a "L shape" manner, therefore there are 8 possibilities
+	return (isSquareOccupiedByKnight(board, !isTestForBlackPlayer, kingPos->x - 1, kingPos->y - 2) ||
+			isSquareOccupiedByKnight(board, !isTestForBlackPlayer, kingPos->x - 2, kingPos->y - 1) ||
+			isSquareOccupiedByKnight(board, !isTestForBlackPlayer, kingPos->x + 1, kingPos->y - 2) ||
+			isSquareOccupiedByKnight(board, !isTestForBlackPlayer, kingPos->x + 2, kingPos->y - 1) ||
+			isSquareOccupiedByKnight(board, !isTestForBlackPlayer, kingPos->x - 1, kingPos->y + 2) ||
+			isSquareOccupiedByKnight(board, !isTestForBlackPlayer, kingPos->x - 2, kingPos->y + 1) ||
+			isSquareOccupiedByKnight(board, !isTestForBlackPlayer, kingPos->x + 1, kingPos->y + 2) ||
+			isSquareOccupiedByKnight(board, !isTestForBlackPlayer, kingPos->x + 2, kingPos->y + 1));
+}
+
+/*
+* Returns true / false if a king is threatning the given king
+* Input:
+*		board ~ The chess game board.
+*		isTestForBlackPlayer ~ True if check if black king is under check. False for white king.
+*		kingPos ~ Where the king piece is currently located.
+*/
+bool isKingThreatningKing(char board[BOARD_SIZE][BOARD_SIZE], bool isTestForBlackPlayer, Position* kingPos)
+{
+	// The king can move one square up, down, left or right
+	return (isSquareOccupiedByKing(board, !isTestForBlackPlayer, kingPos->x + 1, kingPos->y + 1) ||
+			isSquareOccupiedByKing(board, !isTestForBlackPlayer, kingPos->x - 1, kingPos->y + 1) || 
+			isSquareOccupiedByKing(board, !isTestForBlackPlayer, kingPos->x + 1, kingPos->y - 1) || 
+			isSquareOccupiedByKing(board, !isTestForBlackPlayer, kingPos->x - 1, kingPos->y - 1));
+}
+
+/*
+* Returns either whether the black player (isTestForBlackPlayer == true) is in check,
+* or the white player (isTestForBlackPlayer == false) is in check.
+* Input:
+*		board ~ The chess game board.
+*		isTestForBlackPlayer ~ True if check if black king is under check. False for white king.
+*		kingPos ~ Where the king piece is currently located.
+*/
+bool isKingUnderCheck(char board[BOARD_SIZE][BOARD_SIZE], bool isTestForBlackPlayer, Position* kingPos)
+{
+	return isPawnThreatningKing(board, isTestForBlackPlayer, kingPos) ||
+		   isBishopQueenThreatningKing(board, isTestForBlackPlayer, kingPos) ||
+		   isRookQueenThreatningKing(board, isTestForBlackPlayer, kingPos) ||
+		   isKnightThreatningKing(board, isTestForBlackPlayer, kingPos) ||
+		   isKingThreatningKing(board, isTestForBlackPlayer, kingPos);
+}
+
+/*
+ * Returns if the move is valid (doesn't cause the current player a check).
+ * Move is from startPos to target.
+ * - Move is expected to already be valid in terms of piece type constraints
+ *	(e.g: a peon can only move to 3 possible squares).
+ * Input:
+ *		board ~ The chess game board.
+ *		isMovesForBlackPlayer ~ True if current player is black. False if white.
+ *		startPos ~ Where the piece is currently located.
+ *		targetX, targetY ~ Coordinates of where the piece will move to.
+ *		kingPos ~ Current position of the current player's king (following the execution of the move).
+ */
+bool isValidMove(char board[BOARD_SIZE][BOARD_SIZE], bool isMovesForBlackPlayer,
+				 Position* startPos, int targetX, int targetY, Position* kingPos)
+{
+	// First update the board as if the move is executed.
+	// We don't bother taking peon promotion into consideration since this is irrelevant for the check validity test
+	// (promoting a peon of the current player shouldn't cause the king of the current player be in check).
+	char piece = board[startPos->x][startPos->y];
+	board[startPos->x][startPos->y] = EMPTY;
+	board[targetX][targetY] = piece;
+
+	bool isValid = isKingUnderCheck(board, isMovesForBlackPlayer, kingPos);
+
+	// Restore the board to its original state
+	board[startPos->x][startPos->y] = piece;
+	board[targetX][targetY] = EMPTY;
+
+	return isValid;
+}
+
+/*
+ * Add an available move for the player to the list of moves.
+ * - Move is expected to be valid in terms of piece type constraints (e.g: a peon can only move to 3 possible squares).
+ * - Additional validation will be done in this function (moves that result in a check status for the current player are
+ *	 illegal).
+ * --> If the move is legal, it is added to the list of possibleMoves. Otherwise nothing happens.
+ * Input:
+ *		board ~ The chess game board.
+ *		possibleMoves ~ A list of possible moves by the current player, we aggregate it as we check
+ *						possible eat / position change moves.
+ *		isMovesForBlackPlayer ~ True if current player is black. False if white.
+ *		startPos ~ Where the piece is currently located.
+ *		targetX, targetY ~ Coordinates of where the piece will move to.
+ *		kingPos ~ Current position of the current player's king (following the execution of the move).
+ */
+void addPossibleMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves, bool isMovesForBlackPlayer,
+					 Position* startPos, int targetX, int targetY, Position* kingPos)
+{
+	// Check if the move doesn't cause the current player a check. If it does, we don't count it.
+	if (!isValidMove(board, isMovesForBlackPlayer, startPos, targetX, targetY, kingPos))
+		return;
+
+	Position targetPos = { targetX, targetY };
+
+	Move* newMove = createMove(startPos, &targetPos);
+	if (g_memError)
+		return;
+
+	insertLast(possibleMoves, newMove);
+	if (g_memError)
+	{
+		deleteMove((void*)newMove);
+		return;
+	}
+}
+
+/*
+* Add an available move for the player to the list of moves, the move is specifically created for peons,
+* as it may contain promotions.
+* - Move is expected to be valid in terms of piece type constraints (e.g: a peon can only move to 3 possible squares).
+* - Additional validation will be done in this function (moves that result in a check status for the current player are
+*	 illegal).
+* --> If the move is legal, it is added to the list of possibleMoves. Otherwise nothing happens.
+* Input:
+*		board ~ The chess game board.
+*		possibleMoves ~ A list of possible moves by the current player, we aggregate it as we check
+*						possible eat / position change moves.
+*		isMovesForBlackPlayer ~ True if current player is black. False if white.
+*		startPos ~ Where the piece is currently located.
+*		targetX, targetY ~ Coordinates of where the piece will move to.
+*		kingPos ~ Current position of the current player's king (following the execution of the move).
+*/
+void addPeonMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves, bool isMovesForBlackPlayer,
+					  Position* startPos, int targetX, int targetY, Position* kingPos)
+{
+	addPossibleMove(board, possibleMoves, isMovesForBlackPlayer, startPos, targetX, targetY, kingPos);
+	if (g_memError)
+		return;
+
+	// If the pawn reaches the edge, the moves become promotion moves.
+	if (isSquareOnOppositeEdge(isMovesForBlackPlayer, targetY))
+	{
+		char bishop = isMovesForBlackPlayer ? BLACK_B : WHITE_B;
+		char rook = isMovesForBlackPlayer ? BLACK_R : BLACK_R;
+		char knight = isMovesForBlackPlayer ? BLACK_N : WHITE_N;
+		char queen = isMovesForBlackPlayer ? BLACK_Q : WHITE_Q;
+
+		((Move*)possibleMoves->tail->data)->promotion = bishop; // Update the most recent move to a promotion move.
+
+		addPossibleMove(board, possibleMoves, isMovesForBlackPlayer, startPos, targetX, targetY, kingPos);
+		if (g_memError)
+			return;
+		((Move*)possibleMoves->tail->data)->promotion = rook; // Update the most recent move to a promotion move.
+
+		addPossibleMove(board, possibleMoves, isMovesForBlackPlayer, startPos, targetX, targetY, kingPos);
+		if (g_memError)
+			return;
+		((Move*)possibleMoves->tail->data)->promotion = knight; // Update the most recent move to a promotion move.
+
+		addPossibleMove(board, possibleMoves, isMovesForBlackPlayer, startPos, targetX, targetY, kingPos);
+		if (g_memError)
+			return;
+		((Move*)possibleMoves->tail->data)->promotion = queen; // Update the most recent move to a promotion move.
+	}
+}
+
+/*
+ * Get possible moves for current Pawn piece.
+ * Input:
+ *		board ~ The game board.
+ *		possibleMoves ~ A list of possible moves by the current player, we aggregate it as we check
+ *						possible eat / position change moves.
+ *		isMovesForBlackPlayer ~ True if current player is black. False if white.
+ *		startPos ~ Where the piece is currently located.
+ *		kingPos ~ Current position of the current player's king.
+ */
+void getPawnMoves(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
+				  bool isMovesForBlackPlayer, Position* startPos, Position* kingPos)
+{
+	// Check forward move
+	int advanceX = startPos->x;
+	int advanceY = startPos->y;
+
+	if (isMovesForBlackPlayer)
+		advanceY -= 1; // Black player advances downwards
+	else
+		advanceY += 1; // White player advances upwards
+
+	// Check if the pawn can move forward to a vacant spot
+	if (isSquareVacant(board, advanceX, advanceY))
+	{
+		addPeonMove(board, possibleMoves, isMovesForBlackPlayer, startPos, advanceX, advanceY, kingPos);
+	}
+	if (g_memError)
+		return;
+
+	// Check if the pawn can eat in 1st diagonal
+	advanceX = startPos->x + 1;
+	if (isSquareOccupiedByEnemy(board, isMovesForBlackPlayer, advanceX, advanceY))
+		addPeonMove(board, possibleMoves, isMovesForBlackPlayer, startPos, advanceX, advanceY, kingPos);
+	if (g_memError)
+		return;
+
+	// Check if the pawn can eat in 2nd diagonal
+	advanceX = startPos->x - 1;
+	if (isSquareOccupiedByEnemy(board, isMovesForBlackPlayer, advanceX, advanceY))
+		addPeonMove(board, possibleMoves, isMovesForBlackPlayer, startPos, advanceX, advanceY, kingPos);
+	if (g_memError)
+		return;
+}
+
+/*
+* Checks if a piece can move / eat in the given direction.
+* Input:
+*		board ~ The game board.
+*		possibleMoves ~ A list of possible moves by the current player, we aggregate it as we check
+*						possible eat / position change moves.
+*		isMovesForBlackPlayer ~ True if current player is black. False if white.
+*		startPos ~ Where the piece is currently located.
+*		deltaX, deltaY ~ The direction the piece advances in.
+*		kingPos ~ Current position of the current player's king.
+*/
+void queryDirection(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
+					bool isMovesForBlackPlayer, Position* startPos, int deltaX, int deltaY, Position* kingPos)
+{
+	// First square on the diagonal / row / column
+	Position currentSquare = { startPos->x + deltaX, startPos->y + deltaY };
+
+	// We advance along the direction, advancing by deltaX, Y each iteration.
+	// We will stop once we no longer hit an empty square.
+	while (isSquareVacant(board, currentSquare.x, currentSquare.y))
+	{
+		addPossibleMove(board, possibleMoves, isMovesForBlackPlayer,startPos, currentSquare.x, currentSquare.y, kingPos);
+		if (g_memError)
+			return;
 
 		currentSquare.x += deltaX;
 		currentSquare.y += deltaY;
 	}
 
-	// If the reason we stopped iterating was we encountered an enemy soldier, and the next square after it is vacant,
-	// this is a legal eat. We start calculating eats here.
-	Position enemyDiag;
-	Position nextDiag;
-	enemyDiag.x = currentSquare.x;
-	enemyDiag.y = currentSquare.y;
-	nextDiag.x = currentSquare.x + deltaX;
-	nextDiag.y = currentSquare.y + deltaY;
-	Move* baseMove = createMove(startPos);
-	if (g_memError)
-		return;
-
-	// After the first eat, the king behaves like a man soldier
-	queryEatNextSquare(board, possibleMoves, isMovesForBlackPlayer, baseMove,
-					   minNumOfDisksRemoved, enemyDiag, nextDiag, isSingleEatMode);
-	deleteMove((void*)baseMove);
-}
-
-/*
- * Get all possible position / eat moves of a king soldier.
- * Input:
- *		board ~ The game board.
- *		possibleMoves ~ A list of possible moves by the current player, we aggregate it as we check
- *						possible eat / position change moves. This list will always contain the best moves so far.
- *		isMovesForBlackPlayer ~ True if current player is black. False if white.
- *		startPos ~ Where the soldier is currently located.
- *		minNumOfDisksRemoved ~ The minimum number of disks removed by the current eat chain for this move to count.
- *							   This helps us determine we return only the best moves possible for the player.
- *      isSingleEatMode ~ Determines if we should recurse and keep looking for chained eats.
- *						  This parameter can be true and then the function doesn't recurse (and returns only the first eat).
- */
-void getLegalKingMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
-					  bool isMovesForBlackPlayer, Position startPos, int* minNumOfDisksRemoved, bool isSingleEatMode)
-{
-	// Check move / eat in 4 directions:
-	int diagX = -1;
-	int diagY = 1;
-	queryKingDirection(board, possibleMoves, isMovesForBlackPlayer,
-						startPos, minNumOfDisksRemoved, diagX, diagY, isSingleEatMode);
-	if (g_memError)
-		return;
-
-	if (isSingleEatMode && (possibleMoves->length > 0))
-		return; // Optimization - if we've found possible moves, no need to keep checking
-
-	diagX = 1;
-	diagY = 1;
-	queryKingDirection(board, possibleMoves, isMovesForBlackPlayer,
-						startPos, minNumOfDisksRemoved, diagX, diagY, isSingleEatMode);
-	if (g_memError)
-		return;
-
-	if (isSingleEatMode && (possibleMoves->length > 0))
-		return; // Optimization - if we've found possible moves, no need to keep checking
-
-	diagX = 1;
-	diagY = -1;
-	queryKingDirection(board, possibleMoves, isMovesForBlackPlayer,
-						startPos, minNumOfDisksRemoved, diagX, diagY, isSingleEatMode);
-	if (g_memError)
-		return;
-
-	if (isSingleEatMode && (possibleMoves->length > 0))
-		return; // Optimization - if we've found possible moves, no need to keep checking
-
-	diagX = -1;
-	diagY = -1;
-	queryKingDirection(board, possibleMoves, isMovesForBlackPlayer,
-						startPos, minNumOfDisksRemoved, diagX, diagY, isSingleEatMode);
-}
-
-/*
- * Get all possible position / eat moves of any soldier.
- * Input:
- *		board ~ The game board.
- *		possibleMoves ~ A list of possible moves by the current player, we aggregate it as we check
- *						possible eat / position change moves. This list will always contain the best moves so far.
- *		isMovesForBlackPlayer ~ True if current player is black. False if white.
- *		startPos ~ Where the soldier is currently located.
- *		minNumOfDisksRemoved ~ The minimum number of disks removed by the current eat chain for this move to count.
- *							   This helps us determine we return only the best moves possible for the player.
- *      isSingleEatMode ~ Determines if we should recurse and keep looking for chained eats.
- *						  This parameter can be true and then the function doesn't recurse (and returns only the first eat).
- */
-void getLegalPieceMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
-					   bool isMovesForBlackPlayer, Position startPos, int* minNumOfDisksRemoved, bool isSingleEatMode)
-{
-	if (isSquareOccupiedByCurrPlayer(board, isMovesForBlackPlayer, startPos.x, startPos.y))
+	// If the reason we stopped iterating was we encountered an enemy piece, we get an additional move: an eat move.
+	if (isSquareOccupiedByEnemy(board, isMovesForBlackPlayer, currentSquare.x, currentSquare.y))
 	{
-		if (isSquareOccupiedByKing(board, startPos.x, startPos.y))
-		{
-			getLegalKingMove(board, possibleMoves, isMovesForBlackPlayer,
-							 startPos, minNumOfDisksRemoved, isSingleEatMode);
-		}
+		addPossibleMove(board, possibleMoves, isMovesForBlackPlayer, startPos, currentSquare.x, currentSquare.y, kingPos);
+	}
+}
+
+/*
+* Get possible moves for current Bishop piece.
+* Input:
+*		board ~ The game board.
+*		possibleMoves ~ A list of possible moves by the current player, we aggregate it as we check
+*						possible eat / position change moves.
+*		isMovesForBlackPlayer ~ True if current player is black. False if white.
+*		startPos ~ Where the piece is currently located.
+*		kingPos ~ Current position of the current player's king.
+*/
+void getBishopMoves(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
+					bool isMovesForBlackPlayer, Position* startPos, Position* kingPos)
+{
+	// Check move / eat in 4 diagonal directions:
+	queryDirection(board, possibleMoves, isMovesForBlackPlayer, startPos, -1, 1, kingPos);
+	if (g_memError)
+		return;
+
+	queryDirection(board, possibleMoves, isMovesForBlackPlayer, startPos, 1, 1, kingPos);
+	if (g_memError)
+		return;
+
+	queryDirection(board, possibleMoves, isMovesForBlackPlayer, startPos, 1, -1, kingPos);
+	if (g_memError)
+		return;
+
+	queryDirection(board, possibleMoves, isMovesForBlackPlayer, startPos, -1, -1, kingPos);
+}
+
+/*
+* Get possible moves for current Rook piece.
+* Input:
+*		board ~ The game board.
+*		possibleMoves ~ A list of possible moves by the current player, we aggregate it as we check
+*						possible eat / position change moves.
+*		isMovesForBlackPlayer ~ True if current player is black. False if white.
+*		startPos ~ Where the piece is currently located.
+*		kingPos ~ Current position of the current player's king.
+*/
+void getRookMoves(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
+				  bool isMovesForBlackPlayer, Position* startPos, Position* kingPos)
+{
+	// Check move / eat in 4 cross directions:
+	queryDirection(board, possibleMoves, isMovesForBlackPlayer, startPos, 0, 1, kingPos);
+	if (g_memError)
+		return;
+
+	queryDirection(board, possibleMoves, isMovesForBlackPlayer, startPos, 0, -1, kingPos);
+	if (g_memError)
+		return;
+
+	queryDirection(board, possibleMoves, isMovesForBlackPlayer, startPos, 1, 0, kingPos);
+	if (g_memError)
+		return;
+
+	queryDirection(board, possibleMoves, isMovesForBlackPlayer, startPos, -1, 0, kingPos);
+}
+
+/*
+* Add possible move for a single spot, if that spot is available for moving to or eating an enemy piece.
+* Input:
+*		board ~ The game board.
+*		possibleMoves ~ A list of possible moves by the current player, we aggregate it as we check
+*						possible eat / position change moves.
+*		isMovesForBlackPlayer ~ True if current player is black. False if white.
+*		startPos ~ Where the piece is currently located.
+*		deltaX, deltaY ~ How many squares away to move the piece to.
+*		kingPos ~ Current position of the current player's king.
+*/
+void querySinglePos(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
+					bool isMovesForBlackPlayer, Position* startPos, int deltaX, int deltaY, Position* kingPos)
+{
+	Position nextSquare = { startPos->x + deltaX, startPos->y + deltaY  };
+
+	if (isSquareVacant(board, nextSquare.x, nextSquare.y) ||
+		isSquareOccupiedByEnemy(board, isMovesForBlackPlayer, nextSquare.x, nextSquare.y))
+	{
+		Position* kingPosArg;
+
+		// When the king moves, we should update the kingPos parameter accordingly
+		if ((startPos->x == kingPos->x) && (startPos->y == kingPos->y))
+			kingPosArg = &nextSquare; // The king's updated position is where the king moves to
 		else
+			kingPosArg = kingPos; // The current move is not made by a king, the kingPos stays the same
+
+		addPossibleMove(board, possibleMoves, isMovesForBlackPlayer, startPos, nextSquare.x, nextSquare.y, kingPosArg);
+	}
+}
+
+/*
+* Get possible moves for current Knight piece.
+* Input:
+*		board ~ The game board.
+*		possibleMoves ~ A list of possible moves by the current player, we aggregate it as we check
+*						possible eat / position change moves.
+*		isMovesForBlackPlayer ~ True if current player is black. False if white.
+*		startPos ~ Where the piece is currently located.
+*		kingPos ~ Current position of the current player's king.
+*/
+void getKnightMoves(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
+					bool isMovesForBlackPlayer, Position* startPos, Position* kingPos)
+{
+	// The knight leaps forward in a "L shape" manner, therefore there are 8 possibilities
+	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, 1, 2, kingPos);
+	if (g_memError)
+		return;
+	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, 2, 1, kingPos);
+	if (g_memError)
+		return;
+	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, -1, 2, kingPos);
+	if (g_memError)
+		return;
+	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, -2, 1, kingPos);
+	if (g_memError)
+		return;
+	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, 1, -2, kingPos);
+	if (g_memError)
+		return;
+	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, 2, -1, kingPos);
+	if (g_memError)
+		return;
+	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, -1, -2, kingPos);
+	if (g_memError)
+		return;
+	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, -2, -1, kingPos);
+}
+
+/*
+* Get possible moves for current Queen piece.
+* Input:
+*		board ~ The game board.
+*		possibleMoves ~ A list of possible moves by the current player, we aggregate it as we check
+*						possible eat / position change moves.
+*		isMovesForBlackPlayer ~ True if current player is black. False if white.
+*		startPos ~ Where the piece is currently located.
+*		kingPos ~ Current position of the current player's king.
+*/
+void getQueenMoves(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
+				   bool isMovesForBlackPlayer, Position* startPos, Position* kingPos)
+{
+	// The queen combines the power of a bishop and a rook
+	getBishopMoves(board, possibleMoves, isMovesForBlackPlayer, startPos, kingPos);
+	if (g_memError)
+		return;
+	getRookMoves(board, possibleMoves, isMovesForBlackPlayer, startPos, kingPos);
+}
+
+/*
+* Get possible moves for current King piece.
+* Input:
+*		board ~ The game board.
+*		possibleMoves ~ A list of possible moves by the current player, we aggregate it as we check
+*						possible eat / position change moves.
+*		isMovesForBlackPlayer ~ True if current player is black. False if white.
+*		startPos ~ Where the piece is currently located. Also the current position of the current player's king.
+*/
+void getKingMoves(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
+				  bool isMovesForBlackPlayer, Position* startPos)
+{
+	// The king can move in 4 directions, one square
+	// Remember that for the king - startPos == kingPos..
+	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, 0, 1, startPos);
+	if (g_memError)
+		return;
+	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, 0, -1, startPos);
+	if (g_memError)
+		return;
+	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, 1, 0, startPos);
+	if (g_memError)
+		return;
+	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, -1, 0, startPos);
+}
+
+/*
+* Get all possible position / eat moves of any soldier.
+* Input:
+*		board ~ The game board.
+*		possibleMoves ~ A list of possible moves by the current player, the list will be filled with possible moves for
+*					    the piece.
+*		isMovesForBlackPlayer ~ True if current player is black. False if white.
+*		startPos ~ Where the soldier is currently located.
+*		kingPos ~ Current position of the current player's king.
+*/
+void getPieceMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
+				  bool isMovesForBlackPlayer, Position* startPos, Position* kingPos)
+{
+	// Search for moves only if the piece on the square belongs to the current player.
+	if (isSquareOccupiedByCurrPlayer(board, isMovesForBlackPlayer, startPos->x, startPos->y))
+	{
+		switch (board[startPos->x][startPos->y]) // Get move by piece type
 		{
-			getLegalManMove(board, possibleMoves, isMovesForBlackPlayer,
-						    startPos, minNumOfDisksRemoved, isSingleEatMode);
-		}
+			case (WHITE_P):
+			case (BLACK_P):
+			{
+				getPawnMoves(board, possibleMoves, isMovesForBlackPlayer, startPos, kingPos);
+				break;
+			}
+			case (WHITE_B) :
+			case (BLACK_B) :
+			{
+				getBishopMoves(board, possibleMoves, isMovesForBlackPlayer, startPos, kingPos);
+				break;
+			}
+			case (WHITE_R) :
+			case (BLACK_R) :
+			{
+				getRookMoves(board, possibleMoves, isMovesForBlackPlayer, startPos, kingPos);
+				break;
+			}
+			case (WHITE_N) :
+			case (BLACK_N) :
+			{
+				getKnightMoves(board, possibleMoves, isMovesForBlackPlayer, startPos, kingPos);
+				break;
+			}
+			case (WHITE_Q) :
+			case (BLACK_Q) :
+			{
+				getQueenMoves(board, possibleMoves, isMovesForBlackPlayer, startPos, kingPos);
+				break;
+			}
+			case (WHITE_K) :
+			case (BLACK_K) :
+			{
+				getKingMoves(board, possibleMoves, isMovesForBlackPlayer, startPos);
+				break;
+			}
+			default:
+				break; // Illegal board piece
+			}
 	}
 }
 
 /* 
- * Iterates the board and returns a list of moves the player can make with each soldier
+ * Iterates the board and returns a list of moves the player can make with each piece
  * Input:
  *		board ~ The game board.
  *		isMovesForBlackPlayer ~ True if the function returns moves for the black player.
@@ -466,33 +586,23 @@ void getLegalPieceMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleM
  */
 LinkedList* getMoves(char board[BOARD_SIZE][BOARD_SIZE], bool isMovesForBlackPlayer)
 {
-	// Algorithm:
-	// 0) Create an empty list of possible moves. Lets call it possibleMoves.
-	//    Set MinNumOfDisksRemoved = 0.
-	// 1) Iterate the board - only black squares can have soldiers so we can jump every 2 squares
-	//    (beware of the board end).
-	// 2) If the current soldier belongs to the player (isBlackPlayer and current player is black, etc).
-	//		2.1) Call getLegalManMove / getLegalKingMove with the current position.
-	//			 Add the results to possibleMoves (depending on the soldier type).
-	// 3) Return possibleMoves.
-
-	LinkedList* possibleMoves = createList(*deleteMove); // <-- This list contains the results of best moves available.
+	LinkedList* possibleMoves = createList(*deleteMove); // <-- This list contains the results of moves available.
 													     // Note we change this list in the following service functions.
 	if (g_memError)
 		return NULL;
 
-	int minNumOfDisksRemoved = 0;
+	Position kingPos = getKingPosition(board, isMovesForBlackPlayer); // Position of current player's king
+
 	int i, j; // i = column, j = row
 
 	for (j = BOARD_SIZE - 1; j >= 0; j--)
 	{
-		bool isEvenRow = (j % 2 == 0);
-		for (i = (isEvenRow) ? 0 : 1; i < BOARD_SIZE; i += 2)
+		for (i = 0; i < BOARD_SIZE; i++)
 		{
 			Position startPos;
 			startPos.x = i;
 			startPos.y = j;
-			getLegalPieceMove(board, possibleMoves, isMovesForBlackPlayer, startPos, &minNumOfDisksRemoved, false);
+			getPieceMove(board, possibleMoves, isMovesForBlackPlayer, &startPos, &kingPos);
 
 			if (g_memError)
 			{
@@ -505,70 +615,66 @@ LinkedList* getMoves(char board[BOARD_SIZE][BOARD_SIZE], bool isMovesForBlackPla
 	return possibleMoves;
 }
 
-/* 
- * Iterates the board and returns whether the player can make any more move (false) or he is stuck (true).
- * This function is more optimized than getMoves() - it will stop as soon as possible moves are found.
- * Also - chained eats won't be checked.
- * Input:
- *		board ~ The game board.
- *		isBlackPlayer ~ True if the function checks moves for the black player.
- *					    False if the function checks moves for the white player.
+/*
+ * Returns either whether the black player (isTestForBlackPlayer == true) is in check,
+ * or the white player (isTestForBlackPlayer == false) is in check.
  */
-bool isPlayerStuck(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPlayer)
+bool isCheck(char board[BOARD_SIZE][BOARD_SIZE], bool isTestForBlackPlayer)
 {
-	LinkedList* possibleMoves = createList(*deleteMove); // <-- This list contains the results of best moves available.
-														 // Note we change this list in the following service functions.
-	if (g_memError)
-		return false;
-
-	int minNumOfDisksRemoved = 0; // We don't really need to calculate the best eats available,
-								  // but the service functions we use require this parameter so we supply it
-
-	int i, j; // i = column, j = row
-	bool isMovesFound = false;
-
-	// We iterate the board as long as we don't find any possible moves
-	for (j = BOARD_SIZE - 1; !isMovesFound && (j >= 0); j--)
-	{
-		bool isEvenRow = (j % 2 == 0);
-		for (i = (isEvenRow) ? 0 : 1; !isMovesFound && (i < BOARD_SIZE); i += 2)
-		{
-			Position startPos;
-			startPos.x = j;
-			startPos.y = i;
-			getLegalPieceMove(board, possibleMoves, isBlackPlayer, startPos, &minNumOfDisksRemoved, true);
-
-			isMovesFound = (possibleMoves->length > 0);
-
-			if (g_memError)
-			{
-				deleteList(possibleMoves);
-				return false;
-			}
-		}
-	}
-
-	deleteList(possibleMoves);
-
-	return !isMovesFound;
+	Position kingPos = getKingPosition(board, isTestForBlackPlayer);
+	return isKingUnderCheck(board, isTestForBlackPlayer, &kingPos);
 }
 
-/* 
- * Checks the board to see if the black / white player has won.
- * Input:
- *		board ~ The game board.
- *		isPlayerBlack ~ Check if the black player has won (true) or if the white player has won (false).
+/** Returns if the black player (isTestForBlackPlayer-true) or white player (isTestForBlackPlayer=false)
+ *	are in Matt (their king is in danger and cannot be saved).
+ *	To optimize, this method accepts possibleMoves for the given player, to avoid calculating them all over again.
  */
-bool isPlayerVictor(char board[BOARD_SIZE][BOARD_SIZE], bool isPlayerBlack)
+bool isMatt(char board[BOARD_SIZE][BOARD_SIZE], bool isTestForBlackPlayer, LinkedList* possibleMoves)
 {
-	// Check if the other player's army is gone
-	Army enemyArmy = isPlayerBlack ? getArmy(board, false) : getArmy(board, true);
-	if ((enemyArmy.pawns == 0) && (enemyArmy.kings == 0))
-		return true;
+	return ((possibleMoves->length == 0) && (isCheck(board, isTestForBlackPlayer)));
+}
 
-	// Check if the enemy can make any more moves
-	if (isPlayerStuck(board, !isPlayerBlack))
-		return true;
+/** Returns if the black player (isTestForBlackPlayer-true) or white player (isTestForBlackPlayer=false)
+*	are in tie (their king is not in danger but no additional moves can be made).
+*	To optimize, this method accepts possibleMoves for the given player, to avoid calculating them all over again.
+*/
+bool isTie(char board[BOARD_SIZE][BOARD_SIZE], bool isTestForBlackPlayer, LinkedList* possibleMoves)
+{
+	return ((possibleMoves->length == 0) && (!isCheck(board, isTestForBlackPlayer)));
+}
 
-	return false;
+/*
+* Get all possible moves for the given square.
+* If the square is illegal or vacant, empty list is returned.
+* Otherwise we query the square to find out which player occupies the square, and returns the possible moves for that
+* player's piece.
+* Input:
+*		board ~ The game board.
+*		x, y ~ The position on board to search for moves.
+*/
+LinkedList* getMovesForSquare(char board[BOARD_SIZE][BOARD_SIZE], int x, int y)
+{
+	LinkedList* possibleMoves = createList(*deleteMove); // <-- This list contains the results of moves available.
+														 // Note we change this list in the following service functions.
+	if (g_memError)
+		return NULL;
+
+	if (!isSquareOnBoard(board, x, y) || isSquareVacant(board, x, y))
+		return possibleMoves;
+
+	bool isMovesForBlackPlayer = isSquareOccupiedByCurrPlayer(board, true, x, y); //If occupied by black, this is true
+
+	Position kingPos = getKingPosition(board, isMovesForBlackPlayer); // Position of current player's king
+	Position startPos;
+	startPos.x = x;
+	startPos.y = y;
+	getPieceMove(board, possibleMoves, isMovesForBlackPlayer, &startPos, &kingPos);
+
+	if (g_memError)
+	{
+		deleteList(possibleMoves);
+		return NULL;
+	}
+
+	return possibleMoves;
 }

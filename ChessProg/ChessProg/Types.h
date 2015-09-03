@@ -20,6 +20,10 @@ typedef struct
 {
 	Position initPos;	   // Initial position in beginning of move
 	Position nextPos;      // The next position the soldier moves to during the move
+
+	char promotion;		   // For moves that transform pieces (e.g: pawn arrives edge of board),
+						   // this field states which piece the current piece transforms into.
+						   // EMPTY symbolizes no promotion.
 } Move;
 
 /* Capacity of soldiers of a player. */
