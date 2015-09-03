@@ -21,23 +21,31 @@
 #define EMPTY ' '
 
 #define BOARD_SIZE 8
-#define MAX_ARGS 5			// Max number of args supported by shell
+#define MAX_ARGS 7			// Max number of args supported by shell
 #define LINE_LENGTH 50		// Shell "buffer" size used to read user input
 #define MAX_DEPTH 4			// Maximum depth miniMax algorithm depth can be
 #define MAX_SOLDIERS 16		// Maximum number of soldiers per player
 
-#define DIFFICULTY_DEPTH_COMMAND "difficulty depth"
+#define GAME_MODE_COMMAND "game_mode"
+#define DIFFICULTY_COMMAND "difficulty"
+#define DIFFICULTY_DEPTH "depth"
+#define DIFFICULTY_BEST "best"
 #define USER_COLOR_COMMAND "user_color"
+#define LOAD_COMMAND "load"
 #define CLEAR_COMMAND "clear"
+#define NEXT_PLAYER_COMMAND "next_player"
 #define REMOVE_COMMAND "rm"
 #define SET_COMMAND "set"
 #define PRINT_COMMAND "print"
 #define QUIT_COMMAND "quit"
 #define START_COMMAND "start"
 #define MOVE_COMMAND "move"
-#define GETMOVES_COMMAND "get_moves"
+#define GET_MOVES_COMMAND "get_moves"
+#define GET_BEST_MOVES_COMMAND "get_best_moves"
+#define GET_SCORE_COMMAND "get_score"
+#define SAVE_COMMAND "save"
 
-#define WELCOME_TO_CHESS "Welcome to Chess!\n"
+#define WELCOME_TO_CHESS "Welcome to Chess!\n\n"
 #define ENTER_SETTINGS "Enter game settings:\n" 
 #define WRONG_GAME_MODE "Wrong game mode\n"
 #define TWO_PLAYERS_GAME_MODE "Running game in 2 players mode\n"
@@ -48,7 +56,7 @@
 #define WRONG_SET "Setting this piece creates an invalid board\n"  
 #define NO_PIECE "The specified position does not contain your piece\n"
 #define WRONG_BOARD_INITIALIZATION "Wrong board initialization\n"
-#define ENTER_YOUR_MOVE "Enter your move:\n" 
+#define ENTER_YOUR_MOVE "%s player - enter your move:\n"
 #define COMPUTER_MSG "Computer: move "
 #define BLACK_STR "Black"
 #define WHITE_STR "White"
@@ -66,11 +74,17 @@
 
 /* -- Globals Declaration -- */
 
+/* The game mode. There are two possible values: 1 - two players mode, and 2 - player vs. AI mode. Default to 1. */
+extern int g_gameMode;
+
 /* Configuration for mini-max algorithm. Maximum depth of recursion. Default to 1. */
 extern int g_minimaxDepth;
 
-/* Is the user the black color (true) or white color (false). Default to White. */
+/* Is the user the black color (true) or white color (false). Default to white. */
 extern bool g_isUserBlack;
+
+/* Is the next player the black color (true) or white color (false). Default to white. */
+extern bool g_isNextPlayerBlack;
 
 /* A buffer allocated for reading user input. The user's command will not exceed 50 characters. */
 extern char g_inputLine[LINE_LENGTH];
