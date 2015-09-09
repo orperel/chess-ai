@@ -3,43 +3,53 @@
 #include "Chess.h"
 #include "BoardManager.h"
 
+/* Init the board with the pieces in the beginning of a game. */
 void init_board(char board[BOARD_SIZE][BOARD_SIZE]){
 	int i, j;	// i = column, j = row
 	for (i = 0; i < BOARD_SIZE; ++i)
 	{	
-		// Init rooks
-		if ((i == 0) || (i == 7))
+		switch (i)
 		{
-			board[i][0] = WHITE_R;
-			board[i][7] = BLACK_R;
-		}
-
-		// Init knights
-		if ((i == 1) || (i == 6))
-		{
-			board[i][0] = WHITE_N;
-			board[i][7] = BLACK_N;
-		}
-
-		// Init bishops
-		if ((i == 2) || (i == 5))
-		{
-			board[i][0] = WHITE_B;
-			board[i][7] = BLACK_B;
-		}
-
-		// Init kings
-		if (i == 3)
-		{
-			board[i][0] = WHITE_K;
-			board[i][7] = BLACK_K;
-		}
-
-		// Init queens
-		if (i == 4)
-		{
-			board[i][0] = WHITE_Q;
-			board[i][7] = BLACK_Q;
+			case(0):
+			case(7):
+			{
+				// Init rooks
+				board[i][0] = WHITE_R;
+				board[i][7] = BLACK_R;
+				break;
+			}
+			case(1):
+			case(6):
+			{
+				// Init knights
+				board[i][0] = WHITE_N;
+				board[i][7] = BLACK_N;
+				break;
+			}
+			case(2):
+			case(5):
+			{
+				// Init bishops
+				board[i][0] = WHITE_B;
+				board[i][7] = BLACK_B;
+				break;
+			}
+			case(3):
+			{ // Init kings
+				board[i][0] = WHITE_K;
+				board[i][7] = BLACK_K;
+				break;
+			}
+			case(4):
+			{ // Init queens
+				board[i][0] = WHITE_Q;
+				board[i][7] = BLACK_Q;
+				break;
+			}
+			default:
+			{ // Illegal case
+				break;
+			}
 		}
 
 		// Init pawns
@@ -53,6 +63,7 @@ void init_board(char board[BOARD_SIZE][BOARD_SIZE]){
 			board[i][j] = EMPTY;
 }
 
+/* Print to console a single line of the state of the board. */
 void print_line(){
 	int i;
 	printf("  |");
@@ -62,6 +73,7 @@ void print_line(){
 	printf("|\n");
 }
 
+/* Print to console the state of the board. */
 void print_board(char board[BOARD_SIZE][BOARD_SIZE])
 {
 	int i, j;
@@ -125,11 +137,7 @@ Move* createMove(Position* startPos, Position* targetPos)
 	newMove->initPos.y = startPos->y;
 	newMove->nextPos.x = targetPos->x;
 	newMove->nextPos.y = targetPos->y;
-
-	newMove->promotion = EMPTY; // By default in the general case - no promotion
-
-	if (g_memError)
-		return NULL;
+	newMove->promotion = EMPTY; // By default in the general case - no promotion. Manually set if needed.
 
 	return newMove;
 }
@@ -137,26 +145,13 @@ Move* createMove(Position* startPos, Position* targetPos)
 /* A deep copy constructor function for Move structs. */
 Move* cloneMove(Move* original)
 {
-	Move* clone = createMove(original->initPos);
+	Position* originalStartPos = &(original->initPos);
+	Position* originalTargetPos = &(original->nextPos);
+	Move* clone = createMove(originalStartPos, originalTargetPos);
 	if (g_memError)
 		return NULL;
-
-	Node* currNode = original->nextPoses->head;
-
-	while (currNode != NULL)
-	{
-		Position* origPos = (Position*)currNode->data;
-		Position* pos = createPosition(origPos->x, origPos->y);
-		insertLast(clone->nextPoses, pos);
-
-		currNode = currNode->next;
-	}
-
-	if (g_memError)
-	{
-		deleteMove((void*)clone);
-		return NULL;
-	}
+	
+	clone->promotion = original->promotion; // Copy promotion field manually
 
 	return clone;
 }
@@ -164,7 +159,6 @@ Move* cloneMove(Move* original)
 /* A destructor function for Move structs. */
 void deleteMove(void* move)
 {
-	deleteList(((Move*)move)->nextPoses);
 	free(move);
 }
 
@@ -193,113 +187,22 @@ GameStep* createGameStep(char board[BOARD_SIZE][BOARD_SIZE], Move* move)
 		return NULL;
 	}
 
-	char soldier = board[move->initPos.x][move->initPos.y];
-	bool isBlackPlayer = (soldier == BLACK_P) || (soldier == BLACK_K);
+	bool isBlackPlayer = isSquareOccupiedByBlackPlayer(board, move->initPos.x, move->initPos.y);
+	step->isStepByBlackPlayer = isBlackPlayer;
+	step->currSoldier = board[move->initPos.x][move->initPos.y];
 	step->startPos = move->initPos;
-	step->endPos = *((Position*)move->nextPoses->tail->data);
-	step->currSoldier = board[step->startPos.x][step->startPos.y];
+	step->endPos = move->nextPos;
+	step->promotion = move->promotion; // Move contains promotion only if it happened for a pawn. We trust its validity here.
 
-	step->isBecomeKing = isBecomeKing(step->currSoldier, step->endPos);
+	step->isEnemyRemovedInStep = false; // By default, set to false. Next we check if an eat happened and reset accordingly.
 
-	step->removedPositions = createList(NULL);
-	if (g_memError)
+	// Check if an enemy was eaten in this step
+	if (isSquareOccupiedByEnemy(board, isBlackPlayer, move->nextPos.x, move->nextPos.y))
 	{
-		free(step);
-	}
+		step->isEnemyRemovedInStep = true;
 
-	step->removedTypes = NULL;
-
-	// Check in which direction we advance
-	Position* nextPos = (Position*)move->nextPoses->head->data;
-	int deltaX = nextPos->x - step->startPos.x > 0 ? 1 : -1;
-	int deltaY = nextPos->y - step->startPos.y > 0 ? 1 : -1;
-
-	int currX = step->startPos.x + deltaX;
-	int currY = step->startPos.y + deltaY;
-	int enemyIndex = 0; // Index for enemy types we eat
-
-	// We advance along the first diagonal since the king can eat over a large distance
-	while ((currX != nextPos->x) && (currY != nextPos->y))
-	{
-		if (isSquareOccupiedByEnemy(board, isBlackPlayer, currX, currY))
-		{
-			// First eat - allocate types here.
-			// We know how many soldiers were eaten by looking at nextPoses so we can pre-allocate.
-			int numOfEatenSoldiers = move->nextPoses->length;
-			char* allocatedTypes = (char*)malloc(sizeof(char) * numOfEatenSoldiers);
-
-			if (allocatedTypes == NULL)
-			{
-				perror("Error: standard function malloc has failed");
-				g_memError = true;
-				deleteGameStep(step);
-				return NULL;
-			}
-
-			step->removedTypes = allocatedTypes;
-
-			// Add an enemy to the list of eaten soldiers
-			Position* dNextPos = createPosition(currX, currY);
-			if (g_memError)
-			{
-				free(dNextPos);
-				deleteGameStep(step);
-				return NULL;
-			}
-
-			insertLast(step->removedPositions, dNextPos);
-			if (g_memError)
-			{
-				deleteGameStep(step);
-				return NULL;
-			}
-
-			step->removedTypes[enemyIndex] = board[currX][currY];
-			enemyIndex++;
-		}
-
-		currX += deltaX;
-		currY += deltaY;
-	}
-
-	Node* nextPosNode = move->nextPoses->head->next;
-	Position* currStart;
-
-	// Aggregate the next eats if we have any.
-	// If the current step is only a move or there are no more eats, this loop will not occur.
-	while (NULL != nextPosNode)
-	{
-		currStart = nextPos;
-		nextPos = (Position*)nextPosNode->data;
-		deltaX = nextPos->x - currStart->x > 0 ? 1 : -1;
-		deltaY = nextPos->y - currStart->y > 0 ? 1 : -1;
-
-		currX += deltaX;
-		currY += deltaY;
-
-		// Add an enemy to the list of eaten soldiers
-		Position* eatenPos = createPosition(currX, currY);
-		if (g_memError)
-		{
-			deleteGameStep(step);
-			return NULL;
-		}
-
-		insertLast(step->removedPositions, eatenPos);
-		if (g_memError)
-		{
-			free(eatenPos);
-			deleteGameStep(step);
-			return NULL;
-		}
-
-		step->removedTypes[enemyIndex] = board[currX][currY];
-		enemyIndex++;
-
-		currX += deltaX;
-		currY += deltaY;
-
-		nextPosNode = nextPosNode->next;
+		// Eaten soldier is located at where the current piece lands.
+		step->removedType = board[move->nextPos.x][move->nextPos.y];
 	}
 
 	return step;
@@ -308,8 +211,6 @@ GameStep* createGameStep(char board[BOARD_SIZE][BOARD_SIZE], Move* move)
 /* A destructor function for GameStep structs. */
 void deleteGameStep(GameStep* step)
 {
-	deleteList(step->removedPositions);
-	free(step->removedTypes);
 	free(step);
 }
 
@@ -319,58 +220,26 @@ void doStep(char board[BOARD_SIZE][BOARD_SIZE], GameStep* step)
 	// Remove start position
 	board[step->startPos.x][step->startPos.y] = EMPTY;
 
-	// Set end position
-	if (step->isBecomeKing)
-	{
-		if (step->currSoldier == WHITE_P)
-		{
-			board[step->endPos.x][step->endPos.y] = WHITE_K;
-		}
-		else
-		{
-			board[step->endPos.x][step->endPos.y] = BLACK_K;
-		}
-	}
-	else
-	{
-		board[step->endPos.x][step->endPos.y] = step->currSoldier;
-	}
-
-	// Remove all removed positions
-	Node* currPos = step->removedPositions->head;
-	int currX, currY;
-	while (currPos != NULL)
-	{
-		currX = ((Position*)(currPos->data))->x;
-		currY = ((Position*)(currPos->data))->y;
-		board[currX][currY] = EMPTY;
-
-		currPos = currPos->next;
-	}
+	// Set end position to promotion / normal movement. This also removes an eaten enemy if there was any.
+	board[step->endPos.x][step->endPos.y] = (step->promotion != EMPTY) ? step->promotion : step->currSoldier;
 }
 
 /* Undo game step on the board. */
 void undoStep(char board[BOARD_SIZE][BOARD_SIZE], GameStep* step)
 {
-	// Remove end position
-	board[step->endPos.x][step->endPos.y] = EMPTY;
+	// Restore the original value of the target square (empty square for movement, eaten piece if there was an eat move).
+	board[step->endPos.x][step->endPos.y] = (step->isEnemyRemovedInStep) ? step->removedType : EMPTY;
 
 	// Set start position
-	board[step->startPos.x][step->startPos.y] = step->currSoldier;
-
-	// Restore all removed positions
-	Node* currPos = step->removedPositions->head;
-	int i = 0;
-	int currX, currY;
-	while (currPos != NULL)
-	{
-		currX = ((Position*)(currPos->data))->x;
-		currY = ((Position*)(currPos->data))->y;
-		board[currX][currY] = step->removedTypes[i];
-
-		currPos = currPos->next;
-		i++;
+	if (EMPTY == step->promotion)
+	{ // Piece moved without promotion.
+		board[step->startPos.x][step->startPos.y] = step->currSoldier;
 	}
+	else
+	{ // Only pawns can get promoted, so the original square must have been a pawn. Check which color was it.
+		board[step->startPos.x][step->startPos.y] = step->isStepByBlackPlayer ? BLACK_P : WHITE_P;
+	}
+	
 }
 
 /* Returns if the square is on the board area. */
@@ -394,8 +263,23 @@ bool isSquareOccupiedByCurrPlayer(char board[BOARD_SIZE][BOARD_SIZE], bool isMov
 	if (!isSquareOnBoard(i, j))
 		return false;
 
-	return (!isMovesForBlackPlayer && ((board[i][j] == WHITE_K) || (board[i][j] == WHITE_P))) ||
-		(isMovesForBlackPlayer && ((board[i][j] == BLACK_K) || (board[i][j] == BLACK_P)));
+	bool isWhiteMoveAndWhiteOccupies = !isMovesForBlackPlayer &&
+										((board[i][j] == WHITE_K) ||
+										 (board[i][j] == WHITE_Q) ||
+										 (board[i][j] == WHITE_R) ||
+										 (board[i][j] == WHITE_N) ||
+										 (board[i][j] == WHITE_B) ||
+										 (board[i][j] == WHITE_P));
+
+	bool isBlackMoveAndBlackOccupies = isMovesForBlackPlayer &&
+										((board[i][j] == BLACK_K) ||
+										 (board[i][j] == BLACK_Q) ||
+										 (board[i][j] == BLACK_R) ||
+										 (board[i][j] == BLACK_N) ||
+										 (board[i][j] == BLACK_B) ||
+										 (board[i][j] == BLACK_P));
+
+	return (isWhiteMoveAndWhiteOccupies || isBlackMoveAndBlackOccupies);
 }
 
 /* Returns if the square is on the board and occupied by the enemy. */
@@ -404,21 +288,29 @@ bool isSquareOccupiedByEnemy(char board[BOARD_SIZE][BOARD_SIZE], bool isMovesFor
 	if (!isSquareOnBoard(i, j))
 		return false;
 
-	return (isMovesForBlackPlayer && ((board[i][j] == WHITE_K) || (board[i][j] == WHITE_P))) ||
-		(!isMovesForBlackPlayer && ((board[i][j] == BLACK_K) || (board[i][j] == BLACK_P)));
-}
+	bool isBlackMoveAndWhiteOccupies = isMovesForBlackPlayer &&
+										((board[i][j] == WHITE_K) ||
+										 (board[i][j] == WHITE_Q) ||
+										 (board[i][j] == WHITE_R) ||
+										 (board[i][j] == WHITE_N) ||
+										 (board[i][j] == WHITE_B) ||
+										 (board[i][j] == WHITE_P));
 
-/* Returns if the soldier goes to endPos, will it become a king. */
-bool isBecomeKing(char soldier, Position endPos)
-{
-	return ((soldier == BLACK_P) && (endPos.y == 0)) ||
-		((soldier == WHITE_P) && (endPos.y == BOARD_SIZE - 1));
+	bool isWhiteMoveAndBlackOccupies = !isMovesForBlackPlayer &&
+										((board[i][j] == BLACK_K) ||
+										 (board[i][j] == BLACK_Q) ||
+										 (board[i][j] == BLACK_R) ||
+										 (board[i][j] == BLACK_N) ||
+										 (board[i][j] == BLACK_B) ||
+										 (board[i][j] == BLACK_P));
+
+	return (isBlackMoveAndWhiteOccupies || isWhiteMoveAndBlackOccupies);
 }
 
 /*
-* Returns the size of the army of the black / white player (according to the input isBlackSoldiers parameter).
-* Results detail how many kings and men remain.
-*/
+ * Returns the size of the army of the black / white player (according to the input isBlackSoldiers parameter).
+ * Results detail how many of each piece remain.
+ */
 Army getArmy(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackSoldiers)
 {
 	Army army = { 0 };
@@ -435,48 +327,74 @@ Army getArmy(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackSoldiers)
 			{
 				switch (soldier)
 				{
-				case BLACK_P:
-					army.pawns++;
-					break;
-				case BLACK_B:
-					army.bishops++;
-					break;
-				case BLACK_R:
-					army.rooks++;
-					break;
-				case BLACK_N:
-					army.knights++;
-					break;
-				case BLACK_Q:
-					army.queens++;
-					break;
-				case BLACK_K:
-					army.kings++;
-					break;
+					case BLACK_P:
+					{
+						army.pawns++;
+						break;
+					}
+					case BLACK_B:
+					{
+						army.bishops++;
+						break;
+					}
+					case BLACK_R:
+					{
+						army.rooks++;
+						break;
+					}
+					case BLACK_N:
+					{
+						army.knights++;
+						break;
+					}
+					case BLACK_Q:
+					{
+						army.queens++;
+						break;
+					}
+					case BLACK_K:
+					{
+						army.kings++;
+						break;
+					}
+					default: { break; }
 				}
 			}
 			else
 			{
 				switch (soldier)
 				{
-				case WHITE_P:
-					army.pawns++;
-					break;
-				case WHITE_B:
-					army.bishops++;
-					break;
-				case WHITE_R:
-					army.rooks++;
-					break;
-				case WHITE_N:
-					army.knights++;
-					break;
-				case WHITE_Q:
-					army.queens++;
-					break;
-				case WHITE_K:
-					army.kings++;
-					break;
+					case WHITE_P:
+					{
+						army.pawns++;
+						break;
+					}
+					case WHITE_B:
+					{
+						army.bishops++;
+						break;
+					}
+					case WHITE_R:
+					{
+						army.rooks++;
+						break;
+					}
+					case WHITE_N:
+					{
+						army.knights++;
+						break;
+					}
+					case WHITE_Q:
+					{
+						army.queens++;
+						break;
+					}
+					case WHITE_K:
+					{
+						army.kings++;
+						break;
+					}
+					default: { break; }
 				}
 			}
 		}
@@ -523,6 +441,10 @@ Position getKingPosition(char board[BOARD_SIZE][BOARD_SIZE], bool isSearchBlackK
 			}
 		}
 	}
+
+	// Invalid position indices, should never reach this line.
+	Position invalidKingPos = { INVALID_POSITION_INDEX, INVALID_POSITION_INDEX };
+	return invalidKingPos;
 }
 
 /* Returns if the square is on the board and occupied by the a pawn of the given color. */
@@ -583,4 +505,16 @@ bool isSquareOccupiedByKing(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPiec
 bool isSquareOnOppositeEdge(bool isBlackPiece, int row)
 {
 	return (isBlackPiece && (row == (BOARD_SIZE - 1))) || (!isBlackPiece && (row == 0));
+}
+
+/** Returns true if the square is occupied by a piece of the black player. */
+bool isSquareOccupiedByBlackPlayer(char board[BOARD_SIZE][BOARD_SIZE], int x, int y)
+{
+	return isSquareOccupiedByCurrPlayer(board, true, x, y); //If occupied by black, this is true
+}
+
+/** Returns true if the square is occupied by a piece of the white player. */
+bool isSquareOccupiedByWhitePlayer(char board[BOARD_SIZE][BOARD_SIZE], int x, int y)
+{
+	return isSquareOccupiedByCurrPlayer(board, false, x, y); //If occupied by white, this is true
 }

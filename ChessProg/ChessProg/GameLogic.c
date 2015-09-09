@@ -659,10 +659,10 @@ LinkedList* getMovesForSquare(char board[BOARD_SIZE][BOARD_SIZE], int x, int y)
 	if (g_memError)
 		return NULL;
 
-	if (!isSquareOnBoard(board, x, y) || isSquareVacant(board, x, y))
+	if (!isSquareOnBoard(x, y) || isSquareVacant(board, x, y))
 		return possibleMoves;
 
-	bool isMovesForBlackPlayer = isSquareOccupiedByCurrPlayer(board, true, x, y); //If occupied by black, this is true
+	bool isMovesForBlackPlayer = isSquareOccupiedByBlackPlayer(board, x, y);
 
 	Position kingPos = getKingPosition(board, isMovesForBlackPlayer); // Position of current player's king
 	Position startPos;

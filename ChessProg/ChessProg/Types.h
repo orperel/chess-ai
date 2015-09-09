@@ -44,11 +44,14 @@ typedef struct
 typedef struct
 {
 	char currSoldier;				// 'm', 'M', 'b', 'B', 'r', 'R', 'n', 'N', 'q', 'Q', 'k' or 'K'.
+	bool isStepByBlackPlayer;		// True if the step was done by the black player. False if done by white.
 	Position startPos;				// Where the soldier was located at beginning of step.
 	Position endPos;				// Where the soldier was located at the end of the step.
-	bool isBecomeKing;				// True if the soldier became a king during this step.
-	LinkedList* removedPositions;	// List of soldier positions removed.
-	char* removedTypes;				// List of types of soldiers removed. Should match in index the removedPositions.
+	char promotion;					// EMPTY if no promotion for a pawn occured in this step.
+									// Otherwise contains the promotion: 'b', 'B', 'r', 'R', 'n', 'N', 'q', 'Q'.
+	bool isEnemyRemovedInStep;		// True if an enemy piece was eaten on this step. False if not.
+									// The position of the enemy eaten is the same as endPos.
+	char removedType;				// Types of enemy soldier removed. Relevant only if isEnemyRemovedInStep==true.
 } GameStep;
 
 #endif

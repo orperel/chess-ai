@@ -21,6 +21,7 @@
 #define EMPTY ' '
 
 #define BOARD_SIZE 8
+#define INVALID_POSITION_INDEX -1
 #define MAX_ARGS 7			// Max number of args supported by shell
 #define LINE_LENGTH 50		// Shell "buffer" size used to read user input
 #define MAX_DEPTH 4			// Maximum depth miniMax algorithm depth can be

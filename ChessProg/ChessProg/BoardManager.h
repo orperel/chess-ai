@@ -5,8 +5,10 @@
 #include "Types.h"
 #include "Chess.h"
 
+/* Init the board with the pieces in the beginning of a game. */
 void init_board(char board[BOARD_SIZE][BOARD_SIZE]);
 
+/* Print to console the state of the board. */
 void print_board(char board[BOARD_SIZE][BOARD_SIZE]);
 
 /* Clear the Chess board (remove all the pieces). */
@@ -39,6 +41,18 @@ void doStep(char board[BOARD_SIZE][BOARD_SIZE], GameStep* step);
 /* Undo game step on the board. */
 void undoStep(char board[BOARD_SIZE][BOARD_SIZE], GameStep* step);
 
+/*
+ * Returns the size of the army of the black / white player (according to the input isBlackSoldiers parameter).
+ * Results detail how many of each piece remain.
+ */
+Army getArmy(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackSoldiers);
+
+/* Validate that there are no men in the opponent edge. */
+bool validEdges(char board[BOARD_SIZE][BOARD_SIZE]);
+
+/* Returns the white / black king's position. */
+Position getKingPosition(char board[BOARD_SIZE][BOARD_SIZE], bool isSearchBlackKing);
+
 /* Returns if the square is on the board area. */
 bool isSquareOnBoard(int i, int j);
 
@@ -50,18 +64,6 @@ bool isSquareOccupiedByCurrPlayer(char board[BOARD_SIZE][BOARD_SIZE], bool isMov
 
 /* Returns if the square is on the board and occupied by the enemy. */
 bool isSquareOccupiedByEnemy(char board[BOARD_SIZE][BOARD_SIZE], bool isMovesForBlackPlayer, int i, int j);
-
-/* Returns if the soldier goes to endPos, will it become a king. */
-bool isBecomeKing(char soldier, Position endPos);
-
-/* Returns the remaining army size of black or white player. */
-Army getArmy(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackSoldiers);
-
-/* Validate that there are no men in the opponent edge. */
-bool validEdges(char board[BOARD_SIZE][BOARD_SIZE]);
-
-/* Returns the white / black king's position. */
-Position getKingPosition(char board[BOARD_SIZE][BOARD_SIZE], bool isSearchBlackKing);
 
 /* Returns if the square is on the board and occupied by the a pawn of the given color. */
 bool isSquareOccupiedByPawn(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPiece, int i, int j);
@@ -82,6 +84,12 @@ bool isSquareOccupiedByQueen(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPie
 bool isSquareOccupiedByKing(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPiece, int i, int j);
 
 /* Returns if the square is on the edge of the board on the "enemy's side" (bottom for black, top for white). */
-bool isSquareOnOppositeEdge(bool isBlackPiece, int row)
+bool isSquareOnOppositeEdge(bool isBlackPiece, int row);
+
+/** Returns true if the square is occupied by a piece of the black player. */
+bool isSquareOccupiedByBlackPlayer(char board[BOARD_SIZE][BOARD_SIZE], int x, int y);
+
+/** Returns true if the square is occupied by a piece of the white player. */
+bool isSquareOccupiedByWhitePlayer(char board[BOARD_SIZE][BOARD_SIZE], int x, int y);
 
 #endif
