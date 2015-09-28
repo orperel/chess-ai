@@ -207,8 +207,7 @@ COMMAND_RESULT parseUserSettings(char board[BOARD_SIZE][BOARD_SIZE])
 		}
 		else if (0 == strcmp(LOAD_COMMAND, args[0]))
 		{	// Load
-			// TO DO
-			print_board(board);
+			executeLoadCommand(board, args[1]);
 
 			commandResult = RETRY;
 		}
@@ -463,7 +462,8 @@ COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserB
 		}
 		else if (0 == strcmp(SAVE_COMMAND, args[0]))
 		{	// Save
-			// TO DO
+			executeSaveCommand(board, args[1]);
+
 			commandResult = RETRY;
 		}
 		else if (0 == strcmp(QUIT_COMMAND, args[0]))
@@ -675,6 +675,7 @@ int main(int argc, char *argv[])
 			return -1;
 		if (stuckResult)
 			return 0;
+
 		// Black wins (or tie)
 		stuckResult = checkMateTie(board, false);
 		if (g_memError)

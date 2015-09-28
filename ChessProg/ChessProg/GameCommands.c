@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
@@ -314,4 +315,198 @@ void executeGetBestMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserB
 
 	deleteList(possibleMoves);
 	free(scores);
+}
+
+/*
+ * Load the game settings from the file "path", path being the full or relative path to the file.
+ * We assume that the file contains valid data and is correctly formatted.
+ */
+void executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
+{
+	FILE* fp = fopen(path, "r");
+	if (fp == NULL)
+	{
+		printf(WRONG_FILE_NAME);
+		return;
+	}
+
+	char str[TAG_LENGTH];	// A string for reading the file
+	bool done = false;
+
+	// Read until the game tag
+	while ((!done) && (fscanf(fp, "%s", str) == 1))
+	{
+		if (strcmp(GAME_TAG_BEGIN, str) == 0)
+			done = true;
+	}
+
+	// Read the settings
+	done = false;
+	char* token;
+	while ((!done) && (fscanf(fp, "%s", str) == 1))
+	{
+		token = strtok(str, ">");
+		if (strcmp(token, NEXT_TURN_TAG_BEGIN) == 0)
+		{	// Next turn tag
+			// Get the tag content
+			token = strtok(NULL, ">");
+			token = strtok(token, "<");
+
+			if (strcmp(token, WHITE_STR) == 0)
+				g_isNextPlayerBlack = false;
+			else if (strcmp(token, BLACK_STR) == 0)
+				g_isNextPlayerBlack = true;
+			else
+			{	// Should never reach this code
+				printf(WRONG_FORMAT);
+				fclose(fp);
+				return;
+			}
+		}
+		else if (strcmp(token, GAME_MODE_TAG_BEGIN) == 0)
+		{	// Game mode tag
+			// Get the tag content
+			token = strtok(NULL, ">");
+			token = strtok(token, "<");
+
+			if (token[0] == '1')
+				g_gameMode = 1;
+			else if (token[0] == '2')
+				g_gameMode = 2;
+			else
+			{	// Should never reach this code
+				printf(WRONG_FORMAT);
+				fclose(fp);
+				return;
+			}
+		}
+		else if (strcmp(token, DIFFICULTY_TAG_BEGIN) == 0)
+		{	// Difficulty tag
+			if (g_gameMode == 2)
+			{	// Difficulty is applicable only in player vs. AI mode
+				token = strtok(NULL, ">");
+				token = strtok(token, "<");
+
+				if (strcmp(token, DIFFICULTY_BEST) == 0)
+					g_minimaxDepth = MAX_DEPTH;	// Set difficulty best to MAX_DEPTH
+				else
+					g_minimaxDepth = atoi(token);
+			}
+		}
+		else if (strcmp(token, USER_COLOR_TAG_BEGIN) == 0)
+		{	// User color tag
+			if (g_gameMode == 2)
+			{	// User color is applicable only in player vs. AI mode
+				token = strtok(NULL, ">");
+				token = strtok(token, "<");
+
+				if (strcmp(token, WHITE_STR) == 0)
+					g_isUserBlack = false;
+				else if (strcmp(token, BLACK_STR) == 0)
+					g_isUserBlack = true;
+				else
+				{	// Should never reach this code
+					printf(WRONG_FORMAT);
+					fclose(fp);
+					return;
+				}
+			}
+		}
+		else if (strcmp(token, BOARD_TAG_BEGIN) == 0)
+		{	// Board tag
+			done = true;
+		}
+		else
+		{	// Should never reach this code
+			printf(WRONG_FORMAT);
+			fclose(fp);
+			return;
+		}
+	}
+
+	// Read the board
+	int row = BOARD_SIZE;
+	int i;
+	while ((row > 0) && (fscanf(fp, "%s", str) == 1))
+	{
+		token = strtok(str, ">");
+		token = strtok(NULL, ">");
+		token = strtok(token, "<");
+
+		for (i = 0; i < BOARD_SIZE; i++)
+		{
+			if (token[i] == '_')
+				board[i][row-1] = EMPTY;
+			else
+				board[i][row-1] = token[i];
+		}
+
+		row--;
+	}
+
+	fclose(fp);
+	print_board(board);
+}
+
+/* Save the current game state to the file "path". */
+void executeSaveCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
+{
+	FILE* fp = fopen(path, "w");
+	if (fp == NULL)
+	{
+		printf(WRONG_FILE_NAME);
+		return;
+	}
+
+	// Write the header and the game tag begin
+	fprintf(fp, "%s\n%s\n", XML_HEADER, GAME_TAG_BEGIN);
+
+	// Write the next turn
+	fprintf(fp, "\t%s>", NEXT_TURN_TAG_BEGIN);
+	if (g_isNextPlayerBlack)
+		fprintf(fp, "%s%s\n", BLACK_STR, NEXT_TURN_TAG_END);
+	else
+		fprintf(fp, "%s%s\n", WHITE_STR, NEXT_TURN_TAG_END);
+
+	// Write the game mode
+	fprintf(fp, "\t%s>%d%s\n", GAME_MODE_TAG_BEGIN, g_gameMode, GAME_MODE_TAG_END);
+
+	// Write the difficulty
+	fprintf(fp, "\t%s>", DIFFICULTY_TAG_BEGIN);
+	if (g_gameMode == 2)
+		fprintf(fp, "%d", g_minimaxDepth);
+	fprintf(fp, "%s\n", DIFFICULTY_TAG_END);
+
+	// Write the user color
+	fprintf(fp, "\t%s>", USER_COLOR_TAG_BEGIN);
+	if (g_gameMode == 2)
+	{
+		if (g_isUserBlack)
+			fprintf(fp, BLACK_STR);
+		else
+			fprintf(fp, WHITE_STR);
+	}	
+	fprintf(fp, "%s\n", USER_COLOR_TAG_END);
+
+	// Write the board
+	fprintf(fp, "\t%s>\n", BOARD_TAG_BEGIN);
+	int row, i;
+	for (row = 8; row > 0; row--)
+	{
+		fprintf(fp, "\t\t%s%d>", ROW_TAG_BEGIN, row);
+		for (i = 0; i < BOARD_SIZE; i++)
+		{
+			if (board[i][row - 1] == EMPTY)
+				fprintf(fp, "_");
+			else
+				fprintf(fp, "%c", board[i][row - 1]);
+		}
+		fprintf(fp, "%s%d>\n", ROW_TAG_END, row);
+	}
+	fprintf(fp, "\t%s\n", BOARD_TAG_END);
+
+	// Write the game tag end
+	fprintf(fp, "%s\n", GAME_TAG_END);
+
+	fclose(fp);
 }
