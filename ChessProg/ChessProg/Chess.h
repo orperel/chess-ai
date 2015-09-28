@@ -4,6 +4,13 @@
 #include <stdio.h>
 #include "Types.h"
 
+#define PAWN "pawn"
+#define BISHOP "bishop"
+#define ROOK "rook"
+#define KNIGHT "knight"
+#define QUEEN "queen"
+#define KING "king"
+
 #define WHITE_P 'm'
 #define WHITE_B 'b'
 #define WHITE_N 'n'
@@ -68,8 +75,9 @@
 #define WRONG_ROOK_POSITION "Wrong position for a rook\n" 
 #define ILLEGAL_CASTLING_MOVE "Illegal castling move\n"  
 
+#define CHECK "Check!\n"
 #define TIE "The game ends in a tie\n"
-#define WIN_MSG "%s player wins!\n"
+#define WIN_MSG "Mate! %s player wins the game\n"
 
 #define print_message(message) (printf("%s", message));
 
@@ -92,5 +100,13 @@ extern char g_inputLine[LINE_LENGTH];
 
 /* True if there was an allocation error somewhere in the program (would cause an exit). Else false. */
 extern bool g_memError;
+
+/* -- Functions -- */
+
+/*
+ * Returns the position represented by a <i,j> string tuple.
+ * This function also converts from the chess logical representation (letter, digit) to array indices.
+ */
+Position argToPosition(char* arg);
 
 #endif CHESS_

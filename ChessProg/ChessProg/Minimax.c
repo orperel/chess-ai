@@ -30,35 +30,52 @@ int getScore(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
  */
 int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta, bool isABlack)
 {
-	// Reach Minimax depth (leaf)
-	if (level == g_minimaxDepth)
-	{
-		return getScore(board, !isABlack); // Return score as for the parent level in the tree
-	}
-
 	LinkedList* moves = getMoves(board, isABlack);
 	if (g_memError)
 	{	// Error
 		return INT_MIN;
 	}
 
-	// Tie move (leaf). Return worst score, except for loosing, for the parent.
-	if (moves->length == 0)
-	{
+	// Check for mate or tie
+	if (isCheck(board, isABlack))
+	{	
+		if (moves->length == 0)
+		{	// Mate (leaf). Return score as for the parent level in the tree
+			deleteList(moves);
+
+			if ((level % 2) == 0)
+			{	// Max turn
+				return LOOSING_SCORE;
+			}
+			else
+			{	// Min turn
+				return WINNING_SCORE;
+			}
+		}
+	}
+	else if (moves->length == 0)
+	{	// Tie (leaf). Return worst score, except for loosing, for the parent.
 		deleteList(moves);
-		
+
 		if ((level % 2) == 0)
 		{	// Max turn
-			return TIE_SCORE_ABS;
+			return -TIE_SCORE_ABS;
 		}
 		else
 		{	// Min turn
-			return -TIE_SCORE_ABS;
+			return TIE_SCORE_ABS;
 		}
 	}
 
+	// Check Minimax depth (leaf)
+	if (level == g_minimaxDepth)
+	{
+		deleteList(moves);
+		return getScore(board, !isABlack); // Return score as for the parent level in the tree
+	}
+
 	int value;
-	bool stuckResult;
+	//bool stuckResult;
 	if ((level % 2) == 0)
 	{	// Max turn
 		value = INT_MIN;
@@ -76,7 +93,24 @@ int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta
 			doStep(board, currGameStep);
 
 			// Check if the opponent is stuck. If yes, stop recursion in this branch of the tree
-			stuckResult = isPlayerStuck(board, !isABlack);
+			//stuckResult = isPlayerStuck(board, !isABlack);
+			//if (g_memError)
+			//{
+			//	undoStep(board, currGameStep);
+			//	deleteGameStep(currGameStep);
+			//	deleteList(moves);
+			//	return INT_MIN;
+			//}
+			//if (stuckResult)
+			//{
+			//	undoStep(board, currGameStep);
+			//	deleteGameStep(currGameStep);
+			//	deleteList(moves);
+			//	return WINNING_SCORE;
+			//}
+
+			// Call alphabeta algorithm on the current move (child)
+			value = alphabeta(board, level + 1, alpha, beta, !isABlack); 
 			if (g_memError)
 			{
 				undoStep(board, currGameStep);
@@ -84,16 +118,6 @@ int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta
 				deleteList(moves);
 				return INT_MIN;
 			}
-			if (stuckResult)
-			{
-				undoStep(board, currGameStep);
-				deleteGameStep(currGameStep);
-				deleteList(moves);
-				return WINNING_SCORE;
-			}
-
-			// Call alphabeta algorithm on the current move (child)
-			value = alphabeta(board, level + 1, alpha, beta, !isABlack); 
 
 			// Max between alpha and value 
 			if (alpha < value)
@@ -123,7 +147,24 @@ int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta
 			doStep(board, currGameStep);
 
 			// Check if the opponent is stuck. If yes, stop recursion in this branch of the tree
-			stuckResult = isPlayerStuck(board, !isABlack);
+			//stuckResult = isPlayerStuck(board, !isABlack);
+			//if (g_memError)
+			//{
+			//	undoStep(board, currGameStep);
+			//	deleteGameStep(currGameStep);
+			//	deleteList(moves);
+			//	return INT_MIN;
+			//}
+			//if (stuckResult)
+			//{
+			//	undoStep(board, currGameStep);
+			//	deleteGameStep(currGameStep);
+			//	deleteList(moves);
+			//	return LOOSING_SCORE;
+			//}
+
+			// Call alphabeta algorithm on the current move (child)
+			value = alphabeta(board, level + 1, alpha, beta, !isABlack);
 			if (g_memError)
 			{
 				undoStep(board, currGameStep);
@@ -131,16 +172,6 @@ int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta
 				deleteList(moves);
 				return INT_MIN;
 			}
-			if (stuckResult)
-			{
-				undoStep(board, currGameStep);
-				deleteGameStep(currGameStep);
-				deleteList(moves);
-				return LOOSING_SCORE;
-			}
-
-			// Call alphabeta algorithm on the current move (child)
-			value = alphabeta(board, level + 1, alpha, beta, !isABlack);
 
 			// Min between beta and value
 			if (beta > value)
@@ -178,7 +209,7 @@ Move* minimax(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
 
 	Node* currMove = moves->head;
 	Move* winMove = NULL;
-	bool stuckResult;
+	//bool stuckResult;
 	while ((currMove != NULL) && (beta > alpha))
 	{
 		Move* currMoveData = (Move*)(currMove->data);
@@ -191,22 +222,22 @@ Move* minimax(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
 		doStep(board, currGameStep);
 		
 		// Check if the opponent is stuck. If yes, stop recursion in this branch of the tree
-		stuckResult = isPlayerStuck(board, !isABlack);
-		if (g_memError)
-		{
-			undoStep(board, currGameStep);
-			deleteGameStep(currGameStep);
-			deleteList(moves);
-			return NULL;
-		}
-		if (stuckResult)
-		{
-			undoStep(board, currGameStep);
-			deleteGameStep(currGameStep);
-			Move* returnedWinMove = cloneMove(currMoveData);
-			deleteList(moves);
-			return returnedWinMove;	// Win move
-		}
+		//stuckResult = isPlayerStuck(board, !isABlack);
+		//if (g_memError)
+		//{
+		//	undoStep(board, currGameStep);
+		//	deleteGameStep(currGameStep);
+		//	deleteList(moves);
+		//	return NULL;
+		//}
+		//if (stuckResult)
+		//{
+		//	undoStep(board, currGameStep);
+		//	deleteGameStep(currGameStep);
+		//	Move* returnedWinMove = cloneMove(currMoveData);
+		//	deleteList(moves);
+		//	return returnedWinMove;	// Win move
+		//}
 	
 		// Call alphabeta algorithm on the current move (child)
 		value = alphabeta(board, 1, alpha, beta, !isABlack);
@@ -216,6 +247,16 @@ Move* minimax(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
 			deleteGameStep(currGameStep);
 			deleteList(moves);
 			return NULL;
+		}
+
+		// Check if we had a winning move
+		if (value == WINNING_SCORE)
+		{
+			undoStep(board, currGameStep);
+			deleteGameStep(currGameStep);
+			Move* returnedWinMove = cloneMove(currMoveData);
+			deleteList(moves);
+			return returnedWinMove;
 		}
 
 		// Check if the current value is greater than the previous ones (the root is max turn)

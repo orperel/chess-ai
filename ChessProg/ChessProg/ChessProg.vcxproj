@@ -65,6 +65,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Chess.h" />
+    <ClInclude Include="GameCommands.h" />
     <ClInclude Include="GameLogic.h" />
     <ClInclude Include="BoardManager.h" />
     <ClInclude Include="LinkedList.h" />
@@ -73,6 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Chess.c" />
+    <ClCompile Include="GameCommands.c" />
     <ClCompile Include="GameLogic.c" />
     <ClCompile Include="BoardManager.c" />
     <ClCompile Include="LinkedList.c" />

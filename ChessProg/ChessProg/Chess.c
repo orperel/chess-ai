@@ -1,9 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
-#include "Types.h"
 #include "Chess.h"
 #include "BoardManager.h"
+#include "GameCommands.h"
 #include "GameLogic.h"
 #include "Minimax.h"
 
@@ -28,42 +27,6 @@ char g_inputLine[LINE_LENGTH] = { 0 };
 bool g_memError = false;
 
 /* -- Functions -- */
-
-/* A "toString()" function for Move structs. */
-void printMove(Move* move, bool isPromoted, char* promotionType)
-{
-	printf("<%c,%d> to <%c,%d>", 'a' + move->initPos.x, move->initPos.y + 1,
-		   'a' + move->nextPos.x, move->nextPos.y + 1);
-	
-	if (isPromoted)
-	{
-		printf(" %s\n", promotionType);
-	}
-	else
-	{
-		printf("\n");
-	}
-}
-
-/* Returns if the 2 positions are equal in their content. */
-bool isEqualPositions(Position* a, Position* b)
-{
-	return ((a->x == b->x) && (a->y == b->y));
-}
-
-/* Returns if the 2 moves are equal in their content. */
-bool isEqualMoves(Move* a, Move* b)
-{
-	// Check initPos
-	if (!isEqualPositions(&a->initPos, &b->initPos))
-		return false;
-
-	// Check nextPos
-	if (!isEqualPositions(&a->nextPos, &b->nextPos))
-		return false;
-
-	return true;
-}
 
 /*
  * Breaks the g_inputLine into arguments using space as a delimiter.
@@ -292,42 +255,42 @@ COMMAND_RESULT parseUserSettings(char board[BOARD_SIZE][BOARD_SIZE])
 				{	// Set white
 					Army whiteArmy = getArmy(board, false);
 
-					if (0 == strcmp("pawn", args[3]))
+					if (0 == strcmp(PAWN, args[3]))
 					{	// Pawn
 						if (whiteArmy.pawns < 8)
 							board[pos.x][pos.y] = WHITE_P;
 						else
 							printf(WRONG_SET);
 					}
-					else if (0 == strcmp("bishop", args[3]))
+					else if (0 == strcmp(BISHOP, args[3]))
 					{	// Bishop
 						if (whiteArmy.bishops < 2)
 							board[pos.x][pos.y] = WHITE_B;
 						else
 							printf(WRONG_SET);
 					}
-					else if (0 == strcmp("rook", args[3]))
+					else if (0 == strcmp(ROOK, args[3]))
 					{	// Rook
 						if (whiteArmy.rooks < 2)
 							board[pos.x][pos.y] = WHITE_R;
 						else
 							printf(WRONG_SET);
 					}
-					else if (0 == strcmp("knight", args[3]))
+					else if (0 == strcmp(KNIGHT, args[3]))
 					{	// Knight
 						if (whiteArmy.knights < 2)
 							board[pos.x][pos.y] = WHITE_N;
 						else
 							printf(WRONG_SET);
 					}
-					else if (0 == strcmp("queen", args[3]))
+					else if (0 == strcmp(QUEEN, args[3]))
 					{	// Queen
 						if (whiteArmy.queens < 1)
 							board[pos.x][pos.y] = WHITE_Q;
 						else
 							printf(WRONG_SET);
 					}
-					else if (0 == strcmp("king", args[3]))
+					else if (0 == strcmp(KING, args[3]))
 					{	// King
 						if (whiteArmy.kings < 1)
 							board[pos.x][pos.y] = WHITE_K;
@@ -339,42 +302,42 @@ COMMAND_RESULT parseUserSettings(char board[BOARD_SIZE][BOARD_SIZE])
 				{	// Set black
 					Army blackArmy = getArmy(board, true);
 
-					if (0 == strcmp("pawn", args[3]))
+					if (0 == strcmp(PAWN, args[3]))
 					{	// Pawn
 						if (blackArmy.pawns < 8)
 							board[pos.x][pos.y] = BLACK_P;
 						else
 							printf(WRONG_SET);
 					}
-					else if (0 == strcmp("bishop", args[3]))
+					else if (0 == strcmp(BISHOP, args[3]))
 					{	// Bishop
 						if (blackArmy.bishops < 2)
 							board[pos.x][pos.y] = BLACK_B;
 						else
 							printf(WRONG_SET);
 					}
-					else if (0 == strcmp("rook", args[3]))
+					else if (0 == strcmp(ROOK, args[3]))
 					{	// Rook
 						if (blackArmy.rooks < 2)
 							board[pos.x][pos.y] = BLACK_R;
 						else
 							printf(WRONG_SET);
 					}
-					else if (0 == strcmp("knight", args[3]))
+					else if (0 == strcmp(KNIGHT, args[3]))
 					{	// Knight
 						if (blackArmy.knights < 2)
 							board[pos.x][pos.y] = BLACK_N;
 						else
 							printf(WRONG_SET);
 					}
-					else if (0 == strcmp("queen", args[3]))
+					else if (0 == strcmp(QUEEN, args[3]))
 					{	// Queen
 						if (blackArmy.queens < 1)
 							board[pos.x][pos.y] = BLACK_Q;
 						else
 							printf(WRONG_SET);
 					}
-					else if (0 == strcmp("king", args[3]))
+					else if (0 == strcmp(KING, args[3]))
 					{	// King
 						if (blackArmy.kings < 1)
 							board[pos.x][pos.y] = BLACK_K;
@@ -431,229 +394,11 @@ COMMAND_RESULT parseUserSettings(char board[BOARD_SIZE][BOARD_SIZE])
 	return commandResult;
 }
 
-/* 
- * Parses and builds "Move" struct out of the arguments.
- * The Move will also be validated. If it is illegal, NULL is returned.
- * If the function succeeds and this is a valid move, the move is returned.
- */
-Move* parseAndBuildMove(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, char* args[MAX_ARGS])
-{
-	Position initPos = argToPosition(args[1]);
-	Position nextPos = argToPosition(args[3]);
-	
-	// Validation #1 - Invalid position
-	if (!isSquareOnBoard(initPos.x, initPos.y) || !isSquareOnBoard(nextPos.x, nextPos.y))
-	{ 
-		printf(WRONG_POSITION);
-		return NULL;
-	}
-
-	// Validation #2 - Piece does not belong to player
-	if (!isSquareOccupiedByCurrPlayer(board, isUserBlack, initPos.x, initPos.y))
-	{ 
-		printf(NO_PIECE);
-		return NULL;
-	}
-
-	// Build the move
-	Move* move = createMove(&initPos, &nextPos);
-	if (g_memError)
-		return NULL;
-
-	// Validation #3 - Is the move legal (we compare the move against all legal moves)
-	LinkedList* possibleMoves = getMoves(board, isUserBlack);
-	if (g_memError)
-	{
-		deleteMove((void*)move);
-		return NULL;
-	}
-
-	Node* currMoveNode = possibleMoves->head;
-	bool isLegalMove = false;
-	while ((!isLegalMove) && (NULL != currMoveNode))
-	{
-		Move* currMove = (Move*)currMoveNode->data;
-		isLegalMove = isEqualMoves(move, currMove);
-		currMoveNode = currMoveNode->next;
-	}
-
-	deleteList(possibleMoves);	// Free resources
-
-	if (!isLegalMove)
-	{ // Validation #3 failed
-		printf(ILLEGAL_MOVE);
-		deleteMove((void*)move);
-		return NULL;
-	}
-
-	return move;
-}
-
-/* 
- * Executes a move command done by the user.
- * This function parses, builds, validates and executes the move.
- * Returns True if the move is legal and executed successfully.
- * If this move is impossible, False is returned.
- */
-bool executeMoveCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, char* args[MAX_ARGS])
-{
-	Move* move = parseAndBuildMove(board, isUserBlack, args);
-
-	if (NULL == move) // Illegal move
-		return false;
-
-	// Move is valid and now contains all information we need to execute the next step
-	if (!executeMove(board, move))
-		return false;
-
-	return true;
-}
-
-/* Prints a list of all possible moves for the player. */
-void executeGetMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, char* arg)
-{
-	Position pos = argToPosition(arg);
-	// Validation #1 - Invalid position
-	if (!isSquareOnBoard(pos.x, pos.y))
-	{
-		printf(WRONG_POSITION);
-		return;
-	}
-	// Validation #2 - Piece does not belong to player
-	if (!isSquareOccupiedByCurrPlayer(board, isUserBlack, pos.x, pos.y))
-	{
-		printf(NO_PIECE);
-		return;
-	}
-
-	// Get the moves and print them
-	LinkedList* possibleMoves = getMoves(board, isUserBlack);
-	if (g_memError)
-		return;
-
-	Node* currMoveNode = possibleMoves->head;
-	while (NULL != currMoveNode)
-	{
-		Move* currMove = (Move*)currMoveNode->data;
-		printMove(currMove, false, NULL);
-		currMoveNode = currMoveNode->next;
-	}
-
-	deleteList(possibleMoves);
-}
-
-/* 
- * Return the score for the given move in a minimax tree of the given depth.
- * If there was an allocation error return INT_MIN.
- */
-int executeGetScoreCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, char* depth, Move* move)
-{
-	GameStep* gameStep = createGameStep(board, move);	// Convert Move to gameStep
-	
-	if (g_memError)
-		return INT_MIN;
-
-	doStep(board, gameStep);
-
-	// Check if the opponent is stuck
-	bool stuckResult = isPlayerStuck(board, !isUserBlack);
-	if (g_memError)
-	{
-		undoStep(board, gameStep);
-		deleteGameStep(gameStep);
-		return INT_MIN;
-	}
-	if (stuckResult)
-	{
-		undoStep(board, gameStep);
-		deleteGameStep(gameStep);
-		return WINNING_SCORE;	// Win or tie score
-	}
-	
-	// Call alphabeta algorithm with the requested depth, on the requested move
-	int tempDepth = g_minimaxDepth;
-	if (0 != strcmp(DIFFICULTY_BEST, depth))
-		g_minimaxDepth = atoi(depth);
-	else
-		g_minimaxDepth = MAX_DEPTH;	// Difficulty best is implemented as the max depth
-	
-	int score = alphabeta(board, 1, INT_MIN, INT_MAX, !isUserBlack);
-	
-	g_minimaxDepth = tempDepth;
-
-	undoStep(board, gameStep);
-	deleteGameStep(gameStep);
-
-	return score;
-}
-
-/* 
- * Print all the moves with the highest score for the current board.
- * 'depth' is an argument for the minimax algorithm. 
- */
-void executeGetBestMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, char* depth)
-{
-	// Get moves for the current board
-	LinkedList* possibleMoves = getMoves(board, isUserBlack);
-	if (g_memError)
-		return;
-
-	// Compute scores using executeGetScoreCommand and find the max
-	int* scores = (int*)malloc(sizeof(int) * possibleMoves->length);
-	if (scores == NULL)
-	{
-		perror("Error: standard function malloc has failed");
-		g_memError = true;
-		deleteList(possibleMoves);
-		return;
-	}
-	
-	Node* currMoveNode = possibleMoves->head;
-	int i = 0;
-	int maxScore = INT_MIN;
-	while (NULL != currMoveNode)
-	{
-		Move* currMove = (Move*)currMoveNode->data;
-		*(scores + i) = executeGetScoreCommand(board, isUserBlack, depth, currMove);
-		if (g_memError)
-		{
-			deleteList(possibleMoves);
-			return;
-		}
-
-		if (*(scores + i) > maxScore)
-		{
-			maxScore = *(scores + i);
-		}
-
-		currMoveNode = currMoveNode->next;
-		i++;
-	}
-
-	// Print the moves with the highest score
-	currMoveNode = possibleMoves->head;
-	i = 0;
-	while (NULL != currMoveNode)
-	{
-		if (*(scores + i) == maxScore)
-		{
-			Move* currMove = (Move*)currMoveNode->data;
-			printMove(currMove, false, NULL);
-		}
-
-		currMoveNode = currMoveNode->next;
-		i++;
-	}
-
-	deleteList(possibleMoves);
-	free(scores);
-}
-
 /*
-* Parse next user command during Game state and execute it.
-* Return RETRY if the turn hasn't done yet, QUIT if a quit command was entered
-* and SUCCESS if the command was executed successfully.
-*/
+ * Parse next user command during Game state and execute it.
+ * Return RETRY if the turn hasn't done yet, QUIT if a quit command was entered
+ * and SUCCESS if the command was executed successfully.
+ */
 COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack)
 {
 	if (NULL == g_inputLine) // Avoid illegal NULL input
@@ -818,9 +563,43 @@ void executeComputerTurn(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack)
 		return; // Should never happen, but this should protect us from collapsing if it does
 
 	printf(COMPUTER_MSG);
-	printMove(nextMove, false, NULL);
+	printMove(nextMove);
 
 	executeMove(board, nextMove);
+}
+
+/* 
+ * Check for checkmate or a tie and print appropriate message.
+ * Return true if it is a termination case (mate or tie) and false else.
+ */
+bool checkMateTie(char board[BOARD_SIZE][BOARD_SIZE], bool isBlack)
+{
+	LinkedList* moves = getMoves(board, isBlack);
+	if (g_memError)
+		return false;
+
+	if (isCheck(board, isBlack))
+	{
+		if (moves->length == 0)
+		{	// Mate
+			printf(WIN_MSG, isBlack ? WHITE_STR : BLACK_STR);
+			deleteList(moves);
+			return true;
+		}
+		else
+		{	// Check
+			printf(CHECK);
+		}
+	}
+	else if (moves->length == 0)
+	{	// Tie
+		printf(TIE);
+		deleteList(moves);
+		return true;
+	}
+
+	deleteList(moves);
+	return false;
 }
 
 /*
@@ -860,21 +639,18 @@ void executeGameLoop(char board[BOARD_SIZE][BOARD_SIZE], int gameMode, bool isNe
 		if (!isQuit) // If the user doesn't quit, we advance the game loop
 		{
 			print_board(board);
+			
+			// Check for victory or tie - to see if game ends
+			isQuit = checkMateTie(board, !isBlackTurn);
+			if (g_memError)
+				return;
 
-			// Check for victory - to see if game ends
-			if (isPlayerVictor(board, isBlackTurn))
+			// Change turns. In Two Players mode we don't change the flag isUserTurn
+			if (gameMode == 2)
 			{
-				printf(WIN_MSG, isBlackTurn ? BLACK_STR : WHITE_STR);
-				isQuit = true;
+				isUserTurn = !isUserTurn;
 			}
-			else
-			{	// Change turns. In Two Players mode we don't change the flag isUserTurn
-				if (gameMode == 2)
-				{
-					isUserTurn = !isUserTurn;
-				}
-				isBlackTurn = !isBlackTurn;
-			}
+			isBlackTurn = !isBlackTurn;
 		}
 	}
 }
@@ -892,21 +668,22 @@ int main(int argc, char *argv[])
 	// If the user doesn't quit, we start the game (determineGameSettings returns true).
 	if (determineGameSettings(board))
 	{
-		// Treat the edge case of a game board where one player immediately loses due to a non-fair game setting
-		if (isPlayerVictor(board, true))
-		{ // Black wins
-			printf(WIN_MSG, BLACK_STR);
-			return;
-		}
-		if (isPlayerVictor(board, false))
-		{ // White wins
-			printf(WIN_MSG, WHITE_STR);
-			return;
-		}
+		// Treat the edge case of a game board where one player immediately loses due to a non-fair game setting.
+		// White wins (or tie)
+		bool stuckResult = checkMateTie(board, true);
+		if (g_memError)
+			return -1;
+		if (stuckResult)
+			return 0;
+		// Black wins (or tie)
+		stuckResult = checkMateTie(board, false);
+		if (g_memError)
+			return -1;
+		if (stuckResult)
+			return 0;
 		
 		executeGameLoop(board, g_gameMode, g_isNextPlayerBlack, g_isUserBlack);
 	}
 	
-	getchar();
 	return 0;
 }
