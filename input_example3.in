@@ -1,0 +1,19 @@
+clear
+set <g,2> white pawn
+set <h,2> white king
+set <b,3> white pawn
+set <h,3> white pawn
+set <d,4> white pawn
+set <e,4> black knight
+set <h,4> black queen
+set <a,5> black king
+set <d,5> black pawn
+set <e,5> white pawn
+set <h,5> black pawn
+set <a,6> black pawn
+set <e,6> black bishop
+set <b,7> white queen
+set <b,8> white bishop
+start
+get_best_moves 2
+move <b,8> to <c,7>
