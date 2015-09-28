@@ -5,6 +5,7 @@
 #include "GameCommands.h"
 #include "GameLogic.h"
 #include "Minimax.h"
+#include "GuiFW.h"
 
 /* -- Globals Definition -- */
 
@@ -655,7 +656,7 @@ void executeGameLoop(char board[BOARD_SIZE][BOARD_SIZE], int gameMode, bool isNe
 	}
 }
 
-int todo_main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 	printf(WELCOME_TO_CHESS);
 

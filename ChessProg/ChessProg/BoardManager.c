@@ -504,7 +504,7 @@ bool isSquareOccupiedByKing(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackPiec
 /* Returns if the square is on the edge of the board on the "enemy's side". */
 bool isSquareOnOppositeEdge(bool isBlackPiece, int row)
 {
-	return (isBlackPiece && (row == (BOARD_SIZE - 1))) || (!isBlackPiece && (row == 0));
+	return (!isBlackPiece && (row == (BOARD_SIZE - 1))) || (isBlackPiece && (row == 0));
 }
 
 /** Returns true if the square is occupied by a piece of the black player. */

@@ -64,7 +64,7 @@ GuiWindow* createTestDialog()
 	return mainWindow;
 }
 
-int main(int argc, char *argv[])
+int sdl_main(int argc, char *argv[])
 {
 	// Init Gui FW
 	if (SDL_FAILURE_EXIT_CODE == initGui())

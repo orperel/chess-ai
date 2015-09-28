@@ -168,7 +168,7 @@ bool isValidMove(char board[BOARD_SIZE][BOARD_SIZE], bool isMovesForBlackPlayer,
 	board[startPos->x][startPos->y] = EMPTY;
 	board[targetX][targetY] = piece;
 
-	bool isValid = isKingUnderCheck(board, isMovesForBlackPlayer, kingPos);
+	bool isValid = !isKingUnderCheck(board, isMovesForBlackPlayer, kingPos);
 
 	// Restore the board to its original state
 	board[startPos->x][startPos->y] = piece;
