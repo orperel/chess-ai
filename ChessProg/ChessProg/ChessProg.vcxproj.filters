@@ -33,6 +33,9 @@
     <ClInclude Include="BoardManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GuiFW.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LinkedList.c">
@@ -51,6 +54,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BoardManager.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GuiFW.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Types.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

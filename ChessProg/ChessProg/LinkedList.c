@@ -93,6 +93,48 @@ void insertLast(LinkedList* list, void* data)
 	list->length++;
 }
 
+/*
+ * Insert a new node right after the prev node, with the data "data".
+ * It is assumed that prev is a valid node inside list, otherwise the results of this function are undefined.
+ * If prev is NULL, the node is inserted at the beginning of the list
+ * Set g_memError to true if malloc has failed.
+ */
+void insertAfter(LinkedList* list, Node* prev, void* data)
+{
+	Node* newNode = (Node*)malloc(sizeof(Node));
+	if (newNode == NULL)
+	{
+		perror("Error: standard function malloc has failed");
+		g_memError = true;
+		return;
+	}
+
+	newNode->data = data;
+
+	if (NULL == prev)
+	{ // Insert right at beginning (after "head" start)
+		newNode->next = list->head;
+		list->head = newNode;
+
+		if (NULL == list->tail)
+		{ // Update new tail if the list was empty
+			list->tail = newNode;
+		}
+	}
+	else
+	{ // Insert after node
+		newNode->next = prev->next;
+		prev->next = newNode;
+
+		if (list->tail == prev)
+		{ // Update new tail if the new node is now the last
+			list->tail = newNode;
+		}
+	}
+
+	list->length++;
+}
+
 /* Delete the node "node" from the list. If the node doesn't exist do nothing. */
 void deleteNode(LinkedList* list, Node* node)
 {

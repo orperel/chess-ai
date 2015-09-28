@@ -76,7 +76,7 @@ int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta
 			doStep(board, currGameStep);
 
 			// Check if the opponent is stuck. If yes, stop recursion in this branch of the tree
-			stuckResult = isPlayerStuck(board, !isABlack);
+			stuckResult = false;// TODO: isPlayerStuck(board, !isABlack);
 			if (g_memError)
 			{
 				undoStep(board, currGameStep);
@@ -123,7 +123,7 @@ int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta
 			doStep(board, currGameStep);
 
 			// Check if the opponent is stuck. If yes, stop recursion in this branch of the tree
-			stuckResult = isPlayerStuck(board, !isABlack);
+			stuckResult = false;// TODO: isPlayerStuck(board, !isABlack);
 			if (g_memError)
 			{
 				undoStep(board, currGameStep);
@@ -191,7 +191,7 @@ Move* minimax(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
 		doStep(board, currGameStep);
 		
 		// Check if the opponent is stuck. If yes, stop recursion in this branch of the tree
-		stuckResult = isPlayerStuck(board, !isABlack);
+		stuckResult = false;// TODO: isPlayerStuck(board, !isABlack);
 		if (g_memError)
 		{
 			undoStep(board, currGameStep);

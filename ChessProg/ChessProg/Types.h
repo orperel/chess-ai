@@ -54,4 +54,10 @@ typedef struct
 	char removedType;				// Types of enemy soldier removed. Relevant only if isEnemyRemovedInStep==true.
 } GameStep;
 
+/** A general max function for integers (that doesn't use macros) */
+int maxi(int a, int b);
+
+/** A general min function for integers (that doesn't use macros) */
+int mini(int a, int b);
+
 #endif

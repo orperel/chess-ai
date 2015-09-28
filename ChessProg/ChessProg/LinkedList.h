@@ -29,6 +29,8 @@ void deleteList(LinkedList* list);
 
 void insertLast(LinkedList* list, void* data);
 
+void insertAfter(LinkedList* list, Node* prev, void* data);
+
 void deleteNode(LinkedList* list, Node* node);
 
 void deleteAllNodes(LinkedList* list);

@@ -556,7 +556,7 @@ int executeGetScoreCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack,
 	doStep(board, gameStep);
 
 	// Check if the opponent is stuck
-	bool stuckResult = isPlayerStuck(board, !isUserBlack);
+	bool stuckResult = false;// TODO: isPlayerStuck(board, !isUserBlack);
 	if (g_memError)
 	{
 		undoStep(board, gameStep);
@@ -862,7 +862,7 @@ void executeGameLoop(char board[BOARD_SIZE][BOARD_SIZE], int gameMode, bool isNe
 			print_board(board);
 
 			// Check for victory - to see if game ends
-			if (isPlayerVictor(board, isBlackTurn))
+			if(false)// TODO: if (isPlayerVictor(board, isBlackTurn))
 			{
 				printf(WIN_MSG, isBlackTurn ? BLACK_STR : WHITE_STR);
 				isQuit = true;
@@ -879,7 +879,7 @@ void executeGameLoop(char board[BOARD_SIZE][BOARD_SIZE], int gameMode, bool isNe
 	}
 }
 
-int main(int argc, char *argv[])
+int todo_main(int argc, char *argv[])
 {
 	printf(WELCOME_TO_CHESS);
 
@@ -893,12 +893,12 @@ int main(int argc, char *argv[])
 	if (determineGameSettings(board))
 	{
 		// Treat the edge case of a game board where one player immediately loses due to a non-fair game setting
-		if (isPlayerVictor(board, true))
+		if (false)// TODO: (isPlayerVictor(board, true))
 		{ // Black wins
 			printf(WIN_MSG, BLACK_STR);
 			return;
 		}
-		if (isPlayerVictor(board, false))
+		if (false)// TODO: isPlayerVictor(board, false))
 		{ // White wins
 			printf(WIN_MSG, WHITE_STR);
 			return;
