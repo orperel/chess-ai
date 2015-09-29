@@ -131,7 +131,7 @@ bool validStart(char board[BOARD_SIZE][BOARD_SIZE])
 COMMAND_RESULT parseUserSettings(char board[BOARD_SIZE][BOARD_SIZE])
 {
 	COMMAND_RESULT commandResult = RETRY;
-	char* args[MAX_ARGS];
+	char* args[MAX_ARGS] = { 0 };
 	int argc = breakInputToArgs(args);
 	if (g_memError)
 		return QUIT;
@@ -408,7 +408,7 @@ COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserB
 	}
 
 	COMMAND_RESULT commandResult = RETRY;
-	char* args[MAX_ARGS];
+	char* args[MAX_ARGS] = { 0 };
 	int argc = breakInputToArgs(args);
 	if (g_memError)
 		return QUIT;
@@ -687,5 +687,6 @@ int main(int argc, char *argv[])
 		executeGameLoop(board, g_gameMode, g_isNextPlayerBlack, g_isUserBlack);
 	}
 	
+	getchar();
 	return 0;
 }
