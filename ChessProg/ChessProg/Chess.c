@@ -87,16 +87,16 @@ int breakInputToArgs(char* args[MAX_ARGS])
 Position argToPosition(char* arg)
 {
 	Position pos;
-	char xCoord = arg[1];
-	char yCoord = arg[3];
+	char xCoord = arg[3];
+	char yCoord = arg[1];
 
-	pos.x = xCoord - 'a';
+	pos.y = yCoord - 'a';
 
 	// Treat the edge case of position "<c,1X>" -- need to parse 2 digits
-	if (('1' == yCoord) && ('>' != arg[4]))
-		pos.y = 9 + (arg[4] - '0');
+	if (('1' == xCoord) && ('>' != arg[4]))
+		pos.x = 9 + (arg[4] - '0');
 	else
-		pos.y = yCoord - '1';
+		pos.x = xCoord - '1';
 
 	return pos;
 }

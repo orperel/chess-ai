@@ -5,7 +5,7 @@
 /* -- Functions -- */
 
 /*
-* Returns true / false if a pawn is threatning the given king
+* Returns true / false if a pawn is threatening the given king
 * Input:
 *		board ~ The chess game board.
 *		isTestForBlackPlayer ~ True if check if black king is under check. False for white king.
@@ -13,18 +13,18 @@
 */
 bool isPawnThreatningKing(char board[BOARD_SIZE][BOARD_SIZE], bool isTestForBlackPlayer, Position* kingPos)
 {
-	// Test for threatning pawns
+	// Test for threatening pawns
 	// Check forward move
 	int threatX = kingPos->x;
 	int threatY = kingPos->y;
 
 	if (isTestForBlackPlayer)
-		threatY -= 1; // Black king is threatened by pawns below
+		threatX -= 1; // Black king is threatened by pawns below
 	else
-		threatY += 1; // Black king is threatened by pawns above
+		threatX += 1; // Black king is threatened by pawns above
 
-	return isSquareOccupiedByPawn(board, !isTestForBlackPlayer, threatX + 1, threatY) ||
-		   isSquareOccupiedByPawn(board, !isTestForBlackPlayer, threatX - 1, threatY);
+	return isSquareOccupiedByPawn(board, !isTestForBlackPlayer, threatX, threatY + 1) ||
+		   isSquareOccupiedByPawn(board, !isTestForBlackPlayer, threatX, threatY - 1);
 }
 
 /*
@@ -64,7 +64,7 @@ bool isDirectionThreat(char board[BOARD_SIZE][BOARD_SIZE],
 }
 
 /*
-* Returns true / false if a bishop or queen (diagonal) is threatning the given king
+* Returns true / false if a bishop or queen (diagonal) is threatening the given king
 * Input:
 *		board ~ The chess game board.
 *		isTestForBlackPlayer ~ True if check if black king is under check. False for white king.
@@ -79,7 +79,7 @@ bool isBishopQueenThreatningKing(char board[BOARD_SIZE][BOARD_SIZE], bool isTest
 }
 
 /*
-* Returns true / false if a rook or queen (diagonal) is threatning the given king
+* Returns true / false if a rook or queen (diagonal) is threatening the given king
 * Input:
 *		board ~ The chess game board.
 *		isTestForBlackPlayer ~ True if check if black king is under check. False for white king.
@@ -94,7 +94,7 @@ bool isRookQueenThreatningKing(char board[BOARD_SIZE][BOARD_SIZE], bool isTestFo
 }
 
 /*
-* Returns true / false if a knight is threatning the given king
+* Returns true / false if a knight is threatening the given king
 * Input:
 *		board ~ The chess game board.
 *		isTestForBlackPlayer ~ True if check if black king is under check. False for white king.
@@ -114,7 +114,7 @@ bool isKnightThreatningKing(char board[BOARD_SIZE][BOARD_SIZE], bool isTestForBl
 }
 
 /*
-* Returns true / false if a king is threatning the given king
+* Returns true / false if a king is threatening the given king
 * Input:
 *		board ~ The chess game board.
 *		isTestForBlackPlayer ~ True if check if black king is under check. False for white king.
@@ -165,6 +165,7 @@ bool isValidMove(char board[BOARD_SIZE][BOARD_SIZE], bool isMovesForBlackPlayer,
 	// We don't bother taking peon promotion into consideration since this is irrelevant for the check validity test
 	// (promoting a peon of the current player shouldn't cause the king of the current player be in check).
 	char piece = board[startPos->x][startPos->y];
+	char target = board[targetX][targetY];
 	board[startPos->x][startPos->y] = EMPTY;
 	board[targetX][targetY] = piece;
 
@@ -172,7 +173,7 @@ bool isValidMove(char board[BOARD_SIZE][BOARD_SIZE], bool isMovesForBlackPlayer,
 
 	// Restore the board to its original state
 	board[startPos->x][startPos->y] = piece;
-	board[targetX][targetY] = EMPTY;
+	board[targetX][targetY] = target;
 
 	return isValid;
 }
@@ -237,7 +238,7 @@ void addPeonMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves, 
 		return;
 
 	// If the pawn reaches the edge, the moves become promotion moves.
-	if (isSquareOnOppositeEdge(isMovesForBlackPlayer, targetY))
+	if (isSquareOnOppositeEdge(isMovesForBlackPlayer, targetX))
 	{
 		char bishop = isMovesForBlackPlayer ? BLACK_B : WHITE_B;
 		char rook = isMovesForBlackPlayer ? BLACK_R : BLACK_R;
@@ -281,9 +282,9 @@ void getPawnMoves(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
 	int advanceY = startPos->y;
 
 	if (isMovesForBlackPlayer)
-		advanceY -= 1; // Black player advances downwards
+		advanceX -= 1; // Black player advances downwards
 	else
-		advanceY += 1; // White player advances upwards
+		advanceX += 1; // White player advances upwards
 
 	// Check if the pawn can move forward to a vacant spot
 	if (isSquareVacant(board, advanceX, advanceY))
@@ -294,14 +295,14 @@ void getPawnMoves(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
 		return;
 
 	// Check if the pawn can eat in 1st diagonal
-	advanceX = startPos->x + 1;
+	advanceY = startPos->y + 1;
 	if (isSquareOccupiedByEnemy(board, isMovesForBlackPlayer, advanceX, advanceY))
 		addPeonMove(board, possibleMoves, isMovesForBlackPlayer, startPos, advanceX, advanceY, kingPos);
 	if (g_memError)
 		return;
 
 	// Check if the pawn can eat in 2nd diagonal
-	advanceX = startPos->x - 1;
+	advanceY = startPos->y - 1;
 	if (isSquareOccupiedByEnemy(board, isMovesForBlackPlayer, advanceX, advanceY))
 		addPeonMove(board, possibleMoves, isMovesForBlackPlayer, startPos, advanceX, advanceY, kingPos);
 	if (g_memError)
