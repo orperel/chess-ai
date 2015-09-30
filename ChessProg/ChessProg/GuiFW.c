@@ -109,7 +109,7 @@ void addChildToSortedZOrderList(LinkedList* list, GuiComponentWrapper* newItem)
 	Node* prevNode = NULL;
 
 	// Advance along the list until the sorted Z order position for the item is found, or the end is encountered
-	while ((NULL != currNode) && (newZOrder < getComponentGeneralProperties(currNode->data)->zOrder))
+	while ((NULL != currNode) && (newZOrder >= getComponentGeneralProperties(currNode->data)->zOrder))
 	{
 		prevNode = currNode;
 		currNode = currNode->next;
@@ -533,8 +533,6 @@ void destroyWindow(void* component)
 	// Delete all son components first
 	if (NULL != window->subComponents)
 		deleteList(window->subComponents);
-	if (NULL != window->title)
-		free((char*)window->title);
 
 	if (NULL != window->surface)
 	{ // Free SDL resources
@@ -577,9 +575,6 @@ void destroyImage(void* component)
 	{
 		SDL_FreeSurface(image->surface);
 	}
-
-	if (NULL != image->sourcePath)
-		free((char*)image->sourcePath);
 
 	free(image);
 }
@@ -909,7 +904,13 @@ GuiComponentWrapper* hitTestAndPrepareUITree(int mouseX, int mouseY, LinkedList*
 		
 		if (wrapper->type == PANEL)
 		{ // Perform hit test for inner components
-			result = hitTestAndPrepareUITree(mouseX, mouseY, ((GuiPanel*)wrapper->component)->subComponents);
+			GuiComponentWrapper* innerResult = 
+				hitTestAndPrepareUITree(mouseX, mouseY, ((GuiPanel*)wrapper->component)->subComponents);
+
+			if (NULL != innerResult)
+			{ // Only update if hit test was successful, so inner hit tests that fail don't override sibling's successful ones
+				result = innerResult;
+			}
 		}
 		else if (wrapper->type == BUTTON)
 		{
