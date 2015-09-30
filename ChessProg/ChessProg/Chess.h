@@ -103,10 +103,7 @@ extern bool g_memError;
 
 /* -- Functions -- */
 
-/*
- * Returns the position represented by a <i,j> string tuple.
- * This function also converts from the chess logical representation (letter, digit) to array indices.
- */
-Position argToPosition(char* arg);
+/* Validate board initialization. If it is valid the program can move to game state. */
+bool validStart(char board[BOARD_SIZE][BOARD_SIZE]);
 
-#endif CHESS_
+#endif

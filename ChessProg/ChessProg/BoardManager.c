@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include "LinkedList.h"
 #include "Chess.h"
@@ -5,45 +6,45 @@
 
 /* Init the board with the pieces in the beginning of a game. */
 void init_board(char board[BOARD_SIZE][BOARD_SIZE]){
-	int i, j;	// i = column, j = row
-	for (i = 0; i < BOARD_SIZE; ++i)
+	int i, j;	// i = row, j = column
+	for (j = 0; j < BOARD_SIZE; ++j)
 	{	
-		switch (i)
+		switch (j)
 		{
 			case(0):
 			case(7):
 			{
 				// Init rooks
-				board[i][0] = WHITE_R;
-				board[i][7] = BLACK_R;
+				board[0][j] = WHITE_R;
+				board[7][j] = BLACK_R;
 				break;
 			}
 			case(1):
 			case(6):
 			{
 				// Init knights
-				board[i][0] = WHITE_N;
-				board[i][7] = BLACK_N;
+				board[0][j] = WHITE_N;
+				board[7][j] = BLACK_N;
 				break;
 			}
 			case(2):
 			case(5):
 			{
 				// Init bishops
-				board[i][0] = WHITE_B;
-				board[i][7] = BLACK_B;
+				board[0][j] = WHITE_B;
+				board[7][j] = BLACK_B;
 				break;
 			}
 			case(3):
 			{ // Init kings
-				board[i][0] = WHITE_K;
-				board[i][7] = BLACK_K;
+				board[0][j] = WHITE_K;
+				board[7][j] = BLACK_K;
 				break;
 			}
 			case(4):
 			{ // Init queens
-				board[i][0] = WHITE_Q;
-				board[i][7] = BLACK_Q;
+				board[0][j] = WHITE_Q;
+				board[7][j] = BLACK_Q;
 				break;
 			}
 			default:
@@ -53,13 +54,13 @@ void init_board(char board[BOARD_SIZE][BOARD_SIZE]){
 		}
 
 		// Init pawns
-		board[i][1] = WHITE_P;
-		board[i][6] = BLACK_P;
+		board[1][j] = WHITE_P;
+		board[6][j] = BLACK_P;
 	}
 
 	// Init empty squares
-	for (i = 0; i < BOARD_SIZE; ++i)
-		for (j = 2; j < BOARD_SIZE-2; ++j)
+	for (i = 2; i < BOARD_SIZE-2; ++i)
+		for (j = 0; j < BOARD_SIZE; ++j)
 			board[i][j] = EMPTY;
 }
 
@@ -78,10 +79,10 @@ void print_board(char board[BOARD_SIZE][BOARD_SIZE])
 {
 	int i, j;
 	print_line();
-	for (j = BOARD_SIZE - 1; j >= 0; j--)
+	for (i = BOARD_SIZE - 1; i >= 0; i--)
 	{
-		printf((j < 9 ? " %d" : "%d"), j + 1);
-		for (i = 0; i < BOARD_SIZE; i++){
+		printf((i < 9 ? " %d" : "%d"), i + 1);
+		for (j = 0; j < BOARD_SIZE; j++){
 			printf("| %c ", board[i][j]);
 		}
 		printf("|\n");
@@ -315,7 +316,7 @@ Army getArmy(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackSoldiers)
 {
 	Army army = { 0 };
 
-	int i, j; // i = column, j = row
+	int i, j; // i = row, j = column
 
 	for (i = 0; i < BOARD_SIZE; i++)
 	{
@@ -406,15 +407,15 @@ Army getArmy(char board[BOARD_SIZE][BOARD_SIZE], bool isBlackSoldiers)
 /* Validate that there are no pawns in the opponent edge. */
 bool validEdges(char board[BOARD_SIZE][BOARD_SIZE])
 {
-	int i;
-	for (i = 0; i < BOARD_SIZE; ++i)
+	int j;
+	for (j = 0; j < BOARD_SIZE; ++j)
 	{
-		if (board[i][0] == BLACK_P)
+		if (board[0][j] == BLACK_P)
 		{	// Bottom edge
 			return false;
 		}
 
-		if (board[i][7] == WHITE_P)
+		if (board[7][j] == WHITE_P)
 		{	// Top edge
 			return false;
 		}
@@ -426,13 +427,13 @@ bool validEdges(char board[BOARD_SIZE][BOARD_SIZE])
 /* Returns the white / black king's position. */
 Position getKingPosition(char board[BOARD_SIZE][BOARD_SIZE], bool isSearchBlackKing)
 {
-	int i, j; // i = column, j = row
+	int i, j; // i = row, j = column
 
-	for (j = 0; j < BOARD_SIZE; j++)
+	for (i = 0; i < BOARD_SIZE; i++)
 	{
-		for (i = 0; i < BOARD_SIZE; i++)
+		for (j = 0; j < BOARD_SIZE; j++)
 		{
-			char soldier = board[j][i];
+			char soldier = board[i][j];
 
 			if ((isSearchBlackKing && (soldier == BLACK_K)) || (!isSearchBlackKing && (soldier == WHITE_K)))
 			{

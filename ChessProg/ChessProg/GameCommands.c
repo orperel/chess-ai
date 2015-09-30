@@ -7,12 +7,13 @@
 #include "GameCommands.h"
 #include "GameLogic.h"
 #include "Minimax.h"
+#include "Console.h"
 
 /* A "toString()" function for Move structs. */
 void printMove(Move* move)
 {
-	printf("<%c,%d> to <%c,%d>", 'a' + move->initPos.x, move->initPos.y + 1,
-		'a' + move->nextPos.x, move->nextPos.y + 1);
+	printf("<%c,%d> to <%c,%d>", 'a' + move->initPos.y, move->initPos.x + 1,
+		   'a' + move->nextPos.y, move->nextPos.x + 1);
 
 	// We assume that the promotion field is valid
 	if (move->promotion == EMPTY)
@@ -114,7 +115,7 @@ Move* parseAndBuildMove(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, ch
 		return NULL;
 
 	// Update promotion
-	if (args[5] != NULL)
+	if (args[4] != NULL)
 	{	// Promotion was specified, we assume that the type name is valid
 		if (board[initPos.x][initPos.y] == WHITE_P)
 		{
@@ -133,11 +134,11 @@ Move* parseAndBuildMove(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, ch
 	}
 	else
 	{	// Promotion was not specified, check for default promotion
-		if ((nextPos.y == (BOARD_SIZE - 1)) && (board[nextPos.x][nextPos.y] == WHITE_P))
+		if ((nextPos.x == (BOARD_SIZE - 1)) && (board[nextPos.x][nextPos.y] == WHITE_P))
 		{
 			move->promotion = WHITE_Q;
 		}
-		else if ((nextPos.y == 0) && (board[nextPos.x][nextPos.y] == BLACK_P))
+		else if ((nextPos.x == 0) && (board[nextPos.x][nextPos.y] == BLACK_P))
 		{
 			move->promotion = BLACK_Q;
 		}
@@ -426,19 +427,19 @@ void executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 
 	// Read the board
 	int row = BOARD_SIZE;
-	int i;
+	int j;
 	while ((row > 0) && (fscanf(fp, "%s", str) == 1))
 	{
 		token = strtok(str, ">");
 		token = strtok(NULL, ">");
 		token = strtok(token, "<");
 
-		for (i = 0; i < BOARD_SIZE; i++)
+		for (j = 0; j < BOARD_SIZE; j++)
 		{
-			if (token[i] == '_')
-				board[i][row-1] = EMPTY;
+			if (token[j] == '_')
+				board[row - 1][j] = EMPTY;
 			else
-				board[i][row-1] = token[i];
+				board[row - 1][j] = token[j];
 		}
 
 		row--;
@@ -490,16 +491,16 @@ void executeSaveCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 
 	// Write the board
 	fprintf(fp, "\t%s>\n", BOARD_TAG_BEGIN);
-	int row, i;
+	int row, j;
 	for (row = 8; row > 0; row--)
 	{
 		fprintf(fp, "\t\t%s%d>", ROW_TAG_BEGIN, row);
-		for (i = 0; i < BOARD_SIZE; i++)
+		for (j = 0; j < BOARD_SIZE; j++)
 		{
-			if (board[i][row - 1] == EMPTY)
+			if (board[row - 1][j] == EMPTY)
 				fprintf(fp, "_");
 			else
-				fprintf(fp, "%c", board[i][row - 1]);
+				fprintf(fp, "%c", board[row - 1][j]);
 		}
 		fprintf(fp, "%s%d>\n", ROW_TAG_END, row);
 	}
