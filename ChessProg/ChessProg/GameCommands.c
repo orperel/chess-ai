@@ -7,6 +7,7 @@
 #include "GameCommands.h"
 #include "GameLogic.h"
 #include "Minimax.h"
+#include "Console.h"
 
 /* A "toString()" function for Move structs. */
 void printMove(Move* move)
@@ -114,7 +115,7 @@ Move* parseAndBuildMove(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, ch
 		return NULL;
 
 	// Update promotion
-	if (args[5] != NULL)
+	if (args[4] != NULL)
 	{	// Promotion was specified, we assume that the type name is valid
 		if (board[initPos.x][initPos.y] == WHITE_P)
 		{
