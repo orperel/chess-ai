@@ -1,76 +1,299 @@
 #include <stdio.h>
+#include <string.h>
 #include "GuiFW.h"
+#include "Chess.h"
+
+/** Misc constants */
+#define GAME_WINDOW_TITLE "Chess game"
+
+/** Resource images dimensions */
+#define WIN_W 640	// Window dimensions
+#define WIN_H 480
+#define BOARD_W 480 // Board image sizes
+#define BOARD_H 480
+#define PIECE_W 100 // Common piece image dimensinos (for all chess pieces)
+#define PIECE_H 160
+#define SQUARE_W 51.5 // Dimensions of square on board (to space pieces)
+#define SQUARE_H 51.5
+#define TARGET_SQUARE_W 56 // Dimensions of "target marker" image
+#define TARGET_SQUARE_H 54
+#define FIRST_PIECE_OFFSET_X 35 // Top left square x pos of first piece
+#define FIRST_PIECE_OFFSET_Y 0  // Top left square y pos of first piece
+#define FIRST_TARGET_OFFSET_X 45  // Top left square x pos of first target square
+#define FIRST_TARGET_OFFSET_Y 47  // Top left square y pos of first target square
+#define BUTTON_W 200 // Dimensions for buttons
+#define BUTTON_H 80
+#define SAVE_BUTTON_OFFSET_Y 37 // Position of buttons
+#define MENU_BUTTON_OFFSET_Y 100
+#define QUIT_BUTTON_OFFSET_Y 350
+#define WOODPANEL_W 160 // Dimensions for wooden side panel image
+#define WOODPANEL_H BOARD_H
+
+/** Resources paths */
+#define BOARD_IMG "Resources/board.bmp"
+#define SIDE_PANEL_IMG "Resources/game_wood_panel.bmp"
+#define TARGET_SQUARE_IMG "Resources/target_square.bmp"
+#define BUTTON_SAVE_IMG "Resources/button_save.bmp"
+#define BUTTON_MENU_IMG "Resources/button_mainMenu.bmp"
+#define BUTTON_QUIT_IMG "Resources/button_quit.bmp"
+#define BLACK_P_IMG "Resources/black_p.bmp"
+#define BLACK_B_IMG "Resources/black_b.bmp"
+#define BLACK_R_IMG "Resources/black_r.bmp"
+#define BLACK_N_IMG "Resources/black_n.bmp"
+#define BLACK_Q_IMG "Resources/black_q.bmp"
+#define BLACK_K_IMG "Resources/black_k.bmp"
+#define WHITE_P_IMG "Resources/white_p.bmp"
+#define WHITE_B_IMG "Resources/white_b.bmp"
+#define WHITE_R_IMG "Resources/white_r.bmp"
+#define WHITE_N_IMG "Resources/white_n.bmp"
+#define WHITE_Q_IMG "Resources/white_q.bmp"
+#define WHITE_K_IMG "Resources/white_k.bmp"
 
 //  ------------------------------ 
-//  -- App functions           --
+//  -- App functions            --
 //  ------------------------------
 
-void onOkClick(GuiButton* button)
+void onSaveClick(GuiButton* button)
 {
-	static int pos = 0;
-	int clipWidth = 458 / 5;
-	int clipHeight = 758 / 8;
-	Rectangle imgBounds = { pos, pos, 458, 758 };
-	pos += 10;
-	GuiAnimation* testAnim = createAnimation(button->generalProperties.window->generalProperties.wrapper,
-		imgBounds, 0, "Resources/knight.bmp", RED,
-		clipWidth, clipHeight, 500, true, NULL);
-	if (NULL == testAnim)
-	{
-		destroyWindow(button->generalProperties.window);
-	}
+
 }
 
-GuiWindow* createTestDialog()
+void onMainMenuClick(GuiButton* button)
 {
-	GuiColorRGB bgcolor = { 255, 255, 255 };
-	GuiWindow* mainWindow = createWindow(640, 480, "Test window", bgcolor);
 
-	if (NULL == mainWindow)
-		return NULL;
+}
 
-	Rectangle panelBounds1 = { 150, 150, 100, 80 };
-	GuiPanel* panel1 = createPanel(mainWindow->generalProperties.wrapper, panelBounds1, 4, GRAY);
-	if (NULL == panel1)
+void onQuit(GuiButton* button)
+{
+
+}
+
+void onChessPieceClick(GuiButton* button)
+{
+
+}
+
+void onTargetClick(GuiButton* button)
+{
+
+}
+
+bool addSoldierButton(char type, int i, int j, GuiPanel* gameAreaPanel)
+{
+	char* soldierImgPath = NULL;
+	int x, y, imgWidth, imgHeight;
+	GuiColorRGB transparentColor;
+	void(*onClick)(GuiButton* button);
+
+	if (EMPTY == type)
+	{
+		soldierImgPath = TARGET_SQUARE_IMG;
+		x = (int)(FIRST_TARGET_OFFSET_X + (j*SQUARE_W));
+		y = (int)(FIRST_TARGET_OFFSET_Y + (i*SQUARE_H));
+		imgWidth = TARGET_SQUARE_W;
+		imgHeight = TARGET_SQUARE_H;
+		transparentColor = RED;
+		onClick = onTargetClick;
+	}
+	else
+	{
+		switch (type)
+		{
+			case BLACK_P:
+			{
+				soldierImgPath = BLACK_P_IMG;
+				break;
+			}
+			case BLACK_B:
+			{
+				soldierImgPath = BLACK_B_IMG;
+				break;
+			}
+			case BLACK_R:
+			{
+				soldierImgPath = BLACK_R_IMG;
+				break;
+			}
+			case BLACK_N:
+			{
+				soldierImgPath = BLACK_N_IMG;
+				break;
+			}
+			case BLACK_Q:
+			{
+				soldierImgPath = BLACK_Q_IMG;
+				break;
+			}
+			case BLACK_K:
+			{
+				soldierImgPath = BLACK_K_IMG;
+				break;
+			}
+			case WHITE_P:
+			{
+				soldierImgPath = WHITE_P_IMG;
+				break;
+			}
+			case WHITE_B:
+			{
+				soldierImgPath = WHITE_B_IMG;
+				break;
+			}
+			case WHITE_R:
+			{
+				soldierImgPath = WHITE_R_IMG;
+				break;
+			}
+			case WHITE_N:
+			{
+				soldierImgPath = WHITE_N_IMG;
+				break;
+			}
+			case WHITE_Q:
+			{
+				soldierImgPath = WHITE_Q_IMG;
+				break;
+			}
+			case WHITE_K:
+			{
+				soldierImgPath = WHITE_K_IMG;
+				break;
+			}
+			default: { return false; }
+		}
+
+		x = (int)(FIRST_PIECE_OFFSET_X + (j*SQUARE_W));
+		y = (int)(FIRST_PIECE_OFFSET_Y + (i*SQUARE_H));
+		imgWidth = PIECE_W;
+		imgHeight = PIECE_H;
+		transparentColor = BROWN;
+		onClick = onChessPieceClick;
+	}
+
+	char* allocatedPath = (char*)malloc(strlen(soldierImgPath) + 1);
+	strcpy(allocatedPath, soldierImgPath);
+	Rectangle pieceBounds = { x, y, imgWidth, imgHeight };
+	int zIndex = i + 1; // Closer rows should hide the ones behind, increase index by 1 to draw above board image
+	GuiButton* soldier =
+		createButton(gameAreaPanel->generalProperties.wrapper, pieceBounds, zIndex,
+					 allocatedPath, transparentColor, onClick);
+	
+	return ((NULL == soldier) || g_guiError);
+}
+
+GuiWindow* createBoard(char board[BOARD_SIZE][BOARD_SIZE])
+{
+	// Z indices under window
+	short gameAreaPanelZIndex = 1;
+	short sidePanelZIndex = 2;
+
+	// Z indices under game area panel
+	short boardImgZIndex = 0;
+
+	// Z indices under wooden panel
+	short sidePanelImgZIndex = 0;
+	short saveButtonZIndex = 1;
+	short menuButtonZIndex = 2;
+	short quitButtonZIndex = 3;
+
+	GuiColorRGB bgcolor = WHITE;
+	GuiWindow* mainWindow = createWindow(WIN_W, WIN_H, GAME_WINDOW_TITLE, bgcolor);
+
+	if ((NULL == mainWindow) || g_guiError)
+		return NULL; // Clean on errors
+
+	Rectangle gameAreaBounds = { 0, 0, BOARD_W, BOARD_H };
+	GuiPanel* gameAreaPanel = createPanel(mainWindow->generalProperties.wrapper, gameAreaBounds, gameAreaPanelZIndex, GRAY);
+	if ((NULL == gameAreaPanel) || g_guiError)
 	{
 		destroyWindow(mainWindow);
 		return NULL;
 	}
 
-	Rectangle panelBounds2 = { 5, 5, 70, 180 };
-	GuiPanel* panel2 = createPanel(panel1->generalProperties.wrapper, panelBounds2, 4, RED);
-	if (NULL == panel2)
-	{
+	GuiImage* boardImg = createImage(gameAreaPanel->generalProperties.wrapper, gameAreaBounds,
+									 boardImgZIndex, BOARD_IMG, YELLOW);
+	if ((NULL == boardImg) || g_guiError)
+	{ // Clean on errors
 		destroyWindow(mainWindow);
 		return NULL;
 	}
 
-	Rectangle imgBounds = { 50, 50, 200, 80 };
-	GuiButton* btn = createButton(panel2->generalProperties.wrapper, imgBounds, 4, "Resources/button_ok.bmp", MAGENTA, onOkClick);
-	if (NULL == btn)
-	{
+	Rectangle sidePanelBounds = { 0, 0, WOODPANEL_W, WOODPANEL_H };
+	sidePanelBounds.x = BOARD_W; // Panel is to the right of the board
+	GuiPanel* sidePanel = createPanel(mainWindow->generalProperties.wrapper, sidePanelBounds, sidePanelZIndex, GREEN);
+	if ((NULL == sidePanel) || g_guiError)
+	{ // Clean on errors
 		destroyWindow(mainWindow);
 		return NULL;
 	}
 
-	Rectangle imgBounds2 = { 50, 250, 200, 80 };
-	GuiButton* btn2 = createButton(mainWindow->generalProperties.wrapper, imgBounds2, 3, "Resources/button_ok.bmp", MAGENTA, onOkClick);
-	if (NULL == btn2)
-	{
+	sidePanelBounds.x = 0; // Image is 0 relative to the panel
+	GuiImage* sidePanelImg = createImage(sidePanel->generalProperties.wrapper, sidePanelBounds,
+										 sidePanelImgZIndex, SIDE_PANEL_IMG, GREEN);
+	if ((NULL == sidePanelImg) || g_guiError)
+	{ // Clean on errors
 		destroyWindow(mainWindow);
 		return NULL;
+	}
+
+	Rectangle btnBounds = { ((WOODPANEL_W - (BUTTON_W/2)) / 2), 0, BUTTON_W, BUTTON_H };
+	btnBounds.y = SAVE_BUTTON_OFFSET_Y;
+	GuiButton* saveBtn = createButton(sidePanel->generalProperties.wrapper, btnBounds,
+									  saveButtonZIndex, BUTTON_SAVE_IMG, BROWN, onSaveClick);
+	if ((NULL == saveBtn) || g_guiError)
+	{ // Clean on errors
+		destroyWindow(mainWindow);
+		return NULL;
+	}
+
+	btnBounds.y = MENU_BUTTON_OFFSET_Y;
+	GuiButton* mainMenuBtn = createButton(sidePanel->generalProperties.wrapper, btnBounds, 
+										  menuButtonZIndex, BUTTON_MENU_IMG, BROWN, onMainMenuClick);
+	if ((NULL == mainMenuBtn) || g_guiError)
+	{ // Clean on errors
+		destroyWindow(mainWindow);
+		return NULL;
+	}
+
+	btnBounds.y = QUIT_BUTTON_OFFSET_Y;
+	GuiButton* quitBtn = createButton(sidePanel->generalProperties.wrapper, btnBounds, 
+									  quitButtonZIndex, BUTTON_QUIT_IMG, BROWN, onQuit);
+	if ((NULL == quitBtn) || g_guiError)
+	{ // Clean on errors
+		destroyWindow(mainWindow);
+		return NULL;
+	}
+
+	// Draw each of the pieces on the board according to the board state.
+	// We also place marker nodes (for moves that may be available)
+	bool isError = false;
+	int i, j;
+	for (i = 0; i < BOARD_SIZE; i++)
+	{
+		for (j = 0; j < BOARD_SIZE; j++){
+			isError = addSoldierButton(board[i][j], i, j, gameAreaPanel);
+
+			if (isError)
+			{
+				destroyWindow(mainWindow);
+				return NULL;
+			}
+		}
 	}
 
 	return mainWindow;
 }
 
-int sdl_main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
+	char board[BOARD_SIZE][BOARD_SIZE];
+	init_board(board);
+
 	// Init Gui FW
 	if (SDL_FAILURE_EXIT_CODE == initGui())
 		exit(SDL_FAILURE_EXIT_CODE);
 
-	GuiWindow* mainWindow = createTestDialog();
+	GuiWindow* mainWindow = createBoard(board);
 
 	if (NULL == mainWindow)
 		exit(GUI_ERROR_EXIT_CODE);
@@ -93,105 +316,3 @@ int sdl_main(int argc, char *argv[])
 
 	return OK_EXIT_CODE;
 }
-
-//int oldermain(void) {
-//	SDL_Event e;
-//	SDL_Rect rect = {10, 10, 50, 50};
-//	SDL_Rect imgrect = {0, 0, IMG_W, IMG_H};
-//	SDL_Surface *img = SDL_LoadBMP("test.bmp");
-//	SDL_Surface *w  = SDL_SetVideoMode(WIN_W, WIN_H, 0, SDL_HWSURFACE | SDL_DOUBLEBUF);
-//	int quit = 0;
-//	
-//	/* Initialize SDL and make sure it quits*/
-//	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-//		printf("ERROR: unable to init SDL: %s\n", SDL_GetError());
-//		return 1;
-//	}
-//	atexit(SDL_Quit);
-//
-//	/* Create window surface*/
-//
-//	if (w == NULL) {
-//		printf("ERROR: failed to set video mode: %s\n", SDL_GetError());
-//		return 1;
-//	}
-//
-//	/* Define the rects we need*/
-//	
-//
-//	/* Load test spritesheet image*/
-//	
-//	if (img == NULL) {
-//		printf("ERROR: failed to load image: %s\n", SDL_GetError());
-//		return 1;
-//	}
-//
-//	/* Set colorkey to BLUE*/
-//	if (SDL_SetColorKey(img, SDL_SRCCOLORKEY, SDL_MapRGB(img->format, 0, 0, 255)) != 0) {
-//		printf("ERROR: failed to set color key: %s\n", SDL_GetError());
-//		SDL_FreeSurface(img);
-//		return 1;
-//	}
-//
-//
-//	while (!quit) {
-//		/* Clear window to BLACK*/
-//		if (SDL_FillRect(w,0,0) != 0) {
-//			printf("ERROR: failed to draw rect: %s\n", SDL_GetError());
-//			break;
-//		}
-//
-//		/* Green rectangle button*/
-//		if (SDL_FillRect(w, &rect, SDL_MapRGB(w->format, 0, 255, 0)) != 0) {
-//			printf("ERROR: failed to draw rect: %s\n", SDL_GetError());
-//			break;
-//		}
-//
-//		/* Draw image sprite*/
-//		if (SDL_BlitSurface(img, &imgrect, w, 0) != 0) {
-//			SDL_FreeSurface(img);
-//			printf("ERROR: failed to blit image: %s\n", SDL_GetError());
-//			break;
-//		}
-//
-//		/* Advance to next sprite*/
-//		imgrect.x += imgrect.w;
-//		if (imgrect.x >= img->w) {
-//			imgrect.x = 0;
-//			imgrect.y += imgrect.h;
-//			if (imgrect.y >= img->h) imgrect.y = 0;
-//		}
-//
-//		/* We finished drawing*/
-//		if (SDL_Flip(w) != 0) {
-//			printf("ERROR: failed to flip buffer: %s\n", SDL_GetError());
-//			break;
-//		}
-//
-//		/* Poll for keyboard & mouse events*/
-//
-//		while (SDL_PollEvent(&e) != 0) {
-//			switch (e.type) {
-//				case (SDL_QUIT):
-//					quit = 1;
-//					break;
-//				case (SDL_KEYUP):
-//					if (e.key.keysym.sym == SDLK_ESCAPE) quit = 1;
-//					break;
-//				case (SDL_MOUSEBUTTONUP):
-//					if ((e.button.x > rect.x) && (e.button.x < rect.x + rect.w) && (e.button.y > rect.y) && (e.button.y < rect.y+rect.h))
-//						quit = 1;
-//					break;
-//				default:
-//					break;
-//			}
-//		}
-//
-//		/* Wait a little before redrawing*/
-//		SDL_Delay(1000);
-//	}
-//
-//	SDL_Delay(10000);
-//	SDL_FreeSurface(img);
-//	return 0;
-//}
