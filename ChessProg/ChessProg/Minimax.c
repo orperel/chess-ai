@@ -44,13 +44,9 @@ int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta
 			deleteList(moves);
 
 			if ((level % 2) == 0)
-			{	// Max turn
-				return LOOSING_SCORE;
-			}
+				return LOOSING_SCORE;	// Max turn
 			else
-			{	// Min turn
-				return WINNING_SCORE;
-			}
+				return WINNING_SCORE;	// Min turn
 		}
 	}
 	else if (moves->length == 0)
@@ -58,20 +54,21 @@ int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta
 		deleteList(moves);
 
 		if ((level % 2) == 0)
-		{	// Max turn
-			return -TIE_SCORE_ABS;
-		}
+			return -TIE_SCORE_ABS;	// Max turn
 		else
-		{	// Min turn
-			return TIE_SCORE_ABS;
-		}
+			return TIE_SCORE_ABS;	// Min turn
 	}
 
 	// Check Minimax depth (leaf)
 	if (level == g_minimaxDepth)
 	{
 		deleteList(moves);
-		return getScore(board, !isABlack); // Return score as for the parent level in the tree
+		
+		// Return score according to the color of the root of the minimax
+		if ((level % 2) == 0)
+			return getScore(board, isABlack);
+		else
+			return getScore(board, !isABlack);
 	}
 
 	int value;

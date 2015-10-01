@@ -504,7 +504,7 @@ void getQueenMoves(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves
 void getKingMoves(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
 				  bool isMovesForBlackPlayer, Position* startPos)
 {
-	// The king can move in 4 directions, one square
+	// The king can move one square in any direction.
 	// Remember that for the king - startPos == kingPos..
 	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, 0, 1, startPos);
 	if (g_memError)
@@ -516,6 +516,18 @@ void getKingMoves(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
 	if (g_memError)
 		return;
 	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, -1, 0, startPos);
+	if (g_memError)
+		return;
+	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, -1, 1, startPos);
+	if (g_memError)
+		return;
+	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, 1, 1, startPos);
+	if (g_memError)
+		return;
+	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, 1, -1, startPos);
+	if (g_memError)
+		return;
+	querySinglePos(board, possibleMoves, isMovesForBlackPlayer, startPos, -1, -1, startPos);
 }
 
 /*
