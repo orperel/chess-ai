@@ -193,6 +193,7 @@ GuiImage* loadChessPieceImage(GuiPanel* hostPanel, GameControl* gameControl, con
 	}
 
 	img->generalProperties.isVisible = false; // Set to invisible, this is just a resource used for its surface
+	return img;
 }
 
 /** Creates and initializes a new game board control, representing a chess board.

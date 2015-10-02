@@ -204,7 +204,7 @@ void executeGameLoop(char board[BOARD_SIZE][BOARD_SIZE], int gameMode, bool isNe
 	}
 }
 
-int main(int argc, char *argv[])
+int chess_main(int argc, char *argv[])
 {
 	//printf(WELCOME_TO_CHESS);
 	char board[BOARD_SIZE][BOARD_SIZE];

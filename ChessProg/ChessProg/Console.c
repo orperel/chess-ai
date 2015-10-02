@@ -29,7 +29,7 @@ char promotionNameToChar(char* name, bool isBlack)
 	return EMPTY;
 }
 
-/* A "toString()" function for Move structs. */
+/* A "toString()" function for Move structs (for console). */
 void printMove(Move* move)
 {
 	printf("<%c,%d> to <%c,%d>", 'a' + move->initPos.y, move->initPos.x + 1,

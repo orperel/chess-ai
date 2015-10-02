@@ -268,7 +268,7 @@ GuiWindow* createGameWindow(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack
 	return mainWindow;
 }
 
-int sdl_main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 	char board[BOARD_SIZE][BOARD_SIZE];
 	init_board(board);

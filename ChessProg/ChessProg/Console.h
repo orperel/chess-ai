@@ -34,4 +34,7 @@ COMMAND_RESULT parseUserSettings(char board[BOARD_SIZE][BOARD_SIZE]);
   */
 COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack);
 
+/* A "toString()" function for Move structs (for console). */
+void printMove(Move* move);
+
 #endif
