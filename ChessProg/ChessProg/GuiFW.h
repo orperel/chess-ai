@@ -53,6 +53,10 @@ struct GuiGeneralProperties
 	GuiComponentWrapper* wrapper; // Wrapper of the current control
 	GuiComponentWrapper* parent; // Wrapper of the parent control containing the current control
 	GuiWindow* window; // The window that contains the control
+	bool isVisible; // Defines if the control should be drawn or not. By default control are drawn.
+
+	void* extent; // A design pattern for attaching general data to a gui component.
+				  // By default this field is null and it is explicitly set by users with additional data where needed.
 
 	void(*draw)(void* component, const Rectangle* const container); // Draws the component
 	void(*destroy)(void* component); // Destroyes the component
@@ -120,13 +124,24 @@ typedef enum
  */
 struct GuiButton
 {
+	// Public
 	GuiGeneralProperties generalProperties;
 	GuiImage* bgImage;
 
 	ButtonState state;
+	bool isEnabled;
 
+	void(*setBGImage)(struct GuiButton* button, GuiImage* bgImage);
+
+	// Events
 	void(*onClick)(struct GuiButton* button);
 
+	// Private
+
+	bool isSurfaceOwner; // This flag determines if the button manages the background image memory
+						 // or it simply imports the image data from an external image object.
+						 // This flag determines if the button releases the image memory or not and should not
+						 // be altered outside of the GuiFW.
 };
 typedef struct GuiButton GuiButton;
 

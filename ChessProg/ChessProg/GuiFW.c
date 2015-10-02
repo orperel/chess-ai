@@ -211,6 +211,23 @@ void showWindow(GuiWindow* window)
 	drawWindow(window, &window->generalProperties.bounds);
 }
 
+void setBGImage(GuiButton* button, GuiImage* image)
+{
+	// If the button owned a previous bg image, dispose it
+	if ((NULL != button->bgImage) && (button->isSurfaceOwner))
+	{
+		destroyImage(button->bgImage);
+		button->bgImage = NULL;
+	}
+
+	// Attach image and button
+	addChildComponent(image->generalProperties.wrapper, button->generalProperties.wrapper);
+	image->generalProperties.parent = button->generalProperties.wrapper;
+
+	// Mark the external image memory is not managed by the button
+	button->isSurfaceOwner = false;
+}
+
 //  ------------------------------ 
 //  -- Create functions         --
 //  ------------------------------
@@ -230,13 +247,14 @@ GuiWindow* createWindow(int width, int height, const char* title, GuiColorRGB bg
 	}
 
 	// Set "control properties"
-	window->generalProperties.bounds.x = 0;
-	window->generalProperties.bounds.y = 0;
-	window->generalProperties.bounds.width = width;
-	window->generalProperties.bounds.height = height;
+	Rectangle defaultBounds = { 0, 0, width, height };
+	window->generalProperties.bounds = defaultBounds;
 	window->generalProperties.zOrder = 0; // Window is always at the very back
 	window->generalProperties.parent = NULL; // Windows are always at the root
 	window->generalProperties.window = window; // The containing window is the window itself
+	window->generalProperties.isVisible = true;
+	window->generalProperties.visibleBounds = defaultBounds; // Window is always in absolute coords
+	window->generalProperties.extent = NULL;
 	window->bgColor = bgColor;
 	window->title = title;
 	window->subComponents = createList(destroyGuiComponentWrapper);
@@ -292,6 +310,10 @@ GuiPanel* createPanel(GuiComponentWrapper* parent, Rectangle bounds, short zOrde
 	panel->generalProperties.parent = parent;
 	panel->generalProperties.window = getComponentGeneralProperties(parent)->window;
 	panel->generalProperties.zOrder = zOrder;
+	panel->generalProperties.isVisible = true;
+	Rectangle emptyBounds = { 0, 0, 0, 0 };
+	panel->generalProperties.visibleBounds = emptyBounds; // Will be calculated on first draw
+	panel->generalProperties.extent = NULL;
 	panel->bgColor = bgColor;
 	panel->subComponents = createList(destroyGuiComponentWrapper);
 	panel ->generalProperties.wrapper = createControlWrapper(panel, PANEL);
@@ -336,12 +358,16 @@ GuiImage* createImage(GuiComponentWrapper* parent, Rectangle bounds, short zOrde
 	image->generalProperties.parent = parent;
 	image->generalProperties.zOrder = zOrder;
 	image->generalProperties.window = getComponentGeneralProperties(parent)->window;
+	image->generalProperties.isVisible = true;
 	image->sourcePath = sourcePath;
 	image->transparentColor = transparentColor;
 	image->scissorRegion.x = 0; // By default draw the entire image texture
 	image->scissorRegion.y = 0;
 	image->scissorRegion.width = bounds.width;
 	image->scissorRegion.height = bounds.height;
+	Rectangle emptyBounds = { 0, 0, 0, 0 };
+	image->generalProperties.visibleBounds = emptyBounds; // Will be calculated on first draw
+	image->generalProperties.extent = NULL;
 	image->generalProperties.wrapper = createControlWrapper(image, IMAGE);
 	if (NULL == image->generalProperties.wrapper)
 	{
@@ -410,6 +436,10 @@ GuiAnimation* createAnimation(GuiComponentWrapper* parent, Rectangle bounds, sho
 	animation->generalProperties.parent = parent;
 	animation->generalProperties.zOrder = zOrder;
 	animation->generalProperties.window = getComponentGeneralProperties(parent)->window;
+	animation->generalProperties.isVisible = true;
+	Rectangle emptyBounds = { 0, 0, 0, 0 };
+	animation->generalProperties.visibleBounds = emptyBounds; // Will be calculated on first draw
+	animation->generalProperties.extent = NULL;
 	animation->clipWidth = clipWidth;
 	animation->clipHeight = clipHeight;
 	animation->timeBetweenFramesMs = timeBetweenFramesMs;
@@ -470,6 +500,10 @@ GuiButton* createButton(GuiComponentWrapper* parent, Rectangle bounds, short zOr
 	button->generalProperties.parent = parent;
 	button->generalProperties.zOrder = zOrder;
 	button->generalProperties.window = getComponentGeneralProperties(parent)->window;
+	button->generalProperties.isVisible = true;
+	Rectangle emptyBounds = { 0, 0, 0, 0 };
+	button->generalProperties.visibleBounds = emptyBounds; // Will be calculated on first draw
+	button->generalProperties.extent = NULL;
 	button->generalProperties.wrapper = createControlWrapper(button, BUTTON);
 	if (NULL == button->generalProperties.wrapper)
 	{
@@ -478,14 +512,26 @@ GuiButton* createButton(GuiComponentWrapper* parent, Rectangle bounds, short zOr
 
 	// Default button state
 	button->state = DEFAULT;
+	button->isEnabled = true; // By default buttons are enabled
+	button->isSurfaceOwner = false;
 
-	// Create image son component. It will link itself to the button parent.
-	Rectangle imageBounds = { bounds.x, bounds.y, bounds.width, bounds.height };
-	createImage(button->generalProperties.wrapper, imageBounds, zOrder, imageSourcePath, transparentColor);
+	// Create image only if bgImage path was supplied
+	if (NULL != imageSourcePath)
+	{
+		// Create image son component. It will link itself to the button parent.
+		Rectangle imageBounds = { bounds.x, bounds.y, bounds.width, bounds.height };
+		createImage(button->generalProperties.wrapper, imageBounds, zOrder, imageSourcePath, transparentColor);
+		button->isSurfaceOwner = true; // If the background image is specified than the button manages the bg image object
+	}
+	else
+	{
+		button->bgImage = NULL; // Explicitly set to null, until user sets a bg image
+	}
 
 	// Set "control methods"
 	button->generalProperties.draw = drawButton;
 	button->generalProperties.destroy = destroyButton;
+	button->setBGImage = setBGImage;
 
 	// Set "control events"
 	button->onClick = onClick;
@@ -587,7 +633,12 @@ void destroyButton(void* component)
 
 	GuiButton* button = (GuiButton*)component;
 
-	destroyImage(button->bgImage);
+	// Release image only if button owns it
+	if (button->isSurfaceOwner)
+	{
+		destroyImage(button->bgImage);
+	}
+
 	free(button);
 }
 
@@ -638,6 +689,9 @@ void drawWindow(void* component, const Rectangle* const container)
 {
 	GuiWindow* window = (GuiWindow*)component;
 
+	if (!window->generalProperties.isVisible)
+		return; // Avoid drawing invisible controls
+
 	Uint32 color = SDL_MapRGB(window->surface->format, window->bgColor.r, window->bgColor.g, window->bgColor.b);
 	SDL_FillRect(window->surface, NULL, color); // Clear window before beginning to draw (with background color)
 
@@ -679,6 +733,9 @@ void drawPanel(void* component, const Rectangle* const container)
 {
 	GuiPanel* panel = (GuiPanel*)component;
 
+	if (!panel->generalProperties.isVisible)
+		return; // Avoid drawing invisible controls
+
 	const Rectangle absoluteBounds = getAbsoluteBounds(&panel->generalProperties.bounds, container);
 	panel->generalProperties.visibleBounds = absoluteBounds; // Keep results in visibleBounds
 
@@ -699,6 +756,9 @@ void drawPanel(void* component, const Rectangle* const container)
 void drawImage(void* component, const Rectangle* const container)
 {
 	GuiImage* image = (GuiImage*)component;
+
+	if (!image->generalProperties.isVisible)
+		return; // Avoid drawing invisible controls
 
 	Uint32 transparentColor = SDL_MapRGB(image->surface->format,
 										 image->transparentColor.r,
@@ -749,6 +809,9 @@ void drawButton(void* component, const Rectangle* const container)
 {
 	GuiButton* button = (GuiButton*)component;
 
+	if ((!button->generalProperties.isVisible) || (NULL == button->bgImage))
+		return; // Avoid drawing invisible controls
+
 	// The button's image is actually composed of 4 images of the 4 states.
 	// To get the real dimensions we therefore have to divide by 2 both dimensions.
 	// We assume the dimensions are even.
@@ -757,13 +820,17 @@ void drawButton(void* component, const Rectangle* const container)
 	int imageX;
 	int imageY;
 
+	ButtonState respondState = button->state;
+	if (!button->isEnabled)
+		respondState = DEFAULT; // Disabled buttons don't show any animation
+
 	// Assume the button's image is composed as follows - we pick the correct state image:
 	//
 	//  Default     | Mouse Move
 	// -------------------------
 	//  Mouse Down  | Mouse Up
 	//
-	switch (button->state)
+	switch (respondState)
 	{
 		case DEFAULT:
 		{
@@ -796,8 +863,27 @@ void drawButton(void* component, const Rectangle* const container)
 	button->bgImage->scissorRegion.width = imageWidth;
 	button->bgImage->scissorRegion.height = imageHeight;
 
-	// Since the button is drawn as image only, let the image deal with fitting inside the container
-	drawImage(button->bgImage, container);
+	if (button->isSurfaceOwner) // Drawing method depends if the bg image is shared by multiple controls or not
+	{
+		// Since the button is drawn as image only, let the image deal with fitting inside the container
+		drawImage(button->bgImage, container);
+	}
+	else
+	{
+		// The bg image is  a shared resource and therefore may be invisible.
+		// Since the button is displayed, is overrides the image's visibility state, so we set it to true
+		// and make sure to restore the original value in the end. Same goes for the bounds update.
+		bool isBGImageVisible = button->bgImage->generalProperties.isVisible;
+		Rectangle originalBounds = button->bgImage->generalProperties.bounds;
+		button->bgImage->generalProperties.isVisible = true;
+		button->bgImage->generalProperties.bounds = button->generalProperties.bounds;
+
+		// Since the button is drawn as image only, let the image deal with fitting inside the container
+		drawImage(button->bgImage, container);
+
+		button->bgImage->generalProperties.isVisible = isBGImageVisible;
+		button->bgImage->generalProperties.bounds = originalBounds;
+	}
 
 	// Keep results in visibleBounds
 	button->generalProperties.visibleBounds = button->bgImage->generalProperties.visibleBounds;
@@ -807,6 +893,9 @@ void drawButton(void* component, const Rectangle* const container)
 void drawAnimation(void* component, const Rectangle* const container)
 {
 	GuiAnimation* animation = (GuiAnimation*)component;
+
+	if (!animation->generalProperties.isVisible)
+		return; // Avoid drawing invisible controls
 
 	int numOfClipsPerRow = animation->clips->generalProperties.bounds.width / animation->clipWidth;
 	int numOfClipsPerCol = animation->clips->generalProperties.bounds.height / animation->clipHeight;
@@ -884,6 +973,21 @@ void drawAnimation(void* component, const Rectangle* const container)
 //  -- Event handling           --
 //  ------------------------------
 
+/** Returns whether the component represented by the wrapper is under the mouse cursor (x,y).
+ *  This functions uses the component's visible bounds which are absoulte coordinates (match window (0,0)).
+ */
+bool isComponentUnderMouse(GuiComponentWrapper* wrapper, int mouseX, int mouseY)
+{
+	GuiGeneralProperties* componentProperties = getComponentGeneralProperties(wrapper);
+	bool isUnderMouse =
+		(componentProperties->visibleBounds.x < mouseX) &&
+		(componentProperties->visibleBounds.x + componentProperties->visibleBounds.width > mouseX) &&
+		(componentProperties->visibleBounds.y < mouseY) &&
+		(componentProperties->visibleBounds.y + componentProperties->visibleBounds.height > mouseY);
+
+	return isUnderMouse && componentProperties->isVisible;
+}
+
 /** Performs a hit test and searchs for a clickable button under the given mouse coordinates.
  *	If no button was found, NULL will be returned.
  *	Every time this method is called the entire UI Tree is scanned in a DFS manner, even if a panel falls out
@@ -907,6 +1011,9 @@ GuiComponentWrapper* hitTestAndPrepareUITree(int mouseX, int mouseY, LinkedList*
 			GuiComponentWrapper* innerResult = 
 				hitTestAndPrepareUITree(mouseX, mouseY, ((GuiPanel*)wrapper->component)->subComponents);
 
+			if (isComponentUnderMouse(wrapper, mouseX, mouseY))
+				result = NULL; // The panel hides all components found so far
+
 			if (NULL != innerResult)
 			{ // Only update if hit test was successful, so inner hit tests that fail don't override sibling's successful ones
 				result = innerResult;
@@ -917,17 +1024,25 @@ GuiComponentWrapper* hitTestAndPrepareUITree(int mouseX, int mouseY, LinkedList*
 			GuiButton* button = (GuiButton*)wrapper->component;
 			button->state = DEFAULT; // Reset the state of every button encountered
 
-			bool isButtonUnderMouse =
-				(button->generalProperties.visibleBounds.x < mouseX) &&
-				(button->generalProperties.visibleBounds.x + button->generalProperties.visibleBounds.width > mouseX) &&
-				(button->generalProperties.visibleBounds.y < mouseY) &&
-				(button->generalProperties.visibleBounds.y + button->generalProperties.visibleBounds.height > mouseY);
+			bool isButtonUnderMouse = isComponentUnderMouse(wrapper, mouseX, mouseY);
 
-			// A button is clickable if it has an "onClick" event attached to it and it is under the mouse
-			if ((NULL != button->onClick) && isButtonUnderMouse)
+			// A button is clickable if it has an "onClick" event attached to it and it is under the mouse and enabled
+			if (isButtonUnderMouse)
 			{
-				result = wrapper;
+				if ((NULL != button->onClick) && button->isEnabled && (button->bgImage != NULL))
+				{
+					result = wrapper;
+				}
+				else
+				{
+					result = NULL; // The button is not clickable but hides previous controls
+				}
 			}
+		}
+		else
+		{
+			if (isComponentUnderMouse(wrapper, mouseX, mouseY))
+				result = NULL; // All other components don't respond to hit test but may hide components that do
 		}
 
 		currNode = currNode->next;

@@ -6,6 +6,145 @@
 #include "GameCommands.h"
 #include "Console.h"
 
+/* Convert promotion type name to its console representation according to isBlack parameter. */
+char promotionNameToChar(char* name, bool isBlack)
+{
+	if (0 == strcmp(QUEEN, name))
+	{
+		return ((isBlack) ? BLACK_Q : WHITE_Q);
+	}
+	else if (0 == strcmp(BISHOP, name))
+	{
+		return ((isBlack) ? BLACK_B : WHITE_B);
+	}
+	else if (0 == strcmp(ROOK, name))
+	{
+		return ((isBlack) ? BLACK_R : WHITE_R);
+	}
+	else if (0 == strcmp(KNIGHT, name))
+	{
+		return ((isBlack) ? BLACK_N : WHITE_N);
+	}
+
+	return EMPTY;
+}
+
+/* A "toString()" function for Move structs. */
+void printMove(Move* move)
+{
+	printf("<%c,%d> to <%c,%d>", 'a' + move->initPos.y, move->initPos.x + 1,
+		'a' + move->nextPos.y, move->nextPos.x + 1);
+
+	// We assume that the promotion field is valid
+	if (move->promotion == EMPTY)
+	{
+		printf("\n");
+	}
+	else if ((move->promotion == WHITE_Q) || (move->promotion == BLACK_Q))
+	{
+		printf(" %s\n", QUEEN);
+	}
+	else if ((move->promotion == WHITE_B) || (move->promotion == BLACK_B))
+	{
+		printf(" %s\n", BISHOP);
+	}
+	else if ((move->promotion == WHITE_R) || (move->promotion == BLACK_R))
+	{
+		printf(" %s\n", ROOK);
+	}
+	else if ((move->promotion == WHITE_N) || (move->promotion == BLACK_N))
+	{
+		printf(" %s\n", KNIGHT);
+	}
+}
+
+/** Prints the list of moves in a formatted way (list is expected to contain only Move* types). */
+void printListOfMoves(LinkedList* moves)
+{
+	if (moves == NULL)
+		return;
+
+	Node* currMoveNode = moves->head;
+	while (NULL != currMoveNode)
+	{
+		Move* currMove = (Move*)currMoveNode->data;
+		printMove(currMove);
+		currMoveNode = currMoveNode->next;
+	}
+}
+
+/*
+* Parses and builds "Move" struct out of the arguments.
+* The Move will also be validated. If it is illegal, NULL is returned.
+* If the function succeeds and this is a valid move, the move is returned.
+*/
+Move* parseAndBuildMove(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, char* args[])
+{
+	Position initPos = argToPosition(args[1]);
+	Position nextPos = argToPosition(args[3]);
+
+	// Validation #1 - Invalid position
+	if (!isSquareOnBoard(initPos.x, initPos.y) || !isSquareOnBoard(nextPos.x, nextPos.y))
+	{
+		printf(WRONG_POSITION);
+		return NULL;
+	}
+
+	// Validation #2 - Piece does not belong to player
+	if (!isSquareOccupiedByCurrPlayer(board, isUserBlack, initPos.x, initPos.y))
+	{
+		printf(NO_PIECE);
+		return NULL;
+	}
+
+	// Build the move
+	Move* move = createMove(&initPos, &nextPos);
+	if (g_memError)
+		return NULL;
+
+	// Update promotion
+	if (args[4] != NULL)
+	{	// Promotion was specified, we assume that the type name is valid
+		if (board[initPos.x][initPos.y] == WHITE_P)
+		{
+			move->promotion = promotionNameToChar(args[5], false);
+		}
+		else if (board[initPos.x][initPos.y] == BLACK_P)
+		{
+			move->promotion = promotionNameToChar(args[5], true);
+		}
+		else
+		{	// Promotion was specified not for a pawn
+			printf(ILLEGAL_MOVE);
+			deleteMove((void*)move);
+			return NULL;
+		}
+	}
+	else
+	{	// Promotion was not specified, check for default promotion
+		if ((nextPos.x == (BOARD_SIZE - 1)) && (board[nextPos.x][nextPos.y] == WHITE_P))
+		{
+			move->promotion = WHITE_Q;
+		}
+		else if ((nextPos.x == 0) && (board[nextPos.x][nextPos.y] == BLACK_P))
+		{
+			move->promotion = BLACK_Q;
+		}
+	}
+
+	// Validation #3 - Is the move legal (we compare the move against all legal moves)
+	if (!validateMove(board, isUserBlack, move))
+	{ // Validation #3 failed
+		if (!g_memError)
+			printf(ILLEGAL_MOVE); // False may return on mem errors too so query the global mem error flag
+
+		deleteMove((void*)move);
+		return NULL;
+	}
+
+	return move;
+}
+
 /* Reads a user input line into g_inputLine as null terminated string. */
 void getUserInput()
 {
@@ -368,7 +507,8 @@ COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserB
 	{
 		if (0 == strcmp(MOVE_COMMAND, args[0]))
 		{	// Move
-			bool isMoveExecuted = executeMoveCommand(board, isUserBlack, args);
+			Move* move = parseAndBuildMove(board, isUserBlack, args);
+			bool isMoveExecuted = executeMoveCommand(board, isUserBlack, move);
 			if (g_memError)
 				return QUIT;
 
@@ -379,18 +519,24 @@ COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserB
 		}
 		else if (0 == strcmp(GET_MOVES_COMMAND, args[0]))
 		{	// Get Moves
-			executeGetMovesCommand(board, isUserBlack, args[1]);
+
+			Position pos = argToPosition(args[1]);
+			LinkedList* possibleMoves = executeGetMovesForPosCommand(board, isUserBlack, pos);
 			if (g_memError)
 				return QUIT;
 
+			printListOfMoves(possibleMoves);
+			deleteList(possibleMoves);
 			commandResult = RETRY;
 		}
 		else if (0 == strcmp(GET_BEST_MOVES_COMMAND, args[0]))
 		{	// Get Best Moves
-			executeGetBestMovesCommand(board, isUserBlack, args[1]);
+			LinkedList* bestMoves = executeGetBestMovesCommand(board, isUserBlack, args[1]);
 			if (g_memError)
 				return QUIT;
 
+			printListOfMoves(bestMoves);
+			deleteList(bestMoves);
 			commandResult = RETRY;
 		}
 		else if (0 == strcmp(GET_SCORE_COMMAND, args[0]))

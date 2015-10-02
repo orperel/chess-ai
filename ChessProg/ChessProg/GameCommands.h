@@ -22,26 +22,25 @@
 #define ROW_TAG_END "</row_"
 #define WRONG_FORMAT "Wrong XML format\n"
 
-/* A "toString()" function for Move structs. */
-void printMove(Move* move);
 
-/*
- * Parses and builds "Move" struct out of the arguments.
- * The Move will also be validated. If it is illegal, NULL is returned.
- * If the function succeeds and this is a valid move, the move is returned.
+/** Returns true if the move is a legal move by the given player (black or white).
+ *  Validation is done by comparing the move to all legal moves, so make sure to query the mem flag on return.
  */
-Move* parseAndBuildMove(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, char* args[]);
+bool validateMove(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, Move* move);
 
 /*
  * Executes a move command done by the user.
- * This function parses, builds, validates and executes the move.
+ * Move is expected to be validated with validateMove() before calling this function.
+ * This function safely executes the move.
  * Returns True if the move is legal and executed successfully.
- * If this move is impossible, False is returned.
+ * If this move failed to execute (due to an unexpected memory error), False is returned.
  */
-bool executeMoveCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, char* args[MAX_ARGS]);
+bool executeMoveCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, Move* move);
 
-/* Prints a list of all possible moves for the player. */
-void executeGetMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, char* arg);
+/* Returns a list of all possible moves for the player for one square.
+ * List must be freed by user when usage terminates.
+ */
+LinkedList* executeGetMovesForPosCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, Position pos);
 
 /*
  * Return the score for the given move in a minimax tree of the given depth.
@@ -50,10 +49,11 @@ void executeGetMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack
 int executeGetScoreCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, char* depth, Move* move);
 
 /*
- * Print all the moves with the highest score for the current board.
+ * Return all the moves with the highest score for the current board.
  * 'depth' is an argument for the minimax algorithm.
+ * List of moves must be freed when usage is complete.
  */
-void executeGetBestMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, char* depth);
+LinkedList* executeGetBestMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, char* depth);
 
 /*
  * Load the game settings from the file "path", path being the full or relative path to the file.

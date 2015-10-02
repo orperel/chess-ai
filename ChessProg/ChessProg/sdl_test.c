@@ -2,6 +2,9 @@
 #include <string.h>
 #include "GuiFW.h"
 #include "Chess.h"
+#include "ChessGuiGameControl.h"
+#include "GameCommands.h"
+#include "BoardManager.h"
 
 /** Misc constants */
 #define GAME_WINDOW_TITLE "Chess game"
@@ -9,49 +12,147 @@
 /** Resource images dimensions */
 #define WIN_W 640	// Window dimensions
 #define WIN_H 480
-#define BOARD_W 480 // Board image sizes
-#define BOARD_H 480
-#define PIECE_W 100 // Common piece image dimensinos (for all chess pieces)
-#define PIECE_H 160
-#define SQUARE_W 51.5 // Dimensions of square on board (to space pieces)
-#define SQUARE_H 51.5
-#define TARGET_SQUARE_W 56 // Dimensions of "target marker" image
-#define TARGET_SQUARE_H 54
-#define FIRST_PIECE_OFFSET_X 35 // Top left square x pos of first piece
-#define FIRST_PIECE_OFFSET_Y 0  // Top left square y pos of first piece
-#define FIRST_TARGET_OFFSET_X 45  // Top left square x pos of first target square
-#define FIRST_TARGET_OFFSET_Y 47  // Top left square y pos of first target square
 #define BUTTON_W 200 // Dimensions for buttons
 #define BUTTON_H 80
+
 #define SAVE_BUTTON_OFFSET_Y 37 // Position of buttons
 #define MENU_BUTTON_OFFSET_Y 100
 #define QUIT_BUTTON_OFFSET_Y 350
 #define WOODPANEL_W 160 // Dimensions for wooden side panel image
-#define WOODPANEL_H BOARD_H
+#define WOODPANEL_H WIN_H
 
 /** Resources paths */
-#define BOARD_IMG "Resources/board.bmp"
 #define SIDE_PANEL_IMG "Resources/game_wood_panel.bmp"
-#define TARGET_SQUARE_IMG "Resources/target_square.bmp"
 #define BUTTON_SAVE_IMG "Resources/button_save.bmp"
 #define BUTTON_MENU_IMG "Resources/button_mainMenu.bmp"
 #define BUTTON_QUIT_IMG "Resources/button_quit.bmp"
-#define BLACK_P_IMG "Resources/black_p.bmp"
-#define BLACK_B_IMG "Resources/black_b.bmp"
-#define BLACK_R_IMG "Resources/black_r.bmp"
-#define BLACK_N_IMG "Resources/black_n.bmp"
-#define BLACK_Q_IMG "Resources/black_q.bmp"
-#define BLACK_K_IMG "Resources/black_k.bmp"
-#define WHITE_P_IMG "Resources/white_p.bmp"
-#define WHITE_B_IMG "Resources/white_b.bmp"
-#define WHITE_R_IMG "Resources/white_r.bmp"
-#define WHITE_N_IMG "Resources/white_n.bmp"
-#define WHITE_Q_IMG "Resources/white_q.bmp"
-#define WHITE_K_IMG "Resources/white_k.bmp"
 
 //  ------------------------------ 
-//  -- App functions            --
+//  -- Logic functions          --
 //  ------------------------------
+
+void onChessPieceClick(GuiButton* button)
+{
+	GameSquare* gameSquare = (GameSquare*)button->generalProperties.extent;
+
+	if (NULL == gameSquare)
+		return; // Avoid null extents
+
+	GameControl* gameControl = gameSquare->gameControl;
+	int guiX = boardRowIndexToGuiRowIndex(gameSquare->x);
+	bool isSquareBlackPiece = isSquareOccupiedByBlackPlayer(gameControl->board, guiX, gameSquare->y);
+	bool isSquareWhitePiece = isSquareOccupiedByWhitePlayer(gameControl->board, guiX, gameSquare->y);
+
+	// Abort for clicks on enemy pieces or empty squares
+	if ((isSquareBlackPiece && !gameControl->isBlackPlayerEditable) ||
+		(isSquareWhitePiece && !gameControl->isWhitePlayerEditable) ||
+		(!isSquareBlackPiece && !isSquareWhitePiece))
+			return;
+
+	gameControl->selectedSquare = gameSquare; // Save pointer to selected square for future events
+	disableAllTargetSquares(gameControl);
+	Position pos = { guiX, gameSquare->y };
+	LinkedList* moves = executeGetMovesForPosCommand(gameControl->board, isSquareBlackPiece, pos);
+
+	if (moves == NULL)
+		return; // Avoid memory errors
+
+	// Activate all squares the piece can move to
+	Node* currMoveNode = moves->head;
+	while (NULL != currMoveNode)
+	{
+		Move* currMove = (Move*)currMoveNode->data;
+		int logicX = guiRowIndexToboardRowIndex(currMove->nextPos.x);
+		GameSquare* currSquare = &(gameControl->gui_board[logicX][currMove->nextPos.y]);
+		currSquare->targetButton->isEnabled = true;
+		currSquare->targetButton->generalProperties.isVisible = true;
+		currMoveNode = currMoveNode->next;
+	}
+
+	deleteList(moves);
+}
+
+void refreshBoard(GameControl* gameControl, bool isUserBlack)
+{
+	gameControl->isBlackPlayerEditable = isUserBlack;
+	gameControl->isWhitePlayerEditable = !isUserBlack;
+
+	gameControl->selectedSquare = NULL;
+	disableAllTargetSquares(gameControl);
+	disableAllChessPieces(gameControl);
+
+	// Enable chess pieces that can move
+	int i, j;
+	for (i = 0; i < BOARD_SIZE; i++)
+	{
+		for (j = 0; j < BOARD_SIZE; j++) {
+
+			if (!isSquareOccupiedByCurrPlayer(gameControl->board, isUserBlack, i, j))
+				continue; // Skip squares that don't contain the player's pieces
+
+			Position pos = { i, j };
+			LinkedList* moves = executeGetMovesForPosCommand(gameControl->board, isUserBlack, pos);
+			if (g_memError)
+				return;
+
+			if (NULL != moves)
+			{
+				if (moves->length > 0)
+				{
+					int guiI = boardRowIndexToGuiRowIndex(i);
+					gameControl->gui_board[guiI][j].chessPiece->isEnabled = true;
+				}
+
+				deleteList(moves);
+			}
+		}
+	}
+}
+
+void onTargetClick(GuiButton* button)
+{
+	GameSquare* gameSquare = (GameSquare*)button->generalProperties.extent;
+
+	if (NULL == gameSquare)
+		return; // Avoid null extents
+
+	GameControl* gameControl = gameSquare->gameControl;
+	int guiStartX = boardRowIndexToGuiRowIndex(gameControl->selectedSquare->x);
+	int guiTargetX = boardRowIndexToGuiRowIndex(gameSquare->x);
+
+	// Build the move
+	// Make sure to abort clicks on illegal moves
+	Position initPos = { guiStartX, gameControl->selectedSquare->y };
+	Position nextPos = { guiTargetX, gameSquare->y };
+	Move* move = createMove(&initPos, &nextPos);
+	if (g_memError)
+		return;
+	
+	// TODO: Check for promotion and open dialog here
+	if (isSquareOnOppositeEdge(gameControl->isBlackPlayerEditable, nextPos.x) &&
+		isSquareOccupiedByPawn(gameControl->board, gameControl->isBlackPlayerEditable, initPos.x, initPos.y))
+	{
+		move->promotion = gameControl->isBlackPlayerEditable ? BLACK_Q : WHITE_Q;
+	}
+
+	bool isValidMove = validateMove(gameControl->board, gameControl->isBlackPlayerEditable, move);
+	if (!isValidMove)
+	{
+		printf("Warning: Gui allowed user to interact with illegal move, but logic protected from executing this move.\n");
+		return;
+	}
+
+	// Execute the move on the board
+	executeMoveCommand(gameControl->board, gameControl->isBlackPlayerEditable, move);
+
+	// Update the gui
+	gameSquare->chessPiece->setBGImage(gameSquare->chessPiece,
+									   gameControl->selectedSquare->chessPiece->bgImage);
+	gameSquare->chessPiece->generalProperties.isVisible = true;
+	gameControl->selectedSquare->chessPiece->bgImage = NULL;
+	gameControl->selectedSquare->chessPiece->generalProperties.isVisible = false;
+	refreshBoard(gameControl, !gameControl->isBlackPlayerEditable);
+}
 
 void onSaveClick(GuiButton* button)
 {
@@ -68,127 +169,15 @@ void onQuit(GuiButton* button)
 
 }
 
-void onChessPieceClick(GuiButton* button)
-{
+/** -- -- -- -- -- -- -- -- */
+/** -- Main game window  -- */
+/** -- -- -- -- -- -- -- -- */
 
-}
-
-void onTargetClick(GuiButton* button)
-{
-
-}
-
-bool addSoldierButton(char type, int i, int j, GuiPanel* gameAreaPanel)
-{
-	char* soldierImgPath = NULL;
-	int x, y, imgWidth, imgHeight;
-	GuiColorRGB transparentColor;
-	void(*onClick)(GuiButton* button);
-
-	if (EMPTY == type)
-	{
-		soldierImgPath = TARGET_SQUARE_IMG;
-		x = (int)(FIRST_TARGET_OFFSET_X + (j*SQUARE_W));
-		y = (int)(FIRST_TARGET_OFFSET_Y + (i*SQUARE_H));
-		imgWidth = TARGET_SQUARE_W;
-		imgHeight = TARGET_SQUARE_H;
-		transparentColor = RED;
-		onClick = onTargetClick;
-	}
-	else
-	{
-		switch (type)
-		{
-			case BLACK_P:
-			{
-				soldierImgPath = BLACK_P_IMG;
-				break;
-			}
-			case BLACK_B:
-			{
-				soldierImgPath = BLACK_B_IMG;
-				break;
-			}
-			case BLACK_R:
-			{
-				soldierImgPath = BLACK_R_IMG;
-				break;
-			}
-			case BLACK_N:
-			{
-				soldierImgPath = BLACK_N_IMG;
-				break;
-			}
-			case BLACK_Q:
-			{
-				soldierImgPath = BLACK_Q_IMG;
-				break;
-			}
-			case BLACK_K:
-			{
-				soldierImgPath = BLACK_K_IMG;
-				break;
-			}
-			case WHITE_P:
-			{
-				soldierImgPath = WHITE_P_IMG;
-				break;
-			}
-			case WHITE_B:
-			{
-				soldierImgPath = WHITE_B_IMG;
-				break;
-			}
-			case WHITE_R:
-			{
-				soldierImgPath = WHITE_R_IMG;
-				break;
-			}
-			case WHITE_N:
-			{
-				soldierImgPath = WHITE_N_IMG;
-				break;
-			}
-			case WHITE_Q:
-			{
-				soldierImgPath = WHITE_Q_IMG;
-				break;
-			}
-			case WHITE_K:
-			{
-				soldierImgPath = WHITE_K_IMG;
-				break;
-			}
-			default: { return false; }
-		}
-
-		x = (int)(FIRST_PIECE_OFFSET_X + (j*SQUARE_W));
-		y = (int)(FIRST_PIECE_OFFSET_Y + (i*SQUARE_H));
-		imgWidth = PIECE_W;
-		imgHeight = PIECE_H;
-		transparentColor = BROWN;
-		onClick = onChessPieceClick;
-	}
-
-	char* allocatedPath = (char*)malloc(strlen(soldierImgPath) + 1);
-	strcpy(allocatedPath, soldierImgPath);
-	Rectangle pieceBounds = { x, y, imgWidth, imgHeight };
-	int zIndex = i + 1; // Closer rows should hide the ones behind, increase index by 1 to draw above board image
-	GuiButton* soldier =
-		createButton(gameAreaPanel->generalProperties.wrapper, pieceBounds, zIndex,
-					 allocatedPath, transparentColor, onClick);
-	
-	return ((NULL == soldier) || g_guiError);
-}
-
-GuiWindow* createBoard(char board[BOARD_SIZE][BOARD_SIZE])
+GuiWindow* createGameWindow(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack)
 {
 	// Z indices under window
 	short gameAreaPanelZIndex = 1;
 	short sidePanelZIndex = 2;
-
-	// Z indices under game area panel
-	short boardImgZIndex = 0;
 
 	// Z indices under wooden panel
 	short sidePanelImgZIndex = 0;
@@ -202,21 +191,7 @@ GuiWindow* createBoard(char board[BOARD_SIZE][BOARD_SIZE])
 	if ((NULL == mainWindow) || g_guiError)
 		return NULL; // Clean on errors
 
-	Rectangle gameAreaBounds = { 0, 0, BOARD_W, BOARD_H };
-	GuiPanel* gameAreaPanel = createPanel(mainWindow->generalProperties.wrapper, gameAreaBounds, gameAreaPanelZIndex, GRAY);
-	if ((NULL == gameAreaPanel) || g_guiError)
-	{
-		destroyWindow(mainWindow);
-		return NULL;
-	}
-
-	GuiImage* boardImg = createImage(gameAreaPanel->generalProperties.wrapper, gameAreaBounds,
-									 boardImgZIndex, BOARD_IMG, YELLOW);
-	if ((NULL == boardImg) || g_guiError)
-	{ // Clean on errors
-		destroyWindow(mainWindow);
-		return NULL;
-	}
+	// Side panel creation
 
 	Rectangle sidePanelBounds = { 0, 0, WOODPANEL_W, WOODPANEL_H };
 	sidePanelBounds.x = BOARD_W; // Panel is to the right of the board
@@ -229,17 +204,17 @@ GuiWindow* createBoard(char board[BOARD_SIZE][BOARD_SIZE])
 
 	sidePanelBounds.x = 0; // Image is 0 relative to the panel
 	GuiImage* sidePanelImg = createImage(sidePanel->generalProperties.wrapper, sidePanelBounds,
-										 sidePanelImgZIndex, SIDE_PANEL_IMG, GREEN);
+		sidePanelImgZIndex, SIDE_PANEL_IMG, GREEN);
 	if ((NULL == sidePanelImg) || g_guiError)
 	{ // Clean on errors
 		destroyWindow(mainWindow);
 		return NULL;
 	}
 
-	Rectangle btnBounds = { ((WOODPANEL_W - (BUTTON_W/2)) / 2), 0, BUTTON_W, BUTTON_H };
+	Rectangle btnBounds = { ((WOODPANEL_W - (BUTTON_W / 2)) / 2), 0, BUTTON_W, BUTTON_H };
 	btnBounds.y = SAVE_BUTTON_OFFSET_Y;
 	GuiButton* saveBtn = createButton(sidePanel->generalProperties.wrapper, btnBounds,
-									  saveButtonZIndex, BUTTON_SAVE_IMG, BROWN, onSaveClick);
+		saveButtonZIndex, BUTTON_SAVE_IMG, BROWN, onSaveClick);
 	if ((NULL == saveBtn) || g_guiError)
 	{ // Clean on errors
 		destroyWindow(mainWindow);
@@ -247,8 +222,8 @@ GuiWindow* createBoard(char board[BOARD_SIZE][BOARD_SIZE])
 	}
 
 	btnBounds.y = MENU_BUTTON_OFFSET_Y;
-	GuiButton* mainMenuBtn = createButton(sidePanel->generalProperties.wrapper, btnBounds, 
-										  menuButtonZIndex, BUTTON_MENU_IMG, BROWN, onMainMenuClick);
+	GuiButton* mainMenuBtn = createButton(sidePanel->generalProperties.wrapper, btnBounds,
+		menuButtonZIndex, BUTTON_MENU_IMG, BROWN, onMainMenuClick);
 	if ((NULL == mainMenuBtn) || g_guiError)
 	{ // Clean on errors
 		destroyWindow(mainWindow);
@@ -256,29 +231,38 @@ GuiWindow* createBoard(char board[BOARD_SIZE][BOARD_SIZE])
 	}
 
 	btnBounds.y = QUIT_BUTTON_OFFSET_Y;
-	GuiButton* quitBtn = createButton(sidePanel->generalProperties.wrapper, btnBounds, 
-									  quitButtonZIndex, BUTTON_QUIT_IMG, BROWN, onQuit);
+	GuiButton* quitBtn = createButton(sidePanel->generalProperties.wrapper, btnBounds,
+		quitButtonZIndex, BUTTON_QUIT_IMG, BROWN, onQuit);
 	if ((NULL == quitBtn) || g_guiError)
 	{ // Clean on errors
 		destroyWindow(mainWindow);
 		return NULL;
 	}
 
-	// Draw each of the pieces on the board according to the board state.
-	// We also place marker nodes (for moves that may be available)
-	bool isError = false;
-	int i, j;
-	for (i = 0; i < BOARD_SIZE; i++)
+	Rectangle gameAreaBounds = { 0, 0, BOARD_W, BOARD_H };
+	GuiPanel* gameAreaPanel = createPanel(mainWindow->generalProperties.wrapper, gameAreaBounds, gameAreaPanelZIndex, GRAY);
+	if ((NULL == gameAreaPanel) || g_guiError)
 	{
-		for (j = 0; j < BOARD_SIZE; j++){
-			isError = addSoldierButton(board[i][j], i, j, gameAreaPanel);
+		destroyWindow(mainWindow);
+		return NULL;
+	}
 
-			if (isError)
-			{
-				destroyWindow(mainWindow);
-				return NULL;
-			}
-		}
+	// Game board control creation
+
+	GameControl* gameControl = createGameControl(board, gameAreaPanel, onChessPieceClick, onTargetClick);
+	if ((NULL == gameControl) || g_guiError)
+	{
+		destroyWindow(mainWindow);
+		destroyGameControl(gameControl);
+		return NULL;
+	}
+
+	refreshBoard(gameControl, isUserBlack);
+	if (g_memError)
+	{ // Avoid errors
+		destroyWindow(mainWindow);
+		destroyGameControl(gameControl);
+		return NULL;
 	}
 
 	return mainWindow;
@@ -288,12 +272,13 @@ int sdl_main(int argc, char *argv[])
 {
 	char board[BOARD_SIZE][BOARD_SIZE];
 	init_board(board);
+	bool isUserBlack = false;
 
 	// Init Gui FW
 	if (SDL_FAILURE_EXIT_CODE == initGui())
 		exit(SDL_FAILURE_EXIT_CODE);
 
-	GuiWindow* mainWindow = createBoard(board);
+	GuiWindow* mainWindow = createGameWindow(board, isUserBlack);
 
 	if (NULL == mainWindow)
 		exit(GUI_ERROR_EXIT_CODE);

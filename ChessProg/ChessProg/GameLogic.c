@@ -606,7 +606,7 @@ void getPieceMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves,
  */
 LinkedList* getMoves(char board[BOARD_SIZE][BOARD_SIZE], bool isMovesForBlackPlayer)
 {
-	LinkedList* possibleMoves = createList(*deleteMove); // <-- This list contains the results of moves available.
+	LinkedList* possibleMoves = createList(deleteMove);  // <-- This list contains the results of moves available.
 													     // Note we change this list in the following service functions.
 	if (g_memError)
 		return NULL;
@@ -674,7 +674,7 @@ bool isTie(char board[BOARD_SIZE][BOARD_SIZE], bool isTestForBlackPlayer, Linked
 */
 LinkedList* getMovesForSquare(char board[BOARD_SIZE][BOARD_SIZE], int x, int y)
 {
-	LinkedList* possibleMoves = createList(*deleteMove); // <-- This list contains the results of moves available.
+	LinkedList* possibleMoves = createList(deleteMove);  // <-- This list contains the results of moves available.
 														 // Note we change this list in the following service functions.
 	if (g_memError)
 		return NULL;
