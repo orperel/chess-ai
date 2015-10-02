@@ -193,25 +193,27 @@ bool isValidMove(char board[BOARD_SIZE][BOARD_SIZE], bool isMovesForBlackPlayer,
  *		targetX, targetY ~ Coordinates of where the piece will move to.
  *		kingPos ~ Current position of the current player's king (following the execution of the move).
  */
-void addPossibleMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves, bool isMovesForBlackPlayer,
+bool addPossibleMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves, bool isMovesForBlackPlayer,
 					 Position* startPos, int targetX, int targetY, Position* kingPos)
 {
 	// Check if the move doesn't cause the current player a check. If it does, we don't count it.
 	if (!isValidMove(board, isMovesForBlackPlayer, startPos, targetX, targetY, kingPos))
-		return;
+		return false;
 
 	Position targetPos = { targetX, targetY };
 
 	Move* newMove = createMove(startPos, &targetPos);
 	if (g_memError)
-		return;
+		return false;
 
 	insertLast(possibleMoves, newMove);
 	if (g_memError)
 	{
 		deleteMove((void*)newMove);
-		return;
+		return false;
 	}
+
+	return true;
 }
 
 /*
@@ -233,8 +235,10 @@ void addPossibleMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMov
 void addPeonMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves, bool isMovesForBlackPlayer,
 					  Position* startPos, int targetX, int targetY, Position* kingPos)
 {
-	addPossibleMove(board, possibleMoves, isMovesForBlackPlayer, startPos, targetX, targetY, kingPos);
+	bool isMoveAdded = addPossibleMove(board, possibleMoves, isMovesForBlackPlayer, startPos, targetX, targetY, kingPos);
 	if (g_memError)
+		return;
+	if (!isMoveAdded)
 		return;
 
 	// If the pawn reaches the edge, the moves become promotion moves.
@@ -245,22 +249,22 @@ void addPeonMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves, 
 		char knight = isMovesForBlackPlayer ? BLACK_N : WHITE_N;
 		char queen = isMovesForBlackPlayer ? BLACK_Q : WHITE_Q;
 
-		((Move*)possibleMoves->tail->data)->promotion = bishop; // Update the most recent move to a promotion move.
+		((Move*)(possibleMoves->tail->data))->promotion = bishop; // Update the most recent move to a promotion move.
 
 		addPossibleMove(board, possibleMoves, isMovesForBlackPlayer, startPos, targetX, targetY, kingPos);
 		if (g_memError)
 			return;
-		((Move*)possibleMoves->tail->data)->promotion = rook; // Update the most recent move to a promotion move.
+		((Move*)(possibleMoves->tail->data))->promotion = rook; // Update the most recent move to a promotion move.
 
 		addPossibleMove(board, possibleMoves, isMovesForBlackPlayer, startPos, targetX, targetY, kingPos);
 		if (g_memError)
 			return;
-		((Move*)possibleMoves->tail->data)->promotion = knight; // Update the most recent move to a promotion move.
+		((Move*)(possibleMoves->tail->data))->promotion = knight; // Update the most recent move to a promotion move.
 
 		addPossibleMove(board, possibleMoves, isMovesForBlackPlayer, startPos, targetX, targetY, kingPos);
 		if (g_memError)
 			return;
-		((Move*)possibleMoves->tail->data)->promotion = queen; // Update the most recent move to a promotion move.
+		((Move*)(possibleMoves->tail->data))->promotion = queen; // Update the most recent move to a promotion move.
 	}
 }
 
@@ -328,11 +332,14 @@ void queryDirection(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMove
 
 	// We advance along the direction, advancing by deltaX, Y each iteration.
 	// We will stop once we no longer hit an empty square.
+	bool isMoveAdded;
 	while (isSquareVacant(board, currentSquare.x, currentSquare.y))
 	{
-		addPossibleMove(board, possibleMoves, isMovesForBlackPlayer,startPos, currentSquare.x, currentSquare.y, kingPos);
+		isMoveAdded = addPossibleMove(board, possibleMoves, isMovesForBlackPlayer,startPos, currentSquare.x, currentSquare.y, kingPos);
 		if (g_memError)
 			return;
+		if (!isMoveAdded)
+			break;
 
 		currentSquare.x += deltaX;
 		currentSquare.y += deltaY;
@@ -606,11 +613,11 @@ LinkedList* getMoves(char board[BOARD_SIZE][BOARD_SIZE], bool isMovesForBlackPla
 
 	Position kingPos = getKingPosition(board, isMovesForBlackPlayer); // Position of current player's king
 
-	int i, j; // i = column, j = row
+	int i, j; // i = row, j = column
 
-	for (j = BOARD_SIZE - 1; j >= 0; j--)
+	for (i = 0; i < BOARD_SIZE; i++)
 	{
-		for (i = 0; i < BOARD_SIZE; i++)
+		for (j = 0; j < BOARD_SIZE; j++)
 		{
 			Position startPos;
 			startPos.x = i;

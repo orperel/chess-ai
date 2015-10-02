@@ -4,7 +4,7 @@
 #include "Types.h"
 #include "Chess.h"
 
-#define TAG_LENGTH 30
+#define TAG_LENGTH 50
 #define XML_HEADER "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 #define GAME_TAG_BEGIN "<game>"
 #define GAME_TAG_END "</game>"

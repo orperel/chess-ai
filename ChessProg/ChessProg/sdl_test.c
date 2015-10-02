@@ -284,7 +284,7 @@ GuiWindow* createBoard(char board[BOARD_SIZE][BOARD_SIZE])
 	return mainWindow;
 }
 
-int main(int argc, char *argv[])
+int sdl_main(int argc, char *argv[])
 {
 	char board[BOARD_SIZE][BOARD_SIZE];
 	init_board(board);
