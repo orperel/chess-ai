@@ -107,11 +107,11 @@ Move* parseAndBuildMove(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, ch
 	{	// Promotion was specified, we assume that the type name is valid
 		if (board[initPos.x][initPos.y] == WHITE_P)
 		{
-			move->promotion = promotionNameToChar(args[5], false);
+			move->promotion = promotionNameToChar(args[4], false);
 		}
 		else if (board[initPos.x][initPos.y] == BLACK_P)
 		{
-			move->promotion = promotionNameToChar(args[5], true);
+			move->promotion = promotionNameToChar(args[4], true);
 		}
 		else
 		{	// Promotion was specified not for a pawn

@@ -122,11 +122,15 @@ bool isKnightThreatningKing(char board[BOARD_SIZE][BOARD_SIZE], bool isTestForBl
 */
 bool isKingThreatningKing(char board[BOARD_SIZE][BOARD_SIZE], bool isTestForBlackPlayer, Position* kingPos)
 {
-	// The king can move one square up, down, left or right
+	// The king can move one square in any direction
 	return (isSquareOccupiedByKing(board, !isTestForBlackPlayer, kingPos->x + 1, kingPos->y + 1) ||
 			isSquareOccupiedByKing(board, !isTestForBlackPlayer, kingPos->x - 1, kingPos->y + 1) || 
 			isSquareOccupiedByKing(board, !isTestForBlackPlayer, kingPos->x + 1, kingPos->y - 1) || 
-			isSquareOccupiedByKing(board, !isTestForBlackPlayer, kingPos->x - 1, kingPos->y - 1));
+			isSquareOccupiedByKing(board, !isTestForBlackPlayer, kingPos->x - 1, kingPos->y - 1) ||
+			isSquareOccupiedByKing(board, !isTestForBlackPlayer, kingPos->x + 1, kingPos->y) ||
+			isSquareOccupiedByKing(board, !isTestForBlackPlayer, kingPos->x - 1, kingPos->y) ||
+			isSquareOccupiedByKing(board, !isTestForBlackPlayer, kingPos->x, kingPos->y + 1) ||
+			isSquareOccupiedByKing(board, !isTestForBlackPlayer, kingPos->x, kingPos->y - 1));
 }
 
 /*
