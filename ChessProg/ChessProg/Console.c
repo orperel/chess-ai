@@ -122,11 +122,11 @@ Move* parseAndBuildMove(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, ch
 	}
 	else
 	{	// Promotion was not specified, check for default promotion
-		if ((nextPos.x == (BOARD_SIZE - 1)) && (board[nextPos.x][nextPos.y] == WHITE_P))
+		if ((nextPos.x == (BOARD_SIZE - 1)) && (board[initPos.x][initPos.y] == WHITE_P))
 		{
 			move->promotion = WHITE_Q;
 		}
-		else if ((nextPos.x == 0) && (board[nextPos.x][nextPos.y] == BLACK_P))
+		else if ((nextPos.x == 0) && (board[initPos.x][initPos.y] == BLACK_P))
 		{
 			move->promotion = BLACK_Q;
 		}
@@ -270,13 +270,17 @@ COMMAND_RESULT parseUserSettings(char board[BOARD_SIZE][BOARD_SIZE])
 				{
 					int depth = atoi(args[2]);
 					if ((depth >= 1) && (depth <= MAX_DEPTH))
+					{
 						g_minimaxDepth = depth;
+						g_isDifficultyBest = false;
+					}
 					else	// Illegal depth
 						printf(WRONG_MINIMAX_DEPTH);
 				}
 				else if (0 == strcmp(DIFFICULTY_BEST, args[1]))
 				{	// Set difficulty best to MAX_DEPTH
 					g_minimaxDepth = MAX_DEPTH;
+					g_isDifficultyBest = true;
 				}
 			}
 			else

@@ -249,7 +249,7 @@ void addPeonMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves, 
 		char knight = isMovesForBlackPlayer ? BLACK_N : WHITE_N;
 		char queen = isMovesForBlackPlayer ? BLACK_Q : WHITE_Q;
 
-		((Move*)(possibleMoves->tail->data))->promotion = bishop; // Update the most recent move to a promotion move.
+		((Move*)(possibleMoves->tail->data))->promotion = queen; // Update the most recent move to a promotion move.
 
 		addPossibleMove(board, possibleMoves, isMovesForBlackPlayer, startPos, targetX, targetY, kingPos);
 		if (g_memError)
@@ -259,12 +259,12 @@ void addPeonMove(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMoves, 
 		addPossibleMove(board, possibleMoves, isMovesForBlackPlayer, startPos, targetX, targetY, kingPos);
 		if (g_memError)
 			return;
-		((Move*)(possibleMoves->tail->data))->promotion = knight; // Update the most recent move to a promotion move.
+		((Move*)(possibleMoves->tail->data))->promotion = bishop; // Update the most recent move to a promotion move.
 
 		addPossibleMove(board, possibleMoves, isMovesForBlackPlayer, startPos, targetX, targetY, kingPos);
 		if (g_memError)
 			return;
-		((Move*)(possibleMoves->tail->data))->promotion = queen; // Update the most recent move to a promotion move.
+		((Move*)(possibleMoves->tail->data))->promotion = knight; // Update the most recent move to a promotion move.
 	}
 }
 
@@ -332,14 +332,11 @@ void queryDirection(char board[BOARD_SIZE][BOARD_SIZE], LinkedList* possibleMove
 
 	// We advance along the direction, advancing by deltaX, Y each iteration.
 	// We will stop once we no longer hit an empty square.
-	bool isMoveAdded;
 	while (isSquareVacant(board, currentSquare.x, currentSquare.y))
 	{
-		isMoveAdded = addPossibleMove(board, possibleMoves, isMovesForBlackPlayer,startPos, currentSquare.x, currentSquare.y, kingPos);
+		addPossibleMove(board, possibleMoves, isMovesForBlackPlayer,startPos, currentSquare.x, currentSquare.y, kingPos);
 		if (g_memError)
 			return;
-		if (!isMoveAdded)
-			break;
 
 		currentSquare.x += deltaX;
 		currentSquare.y += deltaY;

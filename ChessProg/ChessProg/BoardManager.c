@@ -168,7 +168,10 @@ bool executeMove(char board[BOARD_SIZE][BOARD_SIZE], Move* move)
 {
 	GameStep* nextStep = createGameStep(board, move);
 	if (g_memError)
+	{
+		deleteMove((void*)move);
 		return false;
+	}
 
 	doStep(board, nextStep);
 
