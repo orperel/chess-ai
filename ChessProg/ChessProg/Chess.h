@@ -89,6 +89,9 @@ extern int g_gameMode;
 /* Configuration for mini-max algorithm. Maximum depth of recursion. Default to 1. */
 extern int g_minimaxDepth;
 
+/* Is the difficulty best - i.e. the depth of recursion alternates. Default to false. */
+extern bool g_isDifficultyBest;
+
 /* Is the user the black color (true) or white color (false). Default to white. */
 extern bool g_isUserBlack;
 
@@ -100,6 +103,9 @@ extern char g_inputLine[LINE_LENGTH];
 
 /* True if there was an allocation error somewhere in the program (would cause an exit). Else false. */
 extern bool g_memError;
+
+/* The boards counter for the Minimax algorithm with difficulty best. */
+extern int g_boardsCounter;
 
 /* -- Functions -- */
 

@@ -162,6 +162,7 @@ LinkedList* executeGetBestMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool 
 		if (g_memError)
 		{
 			deleteList(possibleMoves);
+			free(scores);
 			return NULL;
 		}
 
@@ -176,14 +177,28 @@ LinkedList* executeGetBestMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool 
 
 	// Collect the moves with the highest score
 	LinkedList* bestMoves = createList(deleteMove);
+	if (g_memError)
+	{
+		deleteList(possibleMoves);
+		free(scores);
+		return NULL;
+	}
+
 	currMoveNode = possibleMoves->head;
 	i = 0;
 	while (NULL != currMoveNode)
 	{
 		if (*(scores + i) == maxScore)
 		{
-			Move* currMove = (Move*)currMoveNode->data;
+			Move* currMove = cloneMove((Move*)currMoveNode->data);
 			insertLast(bestMoves, currMove);
+			if (g_memError)
+			{
+				deleteList(possibleMoves);
+				free(scores);
+				deleteList(bestMoves);
+				return NULL;
+			}
 		}
 
 		currMoveNode = currMoveNode->next;
@@ -267,9 +282,15 @@ void executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 				token = strtok(token, "<");
 
 				if (strcmp(token, DIFFICULTY_BEST) == 0)
-					g_minimaxDepth = MAX_DEPTH;	// Set difficulty best to MAX_DEPTH
+				{	// Set difficulty best to MAX_DEPTH
+					g_minimaxDepth = MAX_DEPTH;
+					g_isDifficultyBest = true;
+				}
 				else
+				{
 					g_minimaxDepth = atoi(token);
+					g_isDifficultyBest = false;
+				}
 			}
 		}
 		else if (strcmp(token, USER_COLOR_TAG_BEGIN) == 0)
@@ -353,7 +374,12 @@ void executeSaveCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 	// Write the difficulty
 	fprintf(fp, "\t%s>", DIFFICULTY_TAG_BEGIN);
 	if (g_gameMode == 2)
-		fprintf(fp, "%d", g_minimaxDepth);
+	{
+		if (g_isDifficultyBest)
+			fprintf(fp, "%s", DIFFICULTY_BEST);
+		else
+			fprintf(fp, "%d", g_minimaxDepth);
+	}
 	fprintf(fp, "%s\n", DIFFICULTY_TAG_END);
 
 	// Write the user color

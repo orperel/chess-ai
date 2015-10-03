@@ -15,6 +15,9 @@ int g_gameMode = 1;
 /* Configuration for mini-max algorithm. Maximum depth of recursion. Default to 1. */
 int g_minimaxDepth = 1;
 
+/* Is the difficulty best - i.e. the depth of recursion alternates. Default to false. */
+bool g_isDifficultyBest = false;
+
 /* Is the user the black color (true) or white color (false). Default to white. */
 bool g_isUserBlack = false;
 
@@ -26,6 +29,9 @@ char g_inputLine[LINE_LENGTH] = { 0 };
 
 /* True if there was an allocation error somewhere in the program (would cause an exit). Else false. */
 bool g_memError = false;
+
+/* The boards counter for the Minimax algorithm with difficulty best. */
+int g_boardsCounter = 0;
 
 /* -- Functions -- */
 
@@ -204,7 +210,7 @@ void executeGameLoop(char board[BOARD_SIZE][BOARD_SIZE], int gameMode, bool isNe
 	}
 }
 
-int chess_main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 	//printf(WELCOME_TO_CHESS);
 	char board[BOARD_SIZE][BOARD_SIZE];
