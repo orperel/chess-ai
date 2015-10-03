@@ -23,17 +23,20 @@ typedef enum
 	PANEL,
 	BUTTON,
 	IMAGE,
-	ANIMATION
+	ANIMATION,
+	DIALOG,
+	DIALOG_BUTTON // Dialog buttons are merely buttons, but handled a little bit differently in terms of mem managment
 } GuiComponentType;
 
 /** A general wrapper for all GUI components, to allow storing them in a unified LinkedList.
  *  We use this struct as a basis for "pseudo polymorphism" implementation of functions (e.g: general draw, destroy).
  */
-typedef struct
+struct GuiComponentWrapper
 {
 	GuiComponentType type;
 	void* component;
-} GuiComponentWrapper;
+};
+typedef struct GuiComponentWrapper GuiComponentWrapper;
 
 /** A rectangle, as used by the applciation's gui FW. */
 struct Rectangle
@@ -73,11 +76,11 @@ struct GuiWindow
 	GuiColorRGB bgColor; // Background color of window
 	const char* title;   // Null terminated string, preallocated and defines the title shown on the window's top
 	LinkedList* subComponents; // List of GuiComponentWrapper children, wrapping the children controls
+	bool isWindowQuit; // This flag is turned on when the user asks to close the window
 
 	SDL_Surface* surface; // The SDL surface that this window represents
 
 	void(*show)(struct GuiWindow* window); // Draws the windows and all inner components in the UI tree
-
 };
 
 /** A panel in the Gui FW is a simple container for other components.
@@ -169,6 +172,27 @@ struct GuiAnimation
 };
 typedef struct GuiAnimation GuiAnimation;
 
+/** A modal dialog of generic options, opened above all components and blocks until the user makes a choice.
+*/
+struct GuiDialog
+{
+	GuiGeneralProperties generalProperties;
+	GuiColorRGB bgColor; // Background color of window
+	
+	GuiPanel* dialogPanel;
+	GuiImage* bgImage; // The bg image is a son of the panel, but the dialog has quick access to alter it when the size
+					   // changes
+	int choiceButtonWidth, choiceButtonHeight; // Dimensions common to all choice buttons in the dialog
+
+	int numOfChoices;
+	void* choice; // This flag contains the value the user have chosen, otherwise it is NULL
+
+	void(*addOption)(struct GuiDialog* dialog, const char* imageSourcePath,
+					 GuiColorRGB transparentColor, void* choiceData);
+	void*(*showDialog)(struct GuiDialog* dialog); // Shows the modal dialog
+};
+typedef struct GuiDialog GuiDialog;
+
 
 //  --------------------------- 
 //  -- Constants and globals --
@@ -255,7 +279,7 @@ GuiAnimation* createAnimation(GuiComponentWrapper* parent, Rectangle bounds, sho
 							  int timeBetweenFramesMs, bool isRepeated,
 							  void(*onAnimationEnd)(GuiAnimation* animation));
 
-/** Creates a new animation in the Gui FW. On error, NULL is returned.
+/** Creates a new button in the Gui FW. On error, NULL is returned.
  *  parent - Control that contains this new control.
  *  bounds - position and dimensions of the control.
  *	zOrder - Sorts which control shows in front of which, the higher z order the closer the control is to the user.
@@ -266,6 +290,30 @@ GuiAnimation* createAnimation(GuiComponentWrapper* parent, Rectangle bounds, sho
 GuiButton* createButton(GuiComponentWrapper* parent, Rectangle bounds, short zOrder,
 						const char* imageSourcePath, GuiColorRGB transparentColor,
 						void(*onClick)(GuiButton* button));
+
+/** Creates a dialog inner window in the Gui FW. On error, NULL is returned.
+ *	Note: A dialog is created with empty options, they should be added manually.
+ *  parent - Window that contains this new control (dialog's parent must always be a window).
+ *	choiceButtonWidth / choiceButtonHeight - button of the dialog's dimensions.
+ *  bgImageSourcePath - relative path of the bitmap of the background image.
+ *	bgImgtransparentColor - The color that represents transparency in the background bitmap.
+ *	defaultBGColor - Color of the panel behind the bg image (for cases where the image doesn't span on the entire dialog,
+ *					 or transparency occurs).
+ */
+GuiDialog* createDialog(GuiWindow* parent, int choiceButtonWidth, int choiceButtonHeight,
+						const char* bgImageSourcePath, GuiColorRGB bgImgTransparentColor,
+						GuiColorRGB defaultBGColor); 
+
+/** Adds an option to the dialog. The option will be added as a button with the image as background
+ *  (transparency belongs to the image of the button's background). choiceData is the results returned if
+ *	the button option is picked. Options appear in the order they are added in.
+ */
+void addDialogOption(GuiDialog* dialog, const char* imageSourcePath, GuiColorRGB transparentColor, void* choiceData);
+
+/** Shows the dialog in a modal way. The app is stuck on the dialog until a choice is made
+ *	(to give a "modal window" effect).
+ */
+void* showDialog(GuiDialog* dialog);
 
 /** Destructor for Gui windows.
  *	Destroys all inner components as well.

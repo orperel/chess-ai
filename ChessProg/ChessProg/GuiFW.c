@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 #include "GuiFW.h"
 #include "LinkedList.h"
 
@@ -28,6 +29,21 @@ const GuiColorRGB BROWN = { 128, 0, 0 };
 // Time between frames, depends on the framerate (in ms)
 const unsigned int TIME_BETWEEN_FRAMES_MS = (1000 / FRAME_RATE);
 
+// Dimensions for spacing dialog buttons in their container
+const unsigned int DIALOG_BUTTON_OFFSET_X = 20; // Initial X for all buttons
+const unsigned int DIALOG_BUTTON_OFFSET_Y = 20; // Initial Y for first button
+const unsigned int DIALOG_BUTTON_OFFSET_GAP = 7; // Gap in Y axis between dialog buttons
+const unsigned int DIALOG_FRAME_MARGIN = 2;
+
+// The extent additional info attached to each button in gui dialogs.
+// This is used for proper processing of dialog choices (this extent should be private to outside users).
+typedef struct GuiDialogButtonExtent
+{
+	GuiDialog* dialog; // The containing dialog
+	void* choiceData; // Data attached to the dialog button
+};
+typedef struct GuiDialogButtonExtent GuiDialogButtonExtent;
+
 //  ------------------------------ 
 //  -- Forward declerations     --
 //  ------------------------------
@@ -37,12 +53,16 @@ void drawPanel(void* component, const Rectangle* const container);
 void drawButton(void* component, const Rectangle* const container);
 void drawImage(void* component, const Rectangle* const container);
 void drawAnimation(void* component, const Rectangle* const container);
+void drawDialog(void* component, const Rectangle* const container);
 void destroyGuiComponentWrapper(GuiComponentWrapper* wrapper);
 void destroyWindow(void* component);
 void destroyButton(void* component);
 void destroyImage(void* component);
 void destroyPanel(void* component);
 void destroyAnimation(void* component);
+void destroyDialog(void* component);
+void destroyDialogButton(void* component);
+void removeComponentFromParent(GuiComponentWrapper* wrapper);
 
 //  ------------------------------ 
 //  -- General helper functions --
@@ -71,6 +91,7 @@ GuiGeneralProperties* getComponentGeneralProperties(GuiComponentWrapper* compone
 			break;
 		}
 		case(BUTTON) :
+		case(DIALOG_BUTTON) :
 		{
 			GuiButton* button = (GuiButton*)componentWrapper->component;
 			properties = &button->generalProperties;
@@ -86,6 +107,12 @@ GuiGeneralProperties* getComponentGeneralProperties(GuiComponentWrapper* compone
 		{
 			GuiAnimation* animation = (GuiAnimation*)componentWrapper->component;
 			properties = &animation->generalProperties;
+			break;
+		}
+		case(DIALOG) :
+		{
+			GuiDialog* dialog = (GuiDialog*)componentWrapper->component;
+			properties = &dialog->generalProperties;
 			break;
 		}
 		default:
@@ -163,6 +190,7 @@ void addChildComponent(GuiComponentWrapper* wrapper, GuiComponentWrapper* parent
 			break;
 		}
 		case(BUTTON) :
+		case(DIALOG_BUTTON) :
 		{
 			GuiButton* button = (GuiButton*)parent->component;
 
@@ -194,6 +222,24 @@ void addChildComponent(GuiComponentWrapper* wrapper, GuiComponentWrapper* parent
 			}
 
 			animation->clips = (GuiImage*)wrapper->component; // Attach son to specific field
+			break;
+		}
+		case(DIALOG) :
+		{
+			GuiDialog* dialog = (GuiDialog*)parent->component;
+
+			// A dialog has one panel (under that panel there is one background image and a list of buttons).
+			if (PANEL == wrapper->type)
+			{
+				dialog->dialogPanel = (GuiPanel*)wrapper->component; // Attach son to specific field
+			}
+			else
+			{
+				printf("Error: Invalid state. Dialog can only have panel son components");
+				g_guiError = true;
+				break;
+			}
+
 			break;
 		}
 		default:
@@ -257,6 +303,7 @@ GuiWindow* createWindow(int width, int height, const char* title, GuiColorRGB bg
 	window->generalProperties.extent = NULL;
 	window->bgColor = bgColor;
 	window->title = title;
+	window->isWindowQuit = false;
 	window->subComponents = createList(destroyGuiComponentWrapper);
 
 	// Set "control methods"
@@ -470,7 +517,7 @@ GuiAnimation* createAnimation(GuiComponentWrapper* parent, Rectangle bounds, sho
 	return animation;
 }
 
-/** Creates a new animation in the Gui FW. On error, NULL is returned.
+/** Creates a new button in the Gui FW. On error, NULL is returned.
  *  parent - Control that contains this new control.
  *  bounds - position and dimensions of the control.
  *	zOrder - Sorts which control shows in front of which, the higher z order the closer the control is to the user.
@@ -542,6 +589,174 @@ GuiButton* createButton(GuiComponentWrapper* parent, Rectangle bounds, short zOr
 	return button;
 }
 
+/** Delegates the button click event to a dialog button click event, for dialogs. */
+void onDialogButtonClick(GuiButton* button)
+{
+	GuiDialogButtonExtent* extent = (GuiDialogButtonExtent*)button->generalProperties.extent;
+	extent->dialog->choice = extent->choiceData; // Signals the dialog can be closed, now that the choice is made
+}
+
+/** Adds an option to the dialog. The option will be added as a button with the image as background
+ *  (transparency belongs to the image of the button's background). choiceData is the results returned if
+ *	the button option is picked. Options appear in the order they are added in.
+ */
+void addDialogOption(GuiDialog* dialog, const char* imageSourcePath, GuiColorRGB transparentColor, void* choiceData)
+{
+	int offsetX = DIALOG_BUTTON_OFFSET_X; // Constant
+	int singleButtonHeight = (dialog->choiceButtonHeight / 2); // Buttons contain animation of 4 states so we halve by 2
+
+	// Depends on number of choices,
+	int offsetY = DIALOG_BUTTON_OFFSET_Y +
+		dialog->numOfChoices * (singleButtonHeight + DIALOG_BUTTON_OFFSET_GAP);
+	Rectangle buttonBounds = { offsetX, offsetY, dialog->choiceButtonWidth, dialog->choiceButtonHeight };
+	GuiButton* dialogButton = 
+		createButton(dialog->dialogPanel->generalProperties.wrapper, buttonBounds, 2, imageSourcePath,
+					 transparentColor, onDialogButtonClick);
+
+	if (NULL == dialogButton)
+	{
+		g_guiError = true;
+		return;
+	}
+
+	// Override button type to dialog - this should ensure the right destructor is called when the button is deallocated
+	// Also set the correct destructor
+	dialogButton->generalProperties.wrapper->type = DIALOG_BUTTON;
+	dialogButton->generalProperties.destroy = destroyDialogButton;
+
+	GuiDialogButtonExtent* extent = (GuiDialogButtonExtent*)malloc(sizeof(GuiDialogButtonExtent));
+	if (NULL == extent)
+	{
+		g_guiError = true;
+		printf("Error: standard function malloc has failed");
+		return;
+	}
+
+	// Store data in extent for future events
+	extent->dialog = dialog;
+	extent->choiceData = choiceData;
+	dialogButton->generalProperties.extent = extent;
+
+	dialog->numOfChoices++;
+	int heightAddition = singleButtonHeight + DIALOG_BUTTON_OFFSET_GAP;
+	dialog->generalProperties.bounds.height += heightAddition;
+	dialog->generalProperties.bounds.y -= (DIALOG_BUTTON_OFFSET_GAP + singleButtonHeight) / 2;
+	dialog->dialogPanel->generalProperties.bounds = dialog->generalProperties.bounds;
+	dialog->bgImage->generalProperties.bounds.height += heightAddition;
+	dialog->bgImage->scissorRegion.height += heightAddition;
+}
+
+/** Shows the dialog in a modal way. The app is stuck on the dialog until a choice is made
+ *	(to give a "modal window" effect).
+ */
+void* showDialog(GuiDialog* dialog)
+{
+	GuiWindow* window = dialog->generalProperties.window;
+	int lastRenderTime = SDL_GetTicks();
+	showWindow(window); // Redraw the window with the dialog
+
+	// Loop until a choice is made by the user.
+	// This gives the dialog an attribute of a "modal window" (the app is "stuck" until a choice is made).
+	// We make sure to process events here so the GUI feels natural.
+	while (!window->isWindowQuit &&
+		   !processGuiEventsForBranch(dialog->generalProperties.wrapper) &&
+		   (NULL == dialog->choice))
+	{
+		// We process events until one of the dialog buttons is clicked and the dialog is filled with a choice.
+		// We keep redrawing to support onMouseOver and onMouseDown animations
+
+		if (SDL_GetTicks() - lastRenderTime > TIME_BETWEEN_FRAMES_MS)
+		{
+			showWindow(window);
+			lastRenderTime = SDL_GetTicks();
+		}
+
+		SDL_Delay(TIME_BETWEEN_FRAMES_MS); // Maintain a framerate as well.
+	}
+
+	void* result = dialog->choice; // Fetch the choice the user have made
+	removeComponentFromParent(dialog->generalProperties.wrapper); // Destroy the dialog component and its wrapper
+
+	return result;
+}
+
+/** Creates a dialog inner window in the Gui FW. On error, NULL is returned.
+ *	Note: A dialog is created with empty options, they should be added manually.
+ *  parent - Window that contains this new control (dialog's parent must always be a window).
+ *  bgImageSourcePath - relative path of the bitmap of the background image.
+ *	bgImgtransparentColor - The color that represents transparency in the background bitmap.
+ *	defaultBGColor - Color of the panel behind the bg image (for cases where the image doesn't span on the entire dialog,
+ *					 or transparency occurs).
+ */
+GuiDialog* createDialog(GuiWindow* parent, int choiceButtonWidth, int choiceButtonHeight,
+						const char* bgImageSourcePath, GuiColorRGB bgImgTransparentColor,
+						GuiColorRGB defaultBGColor)
+{
+	if (NULL == parent)
+	{
+		printf("Error: NULL parent given to new dialog component");
+		return NULL;
+	}
+
+	GuiDialog* dialog = (GuiDialog*)malloc(sizeof(GuiDialog));
+	if (NULL == dialog)
+	{
+		printf("Error: standard function malloc has failed");
+		return NULL;
+	}
+
+	// Set "control properties"
+	Rectangle bounds; // These are the basic bounds according to we place the inner components.
+	bounds.width = (choiceButtonWidth / 2) + (DIALOG_BUTTON_OFFSET_X * 2);
+	bounds.height = (DIALOG_BUTTON_OFFSET_Y * 2);
+	bounds.x = (parent->generalProperties.bounds.width / 2) - (bounds.width / 2); // Center the dialog
+	bounds.y = (parent->generalProperties.bounds.height / 2) - (bounds.height / 2);
+
+	Rectangle dialogBounds = bounds;
+	dialogBounds.x -= DIALOG_FRAME_MARGIN;
+	dialogBounds.y -= DIALOG_FRAME_MARGIN;
+	dialogBounds.width += DIALOG_FRAME_MARGIN * 2;
+	dialogBounds.height += DIALOG_FRAME_MARGIN * 2;
+	dialog->generalProperties.bounds = dialogBounds;
+	dialog->generalProperties.parent = parent->generalProperties.wrapper;
+	dialog->generalProperties.zOrder = SHRT_MAX; // Dialogs are displayed in front of everything
+	dialog->generalProperties.window = getComponentGeneralProperties(parent->generalProperties.wrapper)->window;
+	dialog->generalProperties.isVisible = true;
+	Rectangle emptyBounds = { 0, 0, 0, 0 };
+	dialog->generalProperties.visibleBounds = emptyBounds; // Will be calculated on first draw
+	dialog->generalProperties.extent = NULL;
+	dialog->generalProperties.wrapper = createControlWrapper(dialog, DIALOG);
+	if (NULL == dialog->generalProperties.wrapper)
+	{
+		g_guiError = true;
+		return NULL;
+	}
+
+	dialog->choiceButtonWidth = choiceButtonWidth;
+	dialog->choiceButtonHeight = choiceButtonHeight;
+	dialog->numOfChoices = 0;
+	dialog->choice = NULL; // Signals that no choice have been made in the dialog yet
+
+	// Create a panel at the very back
+	createPanel(dialog->generalProperties.wrapper, dialogBounds, 0, defaultBGColor);
+
+	// Create image background component. It will link itself to the panel parent.
+	bounds.x = DIALOG_FRAME_MARGIN;
+	bounds.y = DIALOG_FRAME_MARGIN;
+	dialog->bgImage = 
+		createImage(dialog->dialogPanel->generalProperties.wrapper, bounds, 1, bgImageSourcePath, bgImgTransparentColor);
+
+	// Set "control methods"
+	dialog->generalProperties.draw = drawDialog;
+	dialog->generalProperties.destroy = destroyDialog;
+	dialog->addOption = addDialogOption;
+	dialog->showDialog = showDialog;
+
+	// Attach the button to its parent.
+	addChildComponent(dialog->generalProperties.wrapper, parent->generalProperties.wrapper);
+
+	return dialog;
+}
 
 //  ------------------------------ 
 //  -- Destroy functions        --
@@ -654,6 +869,69 @@ void destroyAnimation(void* component)
 	free(animation);
 }
 
+/** Destructor for Gui dialogs. */
+void destroyDialogButton(void* component)
+{
+	if (NULL == component)
+		return;
+
+	GuiButton* dialogButton = (GuiButton*)component;
+
+	// Dialog buttons have to free their extent before their destruction
+	free(dialogButton->generalProperties.extent);
+	destroyButton(dialogButton); // Destroy the rest as a normal button
+}
+
+/** Removes the component from its parent container (window or panel).
+ *  This causes the destruction of the wrapper and its attached component.
+ */
+void removeComponentFromParent(GuiComponentWrapper* wrapper)
+{
+	GuiGeneralProperties* generalProperties = getComponentGeneralProperties(wrapper);
+
+	// Look for the component under its parent window and deattach it
+	GuiComponentWrapper* parentWrapper = generalProperties->parent;
+
+	// Only panel and window contain a list of child components
+	LinkedList* subComponents;
+
+	if (parentWrapper->type == PANEL)
+		subComponents = ((GuiPanel*)parentWrapper->component)->subComponents;
+	else if (parentWrapper->type == WINDOW)
+		subComponents = ((GuiWindow*)parentWrapper->component)->subComponents;
+	else
+		return;
+
+	Node* currNode = subComponents->head;
+
+	while (NULL != currNode)
+	{
+		if (currNode->data == wrapper)
+			break;
+		currNode = currNode->next;
+	}
+
+	// Remove the dialog node
+	if (NULL != currNode)
+		deleteNode(subComponents, currNode);
+
+	// Deleting the node will delete the components's wrapper and then the
+	// wrapper itself (the list calls the destructor)
+}
+
+/** Concrete destructor for Gui dialogs. */
+void destroyDialog(void* component)
+{
+	if (NULL == component)
+		return;
+
+	GuiDialog* dialog = (GuiDialog*)component;
+
+	if (NULL != dialog->dialogPanel)
+		destroyPanel(dialog->dialogPanel); // Should free all son dialog buttons, bg image, etc
+
+	free(dialog);
+}
 
 //  ------------------------------ 
 //  -- Draw functions           --
@@ -968,6 +1246,18 @@ void drawAnimation(void* component, const Rectangle* const container)
 	animation->generalProperties.visibleBounds = animation->clips->generalProperties.visibleBounds;
 }
 
+/** Draws the dialog and all sub components inside it. */
+void drawDialog(void* component, const Rectangle* const container)
+{
+	GuiDialog* dialog = (GuiDialog*)component;
+
+	if (!dialog->generalProperties.isVisible)
+		return; // Avoid drawing invisible controls
+
+	drawPanel(dialog->dialogPanel, container); // Dialog is painted by the sub-panel
+
+	dialog->generalProperties.visibleBounds = dialog->dialogPanel->generalProperties.visibleBounds;
+}
 
 //  ------------------------------ 
 //  -- Event handling           --
@@ -1019,7 +1309,22 @@ GuiComponentWrapper* hitTestAndPrepareUITree(int mouseX, int mouseY, LinkedList*
 				result = innerResult;
 			}
 		}
-		else if (wrapper->type == BUTTON)
+		else if (wrapper->type == DIALOG)
+		{ // Perform hit test for inner panel component
+
+			GuiPanel* dialogPanel = ((GuiDialog*)wrapper->component)->dialogPanel;
+			GuiComponentWrapper* innerResult =
+				hitTestAndPrepareUITree(mouseX, mouseY, dialogPanel->subComponents);
+
+			if (isComponentUnderMouse(dialogPanel->generalProperties.wrapper, mouseX, mouseY))
+				result = NULL; // The panel hides all components found so far
+
+			if (NULL != innerResult)
+			{ // Only update if hit test was successful, so inner hit tests that fail don't override sibling's successful ones
+				result = innerResult;
+			}
+		}
+		else if ((wrapper->type == BUTTON) || (wrapper->type == DIALOG_BUTTON))
 		{
 			GuiButton* button = (GuiButton*)wrapper->component;
 			button->state = DEFAULT; // Reset the state of every button encountered
@@ -1053,12 +1358,28 @@ GuiComponentWrapper* hitTestAndPrepareUITree(int mouseX, int mouseY, LinkedList*
 }
 
 /** Queries which SDL events have happened and prompts corresponding events in the Gui FW.
- *  (e.g: GuiButton was clicked).
+ *  (e.g: GuiButton was clicked). This implementation supports windows and modal dialogs alike.
  */
-bool processGuiEvents(GuiWindow* activeWindow)
+bool processGuiEventsForBranch(GuiComponentWrapper* wrapper)
 {
 	SDL_Event e;
 	bool isQuit = false;
+
+	// Get the window and ui branch we're processing events for
+	// For windows its all the components in the window.
+	// For dialog we query only components that reside under the dialog
+	GuiWindow* activeWindow = NULL;
+	LinkedList* uiBranch = NULL;
+	if (wrapper->type == WINDOW)
+	{
+		activeWindow = (GuiWindow*)wrapper->component;
+		uiBranch = activeWindow->subComponents;
+	}
+	else
+	{
+		activeWindow = ((GuiDialog*)wrapper->component)->generalProperties.window;
+		uiBranch = ((GuiDialog*)wrapper->component)->dialogPanel->subComponents;
+	}
 
 	// Check if event have happened
 	while (0 != SDL_PollEvent(&e))
@@ -1068,15 +1389,16 @@ bool processGuiEvents(GuiWindow* activeWindow)
 			case (SDL_QUIT) :
 			{ // Quit event
 				isQuit = true;
+				activeWindow->isWindowQuit = true;
 				break;
 			}
 			case (SDL_MOUSEMOTION) :
 			{ // Mouse move event - relevant for buttons
-				GuiComponentWrapper* hitComp = hitTestAndPrepareUITree(e.motion.x, e.motion.y, activeWindow->subComponents);
+				GuiComponentWrapper* hitComp = hitTestAndPrepareUITree(e.motion.x, e.motion.y, uiBranch);
 
 				if (NULL != hitComp)
 				{ // A component is under the mouse
-					if (BUTTON == hitComp->type)
+					if ((BUTTON == hitComp->type) || (DIALOG_BUTTON == hitComp->type))
 					{ // And it is a button
 						((GuiButton*)hitComp->component)->state = MOUSE_MOVE;
 					}
@@ -1087,13 +1409,13 @@ bool processGuiEvents(GuiWindow* activeWindow)
 			case (SDL_MOUSEBUTTONDOWN) :
 			case (SDL_MOUSEBUTTONUP) :
 			{ // Mouse down event, relevant for buttons or
-			  // Mouse up event, relevant for buttons
+				// Mouse up event, relevant for buttons
 
-				GuiComponentWrapper* hitComp = hitTestAndPrepareUITree(e.button.x, e.button.y, activeWindow->subComponents);
+				GuiComponentWrapper* hitComp = hitTestAndPrepareUITree(e.button.x, e.button.y, uiBranch);
 
 				if (NULL != hitComp)
 				{ // A component is under the mouse
-					if (BUTTON == hitComp->type)
+					if ((BUTTON == hitComp->type) || (DIALOG_BUTTON == hitComp->type))
 					{ // And it is a button
 						ButtonState clickableState = (e.type == SDL_MOUSEBUTTONDOWN) ? MOUSE_DOWN : MOUSE_UP;
 						GuiButton* button = (GuiButton*)hitComp->component;
@@ -1117,6 +1439,14 @@ bool processGuiEvents(GuiWindow* activeWindow)
 	}
 
 	return isQuit;
+}
+
+/** Queries which SDL events have happened and prompts corresponding events in the Gui FW.
+ *  (e.g: GuiButton was clicked).
+ */
+bool processGuiEvents(GuiWindow* activeWindow)
+{
+	return processGuiEventsForBranch(activeWindow->generalProperties.wrapper);
 }
 
 //  ------------------------------ 

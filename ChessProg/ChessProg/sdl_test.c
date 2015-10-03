@@ -9,11 +9,12 @@
 /** Misc constants */
 #define GAME_WINDOW_TITLE "Chess game"
 
-/** Resource images dimensions */
+/** Resource images dimensions & common resources */
 #define WIN_W 640	// Window dimensions
 #define WIN_H 480
 #define BUTTON_W 200 // Dimensions for buttons
 #define BUTTON_H 80
+#define DIALOG_BGIMAGE "Resources/dialog_background.bmp"
 
 #define SAVE_BUTTON_OFFSET_Y 37 // Position of buttons
 #define MENU_BUTTON_OFFSET_Y 100
@@ -109,6 +110,33 @@ void refreshBoard(GameControl* gameControl, bool isUserBlack)
 	}
 }
 
+char* showPromotionDialog(GuiWindow* window, bool isBlackPlayer)
+{
+	GuiDialog* dialog = createDialog(window, BUTTON_W, BUTTON_H, DIALOG_BGIMAGE, GREEN, BLACK);
+	if ((NULL == dialog) || (g_guiError))
+		return;
+
+	dialog->addOption(dialog, BUTTON_BISHOP, MAGENTA, isBlackPlayer ? BLACK_B : WHITE_B);
+	if (g_guiError)
+		return;
+
+	dialog->addOption(dialog, BUTTON_ROOK, MAGENTA, isBlackPlayer ? BLACK_R : WHITE_R);
+	if (g_guiError)
+		return;
+
+	dialog->addOption(dialog, BUTTON_KNIGHT, MAGENTA, isBlackPlayer ? BLACK_N : WHITE_N);
+	if (g_guiError)
+		return;
+
+	dialog->addOption(dialog, BUTTON_QUEEN, MAGENTA, isBlackPlayer ? BLACK_Q : WHITE_Q);
+	if (g_guiError)
+		return;
+
+	char* promotion = (char*)dialog->showDialog(dialog);
+
+	return promotion;
+}
+
 void onTargetClick(GuiButton* button)
 {
 	GameSquare* gameSquare = (GameSquare*)button->generalProperties.extent;
@@ -127,13 +155,17 @@ void onTargetClick(GuiButton* button)
 	Move* move = createMove(&initPos, &nextPos);
 	if (g_memError)
 		return;
-	
-	// TODO: Check for promotion and open dialog here
+
+	// If a pawn have reached the other edge, we have a promotion move.
+	// Show the promotion dialog and wait for results.
 	if (isSquareOnOppositeEdge(gameControl->isBlackPlayerEditable, nextPos.x) &&
 		isSquareOccupiedByPawn(gameControl->board, gameControl->isBlackPlayerEditable, initPos.x, initPos.y))
 	{
-		move->promotion = gameControl->isBlackPlayerEditable ? BLACK_Q : WHITE_Q;
+		move->promotion = showPromotionDialog(button->generalProperties.window, gameControl->isBlackPlayerEditable);
 	}
+
+	if (g_guiError)
+		return;
 
 	bool isValidMove = validateMove(gameControl->board, gameControl->isBlackPlayerEditable, move);
 	if (!isValidMove)
@@ -142,12 +174,21 @@ void onTargetClick(GuiButton* button)
 		return;
 	}
 
+	char promotion = move->promotion; // Save if this was a promotion move and its type, since after executing the move
+									  // it will be destroyed.
+
 	// Execute the move on the board
 	executeMoveCommand(gameControl->board, gameControl->isBlackPlayerEditable, move);
+	move = NULL; // Move have been destroyed, so we explicitly set the pointer to NULL here for readability.
 
 	// Update the gui
-	gameSquare->chessPiece->setBGImage(gameSquare->chessPiece,
-									   gameControl->selectedSquare->chessPiece->bgImage);
+	GuiImage* finalPieceImg = NULL;
+	if (EMPTY != promotion)
+		finalPieceImg = getImageForChessPiece(gameControl, promotion); // Promote piece
+	else
+		finalPieceImg = gameControl->selectedSquare->chessPiece->bgImage; // Move piece to square
+
+	gameSquare->chessPiece->setBGImage(gameSquare->chessPiece, finalPieceImg);
 	gameSquare->chessPiece->generalProperties.isVisible = true;
 	gameControl->selectedSquare->chessPiece->bgImage = NULL;
 	gameControl->selectedSquare->chessPiece->generalProperties.isVisible = false;
@@ -286,7 +327,7 @@ int main(int argc, char *argv[])
 	int lastRenderTime = SDL_GetTicks();
 	showWindow(mainWindow);
 
-	while (!processGuiEvents(mainWindow))
+	while (!mainWindow->isWindowQuit && !processGuiEvents(mainWindow))
 	{
 		// Process logic here
 

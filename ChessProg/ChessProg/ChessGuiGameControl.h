@@ -12,6 +12,13 @@
 #define BOARD_W 480 // Board image sizes
 #define BOARD_H 480
 
+#define BUTTON_PAWN "Resources/button_pawn.bmp"
+#define BUTTON_BISHOP "Resources/button_bishop.bmp"
+#define BUTTON_ROOK "Resources/button_rook.bmp"
+#define BUTTON_KNIGHT "Resources/button_knight.bmp"
+#define BUTTON_QUEEN "Resources/button_queen.bmp"
+#define BUTTON_KING "Resources/button_king.bmp"
+
 //  ------------------------------ 
 //  -- Type definitions         --
 //  ------------------------------
@@ -89,5 +96,11 @@ void disableAllTargetSquares(GameControl* gameControl);
 
 /** Disables all chess pieces buttons attached to each square on the board. */
 void disableAllChessPieces(GameControl* gameControl);
+
+
+/** Returns the image cached in game control, that matches the chess piece of "type".
+ *	Assumes GameControl has been loaded successfully.
+ */
+GuiImage* getImageForChessPiece(GameControl* gameControl, char type);
 
 #endif

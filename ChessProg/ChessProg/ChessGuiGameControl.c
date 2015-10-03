@@ -51,6 +51,85 @@ int guiRowIndexToboardRowIndex(int i)
 	return  BOARD_SIZE - i - 1;
 }
 
+/** Returns the image cached in game control, that matches the chess piece of "type".
+ *	Assumes GameControl has been loaded successfully.
+ */
+GuiImage* getImageForChessPiece(GameControl* gameControl, char type)
+{
+	GuiImage* soldierImg = NULL;
+
+	switch (type)
+	{
+		case BLACK_P:
+		{
+			soldierImg = gameControl->imgBlackPeon;
+			break;
+		}
+		case BLACK_B:
+		{
+			soldierImg = gameControl->imgBlackBishop;
+			break;
+		}
+		case BLACK_R:
+		{
+			soldierImg = gameControl->imgBlackRook;
+			break;
+		}
+		case BLACK_N:
+		{
+			soldierImg = gameControl->imgBlackKnight;
+			break;
+		}
+		case BLACK_Q:
+		{
+			soldierImg = gameControl->imgBlackQueen;
+			break;
+		}
+		case BLACK_K:
+		{
+			soldierImg = gameControl->imgBlackKing;
+			break;
+		}
+		case WHITE_P:
+		{
+			soldierImg = gameControl->imgWhitePeon;
+			break;
+		}
+		case WHITE_B:
+		{
+			soldierImg = gameControl->imgWhiteBishop;
+			break;
+		}
+		case WHITE_R:
+		{
+			soldierImg = gameControl->imgWhiteRook;
+			break;
+		}
+		case WHITE_N:
+		{
+			soldierImg = gameControl->imgWhiteKnight;
+			break;
+		}
+		case WHITE_Q:
+		{
+			soldierImg = gameControl->imgWhiteQueen;
+			break;
+		}
+		case WHITE_K:
+		{
+			soldierImg = gameControl->imgWhiteKing;
+			break;
+		}
+		default:
+		{
+			soldierImg = NULL;
+			break;
+		}
+	}
+
+	return soldierImg;
+}
+
 /** Initializes a single GameSquare within the gameControl given.
  *  i,j are the indices of the square initialized. Panel is the parent host where the square buttons reside.
  *  Returns the success status.
@@ -60,76 +139,7 @@ bool initGameSquare(GameControl* gameControl, char type, int i, int j, GuiPanel*
 					void(*onTargetClick)(GuiButton* button))
 {
 	// Add soldier piece
-	GuiImage* soldierImg = NULL;
-
-	switch (type)
-	{
-	case BLACK_P:
-	{
-		soldierImg = gameControl->imgBlackPeon;
-		break;
-	}
-	case BLACK_B:
-	{
-		soldierImg = gameControl->imgBlackBishop;
-		break;
-	}
-	case BLACK_R:
-	{
-		soldierImg = gameControl->imgBlackRook;
-		break;
-	}
-	case BLACK_N:
-	{
-		soldierImg = gameControl->imgBlackKnight;
-		break;
-	}
-	case BLACK_Q:
-	{
-		soldierImg = gameControl->imgBlackQueen;
-		break;
-	}
-	case BLACK_K:
-	{
-		soldierImg = gameControl->imgBlackKing;
-		break;
-	}
-	case WHITE_P:
-	{
-		soldierImg = gameControl->imgWhitePeon;
-		break;
-	}
-	case WHITE_B:
-	{
-		soldierImg = gameControl->imgWhiteBishop;
-		break;
-	}
-	case WHITE_R:
-	{
-		soldierImg = gameControl->imgWhiteRook;
-		break;
-	}
-	case WHITE_N:
-	{
-		soldierImg = gameControl->imgWhiteKnight;
-		break;
-	}
-	case WHITE_Q:
-	{
-		soldierImg = gameControl->imgWhiteQueen;
-		break;
-	}
-	case WHITE_K:
-	{
-		soldierImg = gameControl->imgWhiteKing;
-		break;
-	}
-	default:
-	{
-		soldierImg = NULL;
-		break;
-	}
-	}
+	GuiImage* soldierImg = getImageForChessPiece(gameControl, type);
 
 	Rectangle pieceBounds;
 	pieceBounds.x = (int)(FIRST_PIECE_OFFSET_X + (j*SQUARE_W));
