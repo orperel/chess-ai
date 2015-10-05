@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include "Chess.h"
 #include "BoardManager.h"
 #include "GameCommands.h"
@@ -523,7 +524,6 @@ COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserB
 		}
 		else if (0 == strcmp(GET_MOVES_COMMAND, args[0]))
 		{	// Get Moves
-
 			Position pos = argToPosition(args[1]);
 			LinkedList* possibleMoves = executeGetMovesForPosCommand(board, isUserBlack, pos);
 			if (g_memError)
@@ -535,7 +535,13 @@ COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserB
 		}
 		else if (0 == strcmp(GET_BEST_MOVES_COMMAND, args[0]))
 		{	// Get Best Moves
-			LinkedList* bestMoves = executeGetBestMovesCommand(board, isUserBlack, args[1]);
+			int depth;
+			if (0 == strcmp(args[1], DIFFICULTY_BEST))
+				depth = DIFFICULTY_BEST_INT;
+			else
+				depth = atoi(args[1]);
+
+			LinkedList* bestMoves = executeGetBestMovesCommand(board, isUserBlack, depth);
 			if (g_memError)
 				return QUIT;
 
@@ -551,7 +557,13 @@ COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserB
 
 			if (move != NULL)
 			{
-				int score = executeGetScoreCommand(board, isUserBlack, args[1], move);
+				int depth;
+				if (0 == strcmp(args[1], DIFFICULTY_BEST))
+					depth = DIFFICULTY_BEST_INT;
+				else
+					depth = atoi(args[1]);
+
+				int score = executeGetScoreCommand(board, isUserBlack, depth, move);
 				if (g_memError)
 					return QUIT;
 

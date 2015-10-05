@@ -4,6 +4,8 @@
 #include "Types.h"
 #include "Chess.h"
 
+#define DIFFICULTY_BEST_INT -1
+
 #define TAG_LENGTH 50
 #define XML_HEADER "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 #define GAME_TAG_BEGIN "<game>"
@@ -46,14 +48,14 @@ LinkedList* executeGetMovesForPosCommand(char board[BOARD_SIZE][BOARD_SIZE], boo
  * Return the score for the given move in a minimax tree of the given depth.
  * If there was an allocation error return INT_MIN.
  */
-int executeGetScoreCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, char* depth, Move* move);
+int executeGetScoreCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, int depth, Move* move);
 
 /*
  * Return all the moves with the highest score for the current board.
  * 'depth' is an argument for the minimax algorithm.
  * List of moves must be freed when usage is complete.
  */
-LinkedList* executeGetBestMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, char* depth);
+LinkedList* executeGetBestMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, int depth);
 
 /*
  * Load the game settings from the file "path", path being the full or relative path to the file.

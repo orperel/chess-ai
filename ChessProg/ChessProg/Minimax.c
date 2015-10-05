@@ -213,16 +213,12 @@ Move* minimax(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
 		return NULL;
 	}
 
-	// Init alpha, beta and value. Look for the max value among the children of the root
-	int alpha = INT_MIN;
-	int beta = INT_MAX;
-	int maxValue = alpha;
-	int value;
-
 	Node* currMove = moves->head;
+	int value;
+	int maxValue = INT_MIN;
 	Move* winMove = NULL;
 	//bool stuckResult;
-	while ((currMove != NULL) && (beta > alpha))
+	while (currMove != NULL)
 	{
 		Move* currMoveData = (Move*)(currMove->data);
 		GameStep* currGameStep = createGameStep(board, currMoveData);	// Convert Move to gameStep
@@ -253,7 +249,7 @@ Move* minimax(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
 		//}
 	
 		// Call alphabeta algorithm on the current move (child)
-		value = alphabeta(board, 1, alpha, beta, !isABlack);
+		value = alphabeta(board, 1, INT_MIN, INT_MAX, !isABlack);
 		if (g_memError)
 		{
 			undoStep(board, currGameStep);
@@ -277,12 +273,6 @@ Move* minimax(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
 		{
 			maxValue = value;
 			winMove = currMoveData;	// Save winning move
-		}
-
-		// Max between alpha and value 
-		if (alpha < value)
-		{
-			alpha = value;
 		}
 
 		undoStep(board, currGameStep);

@@ -186,6 +186,7 @@ void executeGameLoop(char board[BOARD_SIZE][BOARD_SIZE], int gameMode, bool isNe
 		else
 		{
 			executeComputerTurn(board, isUserBlack);
+			printf("%d\n", g_boardsCounter);
 		}
 
 		if (g_memError)
