@@ -104,7 +104,7 @@ LinkedList* executeGetMovesForPosCommand(char board[BOARD_SIZE][BOARD_SIZE], boo
  * Return the score for the given move in a minimax tree of the given depth.
  * If there was an allocation error return INT_MIN.
  */
-int executeGetScoreCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, char* depth, Move* move)
+int executeGetScoreCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, int depth, Move* move)
 {
 	GameStep* gameStep = createGameStep(board, move);	// Convert Move to gameStep
 
@@ -112,13 +112,14 @@ int executeGetScoreCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack,
 		return INT_MIN;
 
 	doStep(board, gameStep);
+	g_boardsCounter++;
 
 	// Call alphabeta algorithm with the requested depth, on the requested move
 	int tempDepth = g_minimaxDepth;
-	if (0 != strcmp(DIFFICULTY_BEST, depth))
-		g_minimaxDepth = atoi(depth);
-	else
+	if (depth == DIFFICULTY_BEST_INT)
 		g_minimaxDepth = MAX_DEPTH;	// Difficulty best is implemented as the max depth
+	else
+		g_minimaxDepth = depth;
 
 	int score = alphabeta(board, 1, INT_MIN, INT_MAX, !isUserBlack);
 
@@ -135,8 +136,9 @@ int executeGetScoreCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack,
  * 'depth' is an argument for the minimax algorithm.
  * List of moves must be freed when usage is complete.
  */
-LinkedList* executeGetBestMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, char* depth)
+LinkedList* executeGetBestMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, int depth)
 {
+	g_boardsCounter = 0;
 	// Get moves for the current board
 	LinkedList* possibleMoves = getMoves(board, isUserBlack);
 	if (g_memError)
@@ -174,6 +176,7 @@ LinkedList* executeGetBestMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool 
 		currMoveNode = currMoveNode->next;
 		i++;
 	}
+	printf("%d\n", g_boardsCounter);
 
 	// Collect the moves with the highest score
 	LinkedList* bestMoves = createList(deleteMove);
