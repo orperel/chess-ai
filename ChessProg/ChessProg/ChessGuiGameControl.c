@@ -1,6 +1,6 @@
+#include "ChessGuiGameControl.h"
 #include <stdio.h>
 #include <string.h>
-#include "ChessGuiGameControl.h"
 
 //  ------------------------------ 
 //  -- Constants                --
@@ -214,6 +214,8 @@ GameControl* createGameControl(char board[BOARD_SIZE][BOARD_SIZE], GuiPanel* hos
 						 	   void(*onChessPieceClick)(GuiButton* button),
 							   void(*onTargetClick)(GuiButton* button))
 {
+	int i, j; // Loop indices
+
 	GameControl* gameControl = (GameControl*)malloc(sizeof(GameControl));
 	if (NULL == gameControl)
 	{
@@ -222,7 +224,15 @@ GameControl* createGameControl(char board[BOARD_SIZE][BOARD_SIZE], GuiPanel* hos
 		return NULL;
 	}
 
-	gameControl->board = board;
+	// Initialize the game board with the given board settings.
+	// From this moment on this is the active board.
+	for (int i = 0; i < BOARD_SIZE; i++)
+	{
+		for (int j = 0; j < BOARD_SIZE; j++)
+		{
+			gameControl->board[i][j] = board[i][j];
+		}
+	}
 
 	// Load board image
 	short boardImgZIndex = 0; // Should be at the very back
@@ -287,7 +297,6 @@ GameControl* createGameControl(char board[BOARD_SIZE][BOARD_SIZE], GuiPanel* hos
 	// Draw each of the pieces on the board according to the board state.
 	// We also place marker nodes (for moves that may be available)
 	bool isError = false;
-	int i, j;
 	for (i = 0; i < BOARD_SIZE; i++)
 	{
 		for (j = 0; j < BOARD_SIZE; j++){

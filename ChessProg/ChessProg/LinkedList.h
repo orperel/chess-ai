@@ -1,6 +1,8 @@
 #ifndef LINKED_LIST_
 #define LINKED_LIST_
 
+#include "Types.h"
+
 /* The node struct */
 struct Node
 {

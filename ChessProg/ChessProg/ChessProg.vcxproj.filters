@@ -51,6 +51,9 @@
     <ClInclude Include="ChessMainWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ChessGuiGameWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LinkedList.c">
@@ -60,9 +63,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GameLogic.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="sdl_test.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Chess.c">
@@ -87,6 +87,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ChessMainWindow.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ChessGuiGameWindow.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ChessGuiCommons.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

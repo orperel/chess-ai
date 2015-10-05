@@ -74,6 +74,7 @@
     <ClInclude Include="Chess.h" />
     <ClInclude Include="ChessGuiCommons.h" />
     <ClInclude Include="ChessGuiGameControl.h" />
+    <ClInclude Include="ChessGuiGameWindow.h" />
     <ClInclude Include="ChessMainWindow.h" />
     <ClInclude Include="Console.h" />
     <ClInclude Include="GameCommands.h" />
@@ -86,7 +87,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Chess.c" />
+    <ClCompile Include="ChessGuiCommons.c" />
     <ClCompile Include="ChessGuiGameControl.c" />
+    <ClCompile Include="ChessGuiGameWindow.c" />
     <ClCompile Include="ChessMainWindow.c" />
     <ClCompile Include="Console.c" />
     <ClCompile Include="GameCommands.c" />
@@ -95,7 +98,6 @@
     <ClCompile Include="GuiFW.c" />
     <ClCompile Include="LinkedList.c" />
     <ClCompile Include="Minimax.c" />
-    <ClCompile Include="sdl_test.c" />
     <ClCompile Include="Types.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

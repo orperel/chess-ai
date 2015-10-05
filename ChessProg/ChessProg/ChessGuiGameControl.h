@@ -1,8 +1,9 @@
-#ifndef CHESS_GUI_GAME_CONTROL
-#define CHESS_GUI_GAME_CONTROL
+#ifndef CHESS_GUI_GAME_CONTROL_
+#define CHESS_GUI_GAME_CONTROL_
 
 #include "GuiFW.h"
 #include "Chess.h"
+#include "Types.h"
 
 /** -- This unit represents manages the chess board component, gui and common logic alike. -- */
 
@@ -40,7 +41,7 @@ typedef struct
 struct GameControl
 {
 	GameSquare gui_board[BOARD_SIZE][BOARD_SIZE]; // Store data each square on board (state and gui related controls)
-	char* board; // The state of the game board
+	char board[BOARD_SIZE][BOARD_SIZE]; // The state of the game board
 
 	GameSquare* selectedSquare; // A pointer to the currently selected square by the user.
 								// If no square was selected, this field may be NULL.
