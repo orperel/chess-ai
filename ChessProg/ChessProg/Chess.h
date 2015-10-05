@@ -34,6 +34,8 @@
 #define MAX_DEPTH 4			// Maximum depth miniMax algorithm depth can be
 #define MAX_SOLDIERS 16		// Maximum number of soldiers per player
 
+#define CONSOLE_MODE "console"
+#define GUI_MODE "gui"
 #define GAME_MODE_COMMAND "game_mode"
 #define DIFFICULTY_COMMAND "difficulty"
 #define DIFFICULTY_DEPTH "depth"

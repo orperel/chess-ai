@@ -7,29 +7,6 @@
 #include "GameCommands.h"
 #include "Console.h"
 
-/* Convert promotion type name to its console representation according to isBlack parameter. */
-char promotionNameToChar(char* name, bool isBlack)
-{
-	if (0 == strcmp(QUEEN, name))
-	{
-		return ((isBlack) ? BLACK_Q : WHITE_Q);
-	}
-	else if (0 == strcmp(BISHOP, name))
-	{
-		return ((isBlack) ? BLACK_B : WHITE_B);
-	}
-	else if (0 == strcmp(ROOK, name))
-	{
-		return ((isBlack) ? BLACK_R : WHITE_R);
-	}
-	else if (0 == strcmp(KNIGHT, name))
-	{
-		return ((isBlack) ? BLACK_N : WHITE_N);
-	}
-
-	return EMPTY;
-}
-
 /* A "toString()" function for Move structs (for console). */
 void printMove(Move* move)
 {
@@ -72,6 +49,29 @@ void printListOfMoves(LinkedList* moves)
 		printMove(currMove);
 		currMoveNode = currMoveNode->next;
 	}
+}
+
+/* Convert promotion type name to its console representation according to isBlack parameter. */
+char promotionNameToChar(char* name, bool isBlack)
+{
+	if (0 == strcmp(QUEEN, name))
+	{
+		return ((isBlack) ? BLACK_Q : WHITE_Q);
+	}
+	else if (0 == strcmp(BISHOP, name))
+	{
+		return ((isBlack) ? BLACK_B : WHITE_B);
+	}
+	else if (0 == strcmp(ROOK, name))
+	{
+		return ((isBlack) ? BLACK_R : WHITE_R);
+	}
+	else if (0 == strcmp(KNIGHT, name))
+	{
+		return ((isBlack) ? BLACK_N : WHITE_N);
+	}
+
+	return EMPTY;
 }
 
 /*
