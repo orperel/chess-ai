@@ -16,7 +16,7 @@
 
 #define BESTMOVE_BUTTON_OFFSET_Y 37 // Position of buttons
 #define SAVE_BUTTON_OFFSET_Y 100
-#define MENU_BUTTON_OFFSET_Y 63
+#define MENU_BUTTON_OFFSET_Y 163
 #define QUIT_BUTTON_OFFSET_Y 350
 #define WOODPANEL_W 160 // Dimensions for wooden side panel image
 #define WOODPANEL_H WIN_H
@@ -260,6 +260,8 @@ GuiDialog* createDyanmicDialog(GuiWindow* window, int numOfButtons, const char* 
 	}
 
 	free(fileImg);
+
+	return dialog;
 }
 
 /** Marks the best move available on board. This event is prompted when the best move button is clicked. */
@@ -282,10 +284,8 @@ void onBestMoveClick(GuiButton* button)
 			return;
 		}
 
-		// These values aren't configurable, we always know it should be lower than 1 so they are
-		// a local const.
-		const int bestValue = 0;
-		const int cancelValue = -1;
+		const int bestValue = DIFFICULTY_BEST_INT;
+		const int cancelValue = DIFFICULTY_BEST_INT - 1;
 		dialog->addOption(dialog, MINMAX_BEST_DEPTH_IMG_PATH, MAGENTA, bestValue);
 		if (g_guiError)
 		{
@@ -312,8 +312,18 @@ void onBestMoveClick(GuiButton* button)
 	}
 
 	// We only show one best move
-	Move* move = (Move*)bestMoves->head;
+	Move* move = (Move*)bestMoves->head->data; 
+	int guiStartX = boardRowIndexToGuiRowIndex(move->initPos.x);
+	int guiStartY = move->initPos.y;
+	int guiTargetX = boardRowIndexToGuiRowIndex(move->nextPos.x);
+	int guiTargetY = move->nextPos.y;
 
+	disableAllTargetSquares(gameControl);
+	gameControl->selectedSquare = NULL;
+	gameControl->gui_board[guiStartX][guiStartY].targetButton->isEnabled = false;
+	gameControl->gui_board[guiTargetX][guiTargetY].targetButton->isEnabled = false;
+	gameControl->gui_board[guiStartX][guiStartY].targetButton->generalProperties.isVisible = true;
+	gameControl->gui_board[guiTargetX][guiTargetY].targetButton->generalProperties.isVisible = true;
 }
 
 /** Open the save game to slots dialog. This event is prompted when the save button is clicked. */
@@ -484,6 +494,7 @@ GuiWindow* createGameWindow(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack
 
 	saveBtn->generalProperties.extent = gameControl; // Save a reference to the game control /window in the button extents.
 													 // This makes the game control available on events.
+	bestMoveBtn->generalProperties.extent = gameControl;
 	mainMenuBtn->generalProperties.extent = mainWindow;
 	quitBtn->generalProperties.extent = mainWindow;
 	mainWindow->generalProperties.extent = gameControl;

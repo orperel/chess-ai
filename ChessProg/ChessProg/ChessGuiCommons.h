@@ -15,4 +15,4 @@
 #define SAVE_SLOT_PATH "Resources/button_slot" // Image of "Slot #" button
 #define RESOURCE_IMG_EXT ".bmp"
 #define MINMAX_DEPTH_IMG_PATH "Resources/button_depth" // Image of "Depth #" button
-#define MINMAX_BEST_DEPTH_IMG_PATH "Resources/button_depthbest" // Image of "BEST DEPTH" button
+#define MINMAX_BEST_DEPTH_IMG_PATH "Resources/button_depthbest.bmp" // Image of "BEST DEPTH" button
