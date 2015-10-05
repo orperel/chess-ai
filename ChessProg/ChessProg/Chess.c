@@ -186,7 +186,6 @@ void executeGameLoop(char board[BOARD_SIZE][BOARD_SIZE], int gameMode, bool isNe
 		else
 		{
 			executeComputerTurn(board, isUserBlack);
-			printf("%d\n", g_boardsCounter);
 		}
 
 		if (g_memError)
@@ -211,34 +210,90 @@ void executeGameLoop(char board[BOARD_SIZE][BOARD_SIZE], int gameMode, bool isNe
 	}
 }
 
+/* ##### To remove before submission ##### */
+void computerVsComputer(char board[BOARD_SIZE][BOARD_SIZE])
+{	
+	bool isQuit = false;
+	while (!isQuit)
+	{
+		if (!g_isNextPlayerBlack)
+			g_minimaxDepth = 4;	// White turn 
+		else
+			g_minimaxDepth = 4;	// Black turn
+
+		executeComputerTurn(board, !g_isNextPlayerBlack);	// executeComputerTurn switches the color
+		if (g_memError)
+			return;
+
+		printf("%d\n", g_boardsCounter);
+
+		if (!isQuit)
+		{
+			print_board(board);
+
+			isQuit = checkMateTie(board, !g_isNextPlayerBlack);
+			if (g_memError)
+				return;
+
+			g_isNextPlayerBlack = !g_isNextPlayerBlack;
+		}
+	}
+}
+
 int main(int argc, char *argv[])
 {
-	//printf(WELCOME_TO_CHESS);
-	char board[BOARD_SIZE][BOARD_SIZE];
-	init_board(board);
-	print_board(board);
-	printf("\n");
-
-	// Start game settings mode.
-	// If the user doesn't quit, we start the game (determineGameSettings returns true).
-	if (determineGameSettings(board))
+	// Determine console mode or gui mode
+	bool isGuiMode = false;
+	if (argc > 2) {
+		printf("Usage: chessprog [console | gui] or chessprog only (default mode - console)\n");
+		return 0;
+	}
+	if (argc == 2)
 	{
-		// Treat the edge case of a game board where one player immediately loses due to a non-fair game setting.
-		// White wins (or tie)
-		bool stuckResult = checkMateTie(board, true);
-		if (g_memError)
-			return -1;
-		if (stuckResult)
+		if (0 == strcmp(argv[1], GUI_MODE))
+		{
+			isGuiMode = true;
+		}
+		else if (0 != strcmp(argv[1], CONSOLE_MODE))
+		{
+			printf("Illegal argument\n");
 			return 0;
+		}
+	}
 
-		// Black wins (or tie)
-		stuckResult = checkMateTie(board, false);
-		if (g_memError)
-			return -1;
-		if (stuckResult)
-			return 0;
+	if (!isGuiMode)
+	{
+		char board[BOARD_SIZE][BOARD_SIZE];
+		init_board(board);
+		print_board(board);
+		printf("\n");
 		
-		executeGameLoop(board, g_gameMode, g_isNextPlayerBlack, g_isUserBlack);
+		// Start game settings mode.
+		// If the user doesn't quit, we start the game (determineGameSettings returns true).
+		if (determineGameSettings(board))
+		{
+			// Treat the edge case of a game board where one player immediately loses due to a non-fair game setting.
+			// White wins (or tie)
+			bool stuckResult = checkMateTie(board, true);
+			if (g_memError)
+				return -1;
+			if (stuckResult)
+				return 0;
+
+			// Black wins (or tie)
+			stuckResult = checkMateTie(board, false);
+			if (g_memError)
+				return -1;
+			if (stuckResult)
+				return 0;
+
+			//executeGameLoop(board, g_gameMode, g_isNextPlayerBlack, g_isUserBlack);
+			computerVsComputer(board);
+		}
+	}
+	else
+	{
+		// To complete
 	}
 	
 	getchar();

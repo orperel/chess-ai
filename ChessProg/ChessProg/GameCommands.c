@@ -176,7 +176,6 @@ LinkedList* executeGetBestMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool 
 		currMoveNode = currMoveNode->next;
 		i++;
 	}
-	printf("%d\n", g_boardsCounter);
 
 	// Collect the moves with the highest score
 	LinkedList* bestMoves = createList(deleteMove);
