@@ -198,15 +198,6 @@ typedef struct GuiDialog GuiDialog;
 //  -- Constants and globals --
 //  ---------------------------
 
-/** Error code returned when the framework terminates successfully */
-#define OK_EXIT_CODE 0
-
-/** Error code returned when SDL fails to initialize */
-#define SDL_FAILURE_EXIT_CODE 1
-
-/** Error code returned when a gui error occures */
-#define GUI_ERROR_EXIT_CODE 2
-
 /* True if there was a gui error somewhere in the program (would cause an exit). Else false. */
 extern bool g_guiError;
 

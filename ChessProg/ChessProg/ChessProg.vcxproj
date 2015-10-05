@@ -72,7 +72,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Chess.h" />
+    <ClInclude Include="ChessGuiCommons.h" />
     <ClInclude Include="ChessGuiGameControl.h" />
+    <ClInclude Include="ChessMainWindow.h" />
     <ClInclude Include="Console.h" />
     <ClInclude Include="GameCommands.h" />
     <ClInclude Include="GameLogic.h" />
@@ -85,6 +87,7 @@
   <ItemGroup>
     <ClCompile Include="Chess.c" />
     <ClCompile Include="ChessGuiGameControl.c" />
+    <ClCompile Include="ChessMainWindow.c" />
     <ClCompile Include="Console.c" />
     <ClCompile Include="GameCommands.c" />
     <ClCompile Include="GameLogic.c" />

@@ -81,6 +81,9 @@
 
 #define print_message(message) (printf("%s", message));
 
+#define GAME_MODE_2_PLAYERS 1
+#define GAME_MODE_PLAYER_VS_AI 2
+
 /* -- Globals Declaration -- */
 
 /* The game mode. There are two possible values: 1 - two players mode, and 2 - player vs. AI mode. Default to 1. */

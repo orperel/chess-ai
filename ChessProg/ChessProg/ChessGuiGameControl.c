@@ -7,7 +7,7 @@
 //  ------------------------------
 
 /** Resources images dimensions */
-#define PIECE_W 100 // Common piece image dimensinos (for all chess pieces)
+#define PIECE_W 100 // Common piece image dimensions (for all chess pieces)
 #define PIECE_H 160
 #define SQUARE_W 51.5 // Dimensions of square on board (to space pieces)
 #define SQUARE_H 51.5
