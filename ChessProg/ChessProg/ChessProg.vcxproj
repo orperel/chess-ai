@@ -75,6 +75,7 @@
     <ClInclude Include="ChessGuiCommons.h" />
     <ClInclude Include="ChessGuiGameControl.h" />
     <ClInclude Include="ChessGuiGameWindow.h" />
+    <ClInclude Include="ChessGuiPlayerSelectWindow.h" />
     <ClInclude Include="ChessMainWindow.h" />
     <ClInclude Include="Console.h" />
     <ClInclude Include="GameCommands.h" />
@@ -90,6 +91,7 @@
     <ClCompile Include="ChessGuiCommons.c" />
     <ClCompile Include="ChessGuiGameControl.c" />
     <ClCompile Include="ChessGuiGameWindow.c" />
+    <ClCompile Include="ChessGuiPlayerSelectWindow.c" />
     <ClCompile Include="ChessMainWindow.c" />
     <ClCompile Include="Console.c" />
     <ClCompile Include="GameCommands.c" />

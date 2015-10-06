@@ -4,6 +4,7 @@
 #include "GameCommands.h"
 #include "ChessGuiGameWindow.h"
 #include "BoardManager.h"
+#include "ChessGuiPlayerSelectWindow.h"
 
 //  ------------------------------------------------
 //  -- Type definitions, Constants & Globals      --
@@ -28,18 +29,20 @@ GuiWindow* g_activeWindow = NULL;
 //  -- Logic functions       --
 //  ---------------------------
 
-/** Starts a new game (starts the matching screen flow). This event is prompted when the new game button is clicked. */
+/** Starts a new game (starts the matching screen flow). This event is prompted when the new game button is clicked.
+ *	(it actually takes us to the settings screen for the game)
+ */
 void onNewGameClick(GuiButton* button)
 {
 	char board[BOARD_SIZE][BOARD_SIZE];
 	init_board(board);
 
 	// Create new window and set it as active
-	GuiWindow* gameWindow = createGameWindow(board, g_isNextPlayerBlack);
-	if (NULL == gameWindow)
+	GuiWindow* settingsWindow = createSettingsWindow(board);
+	if (NULL == settingsWindow)
 		g_guiError = true; // Raise flag if an error occured, main loop will respond accordingly
 	
-	setActiveWindow(gameWindow); // Switch to game window
+	setActiveWindow(settingsWindow); // Switch to settings window
 }
 
 /**Shows the load game dialog. This event is prompted when the load button is clicked. */

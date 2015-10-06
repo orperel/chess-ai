@@ -1,0 +1,7 @@
+TODO:
+
+- Chess, mate, tie
+- game over (disable all controls)
+
+- More slots / depth pictures (until 10)
+- recheck g_gui, g_mem errors 

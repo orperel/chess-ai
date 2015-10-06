@@ -15,11 +15,8 @@
 #define SAVE_BUTTON_OFFSET_Y 100
 #define MENU_BUTTON_OFFSET_Y 163
 #define QUIT_BUTTON_OFFSET_Y 350
-#define WOODPANEL_W 160 // Dimensions for wooden side panel image
-#define WOODPANEL_H WIN_H
 
 /** Resources paths */
-#define SIDE_PANEL_IMG "Resources/game_wood_panel.bmp"
 #define BUTTON_BESTMOVE_IMG "Resources/button_bestmove.bmp"
 #define BUTTON_SAVE_IMG "Resources/button_save.bmp"
 

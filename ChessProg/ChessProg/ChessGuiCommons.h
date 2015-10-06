@@ -12,7 +12,11 @@
 #define WIN_H 480
 #define BUTTON_W 200 // Dimensions for buttons
 #define BUTTON_H 80
+#define SIDE_PANEL_IMG "Resources/game_wood_panel.bmp"
+#define WOODPANEL_W 160 // Dimensions for wooden side panel image
+#define WOODPANEL_H WIN_H
 #define DIALOG_BGIMAGE "Resources/dialog_background.bmp" // Dialog background image (dynamic image size is ok)
+#define BUTTON_START_IMG "Resources/button_start.bmp"
 #define BUTTON_CANCEL_IMG "Resources/button_cancel.bmp"
 #define BUTTON_MENU_IMG "Resources/button_mainMenu.bmp"
 #define BUTTON_QUIT_IMG "Resources/button_quit.bmp"

@@ -3,7 +3,7 @@
 /* -- Globals Definition -- */
 
 /* The game mode. There are two possible values: 1 - two players mode, and 2 - player vs. AI mode. Default to 1. */
-int g_gameMode = 1;
+int g_gameMode = GAME_MODE_2_PLAYERS;
 
 /* Configuration for mini-max algorithm. Maximum depth of recursion. Default to 1. */
 int g_minimaxDepth = 1;

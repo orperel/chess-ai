@@ -62,6 +62,8 @@ void destroyAnimation(void* component);
 void destroyDialog(void* component);
 void destroyDialogButton(void* component);
 void removeComponentFromParent(GuiComponentWrapper* wrapper);
+bool processGuiEventsForBranch(GuiComponentWrapper* wrapper);
+
 
 //  ------------------------------ 
 //  -- General helper functions --
