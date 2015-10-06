@@ -29,6 +29,17 @@ int g_boardsCounter = 0;
 
 /* -- General functions -- */
 
+/** Set all the global variables to their default. */
+void initGlobals()
+{
+	int g_gameMode = 1;
+	int g_minimaxDepth = 1;
+	bool g_isDifficultyBest = false;
+	bool g_isUserBlack = false;
+	bool g_isNextPlayerBlack = false;
+	bool g_memError = false;
+}
+
 /** A general max function for integers (that doesn't use macros) */
 int maxi(int a, int b)
 {

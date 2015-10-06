@@ -124,6 +124,9 @@ extern int g_boardsCounter;
 
 /* -- General functions -- */
 
+/** Set all the global variables to their default. */
+void initGlobals();
+
 /** A general max function for integers (that doesn't use macros) */
 int maxi(int a, int b);
 

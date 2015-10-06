@@ -78,11 +78,15 @@ ChessGameState executeCheckMateTieCommand(char board[BOARD_SIZE][BOARD_SIZE], bo
 /*
  * Load the game settings from the file "path", path being the full or relative path to the file.
  * We assume that the file contains valid data and is correctly formatted.
+ * Return True if the loading ended successfully, else False.
  */
-void executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path);
+bool executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path);
 
-/* Save the current game state to the file "path". */
-void executeSaveCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path);
+/* 
+ * Save the current game state to the file "path". 
+ * Return True if the saving ended successfully, else False.
+ */
+bool executeSaveCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path, bool isBlackTurn);
 
 /* Validate board initialization. If it is valid the program can move to game state. */
 bool isValidStart(char board[BOARD_SIZE][BOARD_SIZE]);

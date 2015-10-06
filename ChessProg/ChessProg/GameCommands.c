@@ -260,14 +260,15 @@ ChessGameState executeCheckMateTieCommand(char board[BOARD_SIZE][BOARD_SIZE], bo
 /*
  * Load the game settings from the file "path", path being the full or relative path to the file.
  * We assume that the file contains valid data and is correctly formatted.
+ * Return True if the loading ended successfully, else False.
  */
-void executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
+bool executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 {
 	FILE* fp = fopen(path, "r");
 	if (fp == NULL)
 	{
 		printf(WRONG_FILE_NAME);
-		return;
+		return false;
 	}
 
 	char str[TAG_LENGTH];	// A string for reading the file
@@ -300,7 +301,7 @@ void executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 			{	// Should never reach this code
 				printf(WRONG_FORMAT);
 				fclose(fp);
-				return;
+				return false;
 			}
 		}
 		else if (strcmp(token, GAME_MODE_TAG_BEGIN) == 0)
@@ -317,7 +318,7 @@ void executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 			{	// Should never reach this code
 				printf(WRONG_FORMAT);
 				fclose(fp);
-				return;
+				return false;
 			}
 		}
 		else if (strcmp(token, DIFFICULTY_TAG_BEGIN) == 0)
@@ -354,7 +355,7 @@ void executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 				{	// Should never reach this code
 					printf(WRONG_FORMAT);
 					fclose(fp);
-					return;
+					return false;
 				}
 			}
 		}
@@ -366,7 +367,7 @@ void executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 		{	// Should never reach this code
 			printf(WRONG_FORMAT);
 			fclose(fp);
-			return;
+			return false;
 		}
 	}
 
@@ -392,16 +393,21 @@ void executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 
 	fclose(fp);
 	print_board(board);
+	
+	return true;
 }
 
-/* Save the current game state to the file "path". */
-void executeSaveCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
+/*
+ * Save the current game state to the file "path".
+ * Return True if the saving ended successfully, else False.
+ */
+bool executeSaveCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path, bool isBlackTurn)
 {
 	FILE* fp = fopen(path, "w");
 	if (fp == NULL)
 	{
 		printf(WRONG_FILE_NAME);
-		return;
+		return false;
 	}
 
 	// Write the header and the game tag begin
@@ -409,10 +415,10 @@ void executeSaveCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 
 	// Write the next turn
 	fprintf(fp, "\t%s>", NEXT_TURN_TAG_BEGIN);
-	if (g_isNextPlayerBlack)
-		fprintf(fp, "%s%s\n", BLACK_STR, NEXT_TURN_TAG_END);
+	if (isBlackTurn)
+		fprintf(fp, "%s%s\n", WHITE_STR, NEXT_TURN_TAG_END);	// The next player is white
 	else
-		fprintf(fp, "%s%s\n", WHITE_STR, NEXT_TURN_TAG_END);
+		fprintf(fp, "%s%s\n", BLACK_STR, NEXT_TURN_TAG_END);	// The next player is black
 
 	// Write the game mode
 	fprintf(fp, "\t%s>%d%s\n", GAME_MODE_TAG_BEGIN, g_gameMode, GAME_MODE_TAG_END);
@@ -460,6 +466,8 @@ void executeSaveCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 	fprintf(fp, "%s\n", GAME_TAG_END);
 
 	fclose(fp);
+
+	return true;
 }
 
 /* Validate board initialization. If it is valid the program can move to game state. */

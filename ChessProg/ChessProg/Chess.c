@@ -33,4 +33,6 @@ int main(int argc, char *argv[])
 	{
 		return runGuiMainLoop();
 	}
+
+	return 0;
 }

@@ -8,7 +8,7 @@
 #include "LinkedList.h"
 
 /** -- Console constants -- */
-// (these constants are private to the console so they are declaared here)
+// (these constants are private to the console so they are declared here)
 #define PAWN "pawn"
 #define BISHOP "bishop"
 #define ROOK "rook"
@@ -52,21 +52,6 @@
 #define CHECK "Check!\n"
 #define TIE "The game ends in a tie\n"
 #define WIN_MSG "Mate! %s player wins the game\n"
-
-/** -- Forward declarations -- */
-
-bool checkMateTie(char board[BOARD_SIZE][BOARD_SIZE], bool isBlack);
-bool determineGameSettings(char board[BOARD_SIZE][BOARD_SIZE]);
-bool executeUserTurn(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack);
-void executeComputerTurn(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack);
-void getUserInput();
-int breakInputToArgs(char* args[MAX_ARGS]);
-Position argToPosition(char* arg);
-COMMAND_RESULT parseUserSettings(char board[BOARD_SIZE][BOARD_SIZE]);
-COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack);
-void printMove(Move* move);
-void executeConsoleGameLoop(char board[BOARD_SIZE][BOARD_SIZE], int gameMode,
-							bool isNextPlayerBlack, bool isUserBlack);
 
 /** -- Logic functions -- */
 
@@ -112,6 +97,90 @@ void printListOfMoves(LinkedList* moves)
 		printMove(currMove);
 		currMoveNode = currMoveNode->next;
 	}
+}
+
+/* Reads a user input line into g_inputLine as null terminated string. */
+void getUserInput()
+{
+	int ch, i = 0;
+	while ((ch = fgetc(stdin)) != '\n')
+	{
+		g_inputLine[i++] = ch;
+	}
+
+	g_inputLine[i] = '\0';
+}
+
+/*
+ * Breaks the g_inputLine into arguments using space as a delimiter.
+ * The results will be packed inside args.
+ * Calling functions should make sure to free the memory held by the args when done!
+ */
+int breakInputToArgs(char* args[MAX_ARGS])
+{
+	int argc = 0;
+	char* argStart = g_inputLine;
+	char* nextChar;
+	const char nullStr[1] = "";
+
+	nextChar = g_inputLine;
+	int argSize = 0;
+
+	// Parse each argument until we reach the maximum amount supported
+	while ((argc < MAX_ARGS) && (*nextChar != '\0'))
+	{
+		// Iterate until space or Null terminate char
+		while ((*nextChar != ' ') && (*nextChar != '\0'))
+		{
+			nextChar++;
+			argSize++;
+		}
+
+		if (argc == (MAX_ARGS - 1)) // Last arg contains all that remains
+			argSize = strlen(argStart);
+
+		char* nextArg = (char*)malloc(sizeof(char) * argSize + 1);
+
+		if (nextArg == NULL)
+		{ // Check allocation succeeded
+			perror("Error: standard function malloc has failed");
+			g_memError = true;
+			return -1;
+		}
+
+		memcpy(nextArg, argStart, argSize);
+		memcpy(nextArg + argSize, nullStr, 1);
+
+		args[argc] = nextArg;
+		if (*nextChar != '\0')
+			nextChar++;
+		argc++;
+		argSize = 0;
+		argStart = nextChar;
+	}
+
+	return argc;
+}
+
+/*
+ * Returns the position represented by a <i,j> string tuple.
+ * This function also converts from the chess logical representation (letter, digit) to array indices.
+ */
+Position argToPosition(char* arg)
+{
+	Position pos;
+	char xCoord = arg[3];
+	char yCoord = arg[1];
+
+	pos.y = yCoord - 'a';
+
+	// Treat the edge case of position "<c,1X>" -- need to parse 2 digits
+	if (('1' == xCoord) && ('>' != arg[4]))
+		pos.x = 9 + (arg[4] - '0');
+	else
+		pos.x = xCoord - '1';
+
+	return pos;
 }
 
 /* Convert promotion type name to its console representation according to isBlack parameter. */
@@ -207,90 +276,6 @@ Move* parseAndBuildMove(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, ch
 	}
 
 	return move;
-}
-
-/* Reads a user input line into g_inputLine as null terminated string. */
-void getUserInput()
-{
-	int ch, i = 0;
-	while ((ch = fgetc(stdin)) != '\n')
-	{
-		g_inputLine[i++] = ch;
-	}
-
-	g_inputLine[i] = '\0';
-}
-
-/*
- * Breaks the g_inputLine into arguments using space as a delimiter.
- * The results will be packed inside args.
- * Calling functions should make sure to free the memory held by the args when done!
- */
-int breakInputToArgs(char* args[MAX_ARGS])
-{
-	int argc = 0;
-	char* argStart = g_inputLine;
-	char* nextChar;
-	const char nullStr[1] = "";
-
-	nextChar = g_inputLine;
-	int argSize = 0;
-
-	// Parse each argument until we reach the maximum amount supported
-	while ((argc < MAX_ARGS) && (*nextChar != '\0'))
-	{
-		// Iterate until space or Null terminate char
-		while ((*nextChar != ' ') && (*nextChar != '\0'))
-		{
-			nextChar++;
-			argSize++;
-		}
-
-		if (argc == (MAX_ARGS - 1)) // Last arg contains all that remains
-			argSize = strlen(argStart);
-
-		char* nextArg = (char*)malloc(sizeof(char) * argSize + 1);
-
-		if (nextArg == NULL)
-		{ // Check allocation succeeded
-			perror("Error: standard function malloc has failed");
-			g_memError = true;
-			return -1;
-		}
-
-		memcpy(nextArg, argStart, argSize);
-		memcpy(nextArg + argSize, nullStr, 1);
-
-		args[argc] = nextArg;
-		if (*nextChar != '\0')
-			nextChar++;
-		argc++;
-		argSize = 0;
-		argStart = nextChar;
-	}
-
-	return argc;
-}
-
-/*
- * Returns the position represented by a <i,j> string tuple.
- * This function also converts from the chess logical representation (letter, digit) to array indices.
- */
-Position argToPosition(char* arg)
-{
-	Position pos;
-	char xCoord = arg[3];
-	char yCoord = arg[1];
-
-	pos.y = yCoord - 'a';
-
-	// Treat the edge case of position "<c,1X>" -- need to parse 2 digits
-	if (('1' == xCoord) && ('>' != arg[4]))
-		pos.x = 9 + (arg[4] - '0');
-	else
-		pos.x = xCoord - '1';
-
-	return pos;
 }
 
 /*
@@ -580,89 +565,6 @@ bool determineGameSettings(char board[BOARD_SIZE][BOARD_SIZE])
 }
 
 /*
- * Executes the next turn done by the user.
- * This function will repeat until the user executes a legal move.
- * Return true if the user quits the game. False if the game continues.
- */
-bool executeUserTurn(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack)
-{
-	COMMAND_RESULT command = RETRY;
-
-	while (RETRY == command)
-	{
-		printf(ENTER_YOUR_MOVE, isUserBlack ? BLACK_STR : WHITE_STR);
-
-		getUserInput();
-
-		command = parseUserCommand(board, isUserBlack);
-	}
-
-	return (QUIT == command);
-}
-
-/* Executes the next turn done by the computer. */
-void executeComputerTurn(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack)
-{
-	Move* nextMove = executeGetNextComputerMoveCommand(board, isUserBlack);
-	if (NULL == nextMove)
-		return; // Should never happen, but this should protect us from collapsing if it does
-
-	printf(COMPUTER_MSG);
-	printMove(nextMove);
-
-	executeMove(board, nextMove);
-}
-
-/*
- * Check for checkmate or a tie and return the state of the board.
- * Note: mate or tie are termination cases.
- */
-bool checkMateTie(char board[BOARD_SIZE][BOARD_SIZE], bool isBlack)
-{
-	ChessGameState state = executeCheckMateTieCommand(board, isBlack);
-	bool isTerminate = false;
-
-	switch (state)
-	{
-		case(GAME_MATE_BLACK_WINS) :
-		{
-			printf(WIN_MSG, BLACK_STR);
-			isTerminate = true;
-			break;
-		}
-		case(GAME_MATE_WHITE_WINS) :
-		{
-			printf(WIN_MSG, WHITE_STR);
-			isTerminate = true;
-			break;
-		}
-		case(GAME_CHECK) :
-		{
-			printf(CHECK);
-			isTerminate = false;
-			break;
-		}
-		case(GAME_TIE) :
-		{
-			printf(TIE);
-			isTerminate = true;
-			break;
-		}
-		case(GAME_ERROR) :
-		{
-			isTerminate = true;
-			break;
-		}
-		default:
-		{
-			isTerminate = false;
-		}
-	}
-
-	return isTerminate;
-}
-
-/*
  * Parse next user command during Game state and execute it.
  * Return RETRY if the turn hasn't done yet, QUIT if a quit command was entered
  * and SUCCESS if the command was executed successfully.
@@ -749,7 +651,7 @@ COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserB
 		}
 		else if (0 == strcmp(SAVE_COMMAND, args[0]))
 		{	// Save
-			executeSaveCommand(board, args[1]);
+			executeSaveCommand(board, args[1], isUserBlack);
 
 			commandResult = RETRY;
 		}
@@ -775,6 +677,89 @@ COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserB
 		free(args[i]);
 
 	return commandResult;
+}
+
+/*
+* Executes the next turn done by the user.
+* This function will repeat until the user executes a legal move.
+* Return true if the user quits the game. False if the game continues.
+*/
+bool executeUserTurn(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack)
+{
+	COMMAND_RESULT command = RETRY;
+
+	while (RETRY == command)
+	{
+		printf(ENTER_YOUR_MOVE, isUserBlack ? BLACK_STR : WHITE_STR);
+
+		getUserInput();
+
+		command = parseUserCommand(board, isUserBlack);
+	}
+
+	return (QUIT == command);
+}
+
+/* Executes the next turn done by the computer. */
+void executeComputerTurn(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack)
+{
+	Move* nextMove = executeGetNextComputerMoveCommand(board, isUserBlack);
+	if (NULL == nextMove)
+		return;
+
+	printf(COMPUTER_MSG);
+	printMove(nextMove);
+
+	executeMove(board, nextMove);
+}
+
+/*
+* Check for checkmate or a tie and return the state of the board.
+* Note: mate or tie are termination cases.
+*/
+bool checkMateTie(char board[BOARD_SIZE][BOARD_SIZE], bool isBlack)
+{
+	ChessGameState state = executeCheckMateTieCommand(board, isBlack);
+	bool isTerminate = false;
+
+	switch (state)
+	{
+	case(GAME_MATE_BLACK_WINS) :
+	{
+		printf(WIN_MSG, BLACK_STR);
+		isTerminate = true;
+		break;
+	}
+	case(GAME_MATE_WHITE_WINS) :
+	{
+		printf(WIN_MSG, WHITE_STR);
+		isTerminate = true;
+		break;
+	}
+	case(GAME_CHECK) :
+	{
+		printf(CHECK);
+		isTerminate = false;
+		break;
+	}
+	case(GAME_TIE) :
+	{
+		printf(TIE);
+		isTerminate = true;
+		break;
+	}
+	case(GAME_ERROR) :
+	{
+		isTerminate = true;
+		break;
+	}
+	default:
+	{
+		isTerminate = false;
+	}
+	}
+
+	return isTerminate;
 }
 
 /*
@@ -891,8 +876,7 @@ int initConsoleMainLoop()
 		if (stuckResult)
 			return 0;
 
-		//executeConsoleGameLoop(board, g_gameMode, g_isNextPlayerBlack, g_isUserBlack);
-		computerVsComputer(board);
+		executeConsoleGameLoop(board, g_gameMode, g_isNextPlayerBlack, g_isUserBlack);
 	}
 
 	getchar();
