@@ -34,6 +34,7 @@ GuiWindow* g_activeWindow = NULL;
  */
 void onNewGameClick(GuiButton* button)
 {
+	initGlobals(); // Make sure the game settings window starts fresh
 	char board[BOARD_SIZE][BOARD_SIZE];
 	init_board(board);
 

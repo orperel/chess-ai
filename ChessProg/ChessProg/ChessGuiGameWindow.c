@@ -274,7 +274,7 @@ void onSaveClick(GuiButton* button)
 
 	// Execute the save command in the logic layer
 	GameControl* gameControl = (GameControl*)button->generalProperties.extent;
-	executeSaveCommand(gameControl->board, saveFilePath);
+	executeSaveCommand(gameControl->board, saveFilePath, gameControl->isBlackPlayerEditable);
 	free(saveFilePath);
 }
 
