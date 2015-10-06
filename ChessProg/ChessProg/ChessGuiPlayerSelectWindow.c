@@ -3,6 +3,7 @@
 #include "ChessGuiGameControl.h"
 #include "ChessMainWindow.h"
 #include "ChessGuiGameWindow.h"
+#include "ChessGuiAISettingsWindow.h"
 
 //  -------------------------------- 
 //  -- Constants and type defs    --
