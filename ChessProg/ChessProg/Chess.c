@@ -6,6 +6,7 @@
 #include "Minimax.h"
 #include "Console.h"
 #include "GuiFW.h"
+#include "ChessMainWindow.h"
 
 /* -- Globals Definition -- */
 
@@ -293,7 +294,7 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		// To complete
+		return runGuiMainLoop();
 	}
 	
 	getchar();

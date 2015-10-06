@@ -215,8 +215,3 @@ int runGuiMainLoop()
 	else
 		return OK_EXIT_CODE;
 }
-
-int main(int argc, char *argv[])
-{
-	return runGuiMainLoop();
-}
