@@ -6,6 +6,6 @@
 #include "ChessGuiGameControl.h"
 
 /** Creates the AI settings window of the chess game. */
-GuiWindow* createAISettingsMenu();
+GuiWindow* createAISettingsMenu(char board[BOARD_SIZE][BOARD_SIZE]);
 
 #endif

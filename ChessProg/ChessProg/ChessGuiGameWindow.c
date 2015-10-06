@@ -241,10 +241,12 @@ void onBestMoveClick(GuiButton* button)
 	{ // For player vs player we show a dialog and let the player choose
 
 		depth = showDepthDialog(window);
-
-		// On error or cancel - return
-		if (((DIFFICULTY_BEST_INT - 1) == depth) || ((DIFFICULTY_BEST_INT - 2) == depth))
+		if (g_guiError)
 			return;
+		if (window->isWindowQuit)
+			return; // Check if user exits the game when the dialog is open
+		if (((DIFFICULTY_BEST_INT - 1) == depth) || ((DIFFICULTY_BEST_INT - 2) == depth))
+			return; // On error or cancel - return
 	}
 
 	LinkedList* bestMoves = executeGetBestMovesCommand(gameControl->board, gameControl->isBlackPlayerEditable, depth);

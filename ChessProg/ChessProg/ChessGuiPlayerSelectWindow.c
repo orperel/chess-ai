@@ -289,32 +289,13 @@ void onNextPlayerClick(GuiButton* button)
 	GuiWindow* window = button->generalProperties.window;
 	SettingsWindowExtent* extent = window->generalProperties.extent;
 
-	GuiDialog* dialog = createDialog(window, BUTTON_W, BUTTON_H, DIALOG_BGIMAGE, GREEN, BLACK);
-	if ((NULL == dialog) || (g_guiError))
-		return;
-
-	// The dialog only lives inside this scope, so it is safe to pass a pointer to the local variables.
-	// (the dialog values will simply point to values that live on the stack).
-	// While not the safest practice, it saves redundant malloc calls here.
-	bool black = true;
-	bool white = false;
-
-	dialog->addOption(dialog, BUTTON_BLACK_IMG, MAGENTA, &black);
-	if (g_guiError)
-		return;
-
-	dialog->addOption(dialog, BUTTON_WHITE_IMG, MAGENTA, &white);
-	if (g_guiError)
-		return;
-
-	// Update settings with the user choice
-	// The dialog is automatically destroyed when an option is picked
-	bool* dialogResult = (bool*)dialog->showDialog(dialog);
+	bool dialogResults = showBlackWhiteDialog(window);
 	if (g_guiError)
 		return;
 	if (window->isWindowQuit)
 		return; // Check if user exits the game when the dialog is open
-	g_isNextPlayerBlack = *(dialogResult);
+
+	g_isNextPlayerBlack = dialogResults;
 
 	// Update the button look and feel to reflect the user's choice
 	GuiImage* nextPlayerBGImg = (g_isNextPlayerBlack) ? extent->blackImg : extent->whiteImg;
@@ -342,7 +323,7 @@ void onStartGameClick(GuiButton* button)
 	}
 	else
 	{ // Player VS AI continues to ai settings screen
-		GuiWindow* aiWindow = createAISettingsMenu();
+		GuiWindow* aiWindow = createAISettingsMenu(settingsWindowExtent->gameControl->board);
 		if (NULL == aiWindow)
 			g_guiError = true; // Raise flag if an error occured, main loop will respond accordingly
 

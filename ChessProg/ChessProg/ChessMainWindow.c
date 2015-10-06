@@ -147,6 +147,9 @@ GuiWindow* createMainMenu()
  */
 void setActiveWindow(GuiWindow* window)
 {
+	if (g_guiError || g_memError)
+		return; // Don't update when the error flag is on. Protect the current existing window to prevent leaks.
+
 	g_activeWindow = window;
 }
 

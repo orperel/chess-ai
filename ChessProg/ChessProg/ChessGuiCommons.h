@@ -46,4 +46,9 @@ int showDepthDialog(GuiWindow* window);
  */
 char* showLoadSaveDialog(GuiWindow* window);
 
+/** Open the black / white color dialog.
+ *	The color (or if the user quit the app, or eror occured - via flags) are returned.
+ */
+bool showBlackWhiteDialog(GuiWindow* window);
+
 #endif

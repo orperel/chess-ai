@@ -30,12 +30,16 @@
  */
 struct AIWindowExtent
 {
+	char board[BOARD_SIZE][BOARD_SIZE]; // Keep the board editted in previous screens
+
 	// Pointer to the button images that may change as user alters settings
 	GuiImage* blackImg;
 	GuiImage* whiteImg;
 	GuiImage* depthImg[MAX_DEPTH];
 	GuiImage* bestDepthImg;
 
+	GuiButton* userColorButton; // Pointer to the buttons that may change their appearance (for quick acess in events)
+	GuiButton* aiLevelButton;
 	GameControl* gameControl; // Pointer to the containing game logic struct
 };
 typedef struct AIWindowExtent AIWindowExtent;
@@ -44,39 +48,75 @@ typedef struct AIWindowExtent AIWindowExtent;
 //  -- Logic functions       --
 //  ---------------------------
 
+/** Opens the Black / White selection dialog */
 void onUserColorClick(GuiButton* button)
 {
+	GuiWindow* window = button->generalProperties.window;
 
+	bool isUserBlack = showBlackWhiteDialog(window);
+	if (g_guiError || g_memError)
+		return;
+	if (window->isWindowQuit)
+		return; // Check if user exits the game when the dialog is open
+
+	AIWindowExtent* extent = (AIWindowExtent*)window->generalProperties.extent;
+
+	// Update logic
+	g_isUserBlack = isUserBlack;
+
+	// Update the gui button state
+	GuiImage* newButtonImage = g_isUserBlack ? extent->blackImg : extent->whiteImg;
+	setBGImage(extent->userColorButton, newButtonImage);
 }
 
+/** Opens the dynamic depth AI selection dialog. This dialog is buily according to MAX_DEPTH. */
 void onAILevelClick(GuiButton* button)
 {
 	GuiWindow* window = button->generalProperties.window;
 
 	int depth = showDepthDialog(window);
-
-	// On error or cancel - return
-	if (((DIFFICULTY_BEST_INT - 1) == depth) || ((DIFFICULTY_BEST_INT - 2) == depth) || g_guiError || g_memError)
+	if (g_guiError)
 		return;
+	if (window->isWindowQuit)
+		return; // Check if user exits the game when the dialog is open
+	if (((DIFFICULTY_BEST_INT - 1) == depth) || ((DIFFICULTY_BEST_INT - 2) == depth) || g_guiError || g_memError)
+		return; 	// On error or cancel - return
 
+	AIWindowExtent* extent = (AIWindowExtent*)window->generalProperties.extent;
+	GuiImage* newButtonImage = NULL;
+
+	// Update logic globals according to results
 	if (DIFFICULTY_BEST_INT == depth)
 	{
-
+		g_isDifficultyBest = true;
+		g_minimaxDepth = MAX_DEPTH;
+		newButtonImage = extent->bestDepthImg;
 	}
 	else
 	{
-
+		g_isDifficultyBest = false;
+		g_minimaxDepth = depth;
+		newButtonImage = extent->depthImg[depth - 1];
 	}
 
-	//g_isDifficultyBest = (depth == )
+	// Update the gui button state
+	setBGImage(extent->aiLevelButton, newButtonImage);
 }
 
+/** Starts the game with the defined settings. */
 void onStartClick(GuiButton* button)
 {
+	GuiWindow* window = button->generalProperties.window;
+	AIWindowExtent* extent = (AIWindowExtent*)window->generalProperties.extent;
+	GuiWindow* gameWindow = createGameWindow(extent->board, g_isNextPlayerBlack);
+	if (NULL == gameWindow)
+		g_guiError = true; // Raise flag if an error occured, main loop will respond accordingly
 
+	setActiveWindow(gameWindow);
 }
 
-AIWindowExtent* createAIWindowExtent(GuiWindow* window, GameControl* gameControl)
+AIWindowExtent* createAIWindowExtent(GuiWindow* window, char board[BOARD_SIZE][BOARD_SIZE],
+									 GuiButton* userColorButton, GuiButton* aiLevelButton)
 {
 	AIWindowExtent* windowExtent = (AIWindowExtent*)malloc(sizeof(AIWindowExtent));
 	if (NULL == windowExtent)
@@ -86,7 +126,18 @@ AIWindowExtent* createAIWindowExtent(GuiWindow* window, GameControl* gameControl
 		return NULL;
 	}
 
-	windowExtent->gameControl = gameControl;
+	// Keep the game board with the given board settings.
+	// From this moment on this is the active board (it will be passed on to the game window when we're done here).
+	for (int i = 0; i < BOARD_SIZE; i++)
+	{
+		for (int j = 0; j < BOARD_SIZE; j++)
+		{
+			windowExtent->board[i][j] = board[i][j];
+		}
+	}
+
+	windowExtent->userColorButton = userColorButton;
+	windowExtent->aiLevelButton = aiLevelButton;
 
 	// Create resource images (we cache them to switch the button look and feel)
 	Rectangle btnBounds = { 0, 0, BUTTON_W, BUTTON_H };
@@ -168,7 +219,7 @@ void destroyAIWindow(void* mainMenu)
 }
 
 /** Creates the AI settings window of the chess game. */
-GuiWindow* createAISettingsMenu()
+GuiWindow* createAISettingsMenu(char board[BOARD_SIZE][BOARD_SIZE])
 {
 	GuiWindow* aiWindow = createWindow(WIN_W, WIN_H, AI_WINDOW_TITLE, BLACK);
 
@@ -245,7 +296,7 @@ GuiWindow* createAISettingsMenu()
 	}
 
 	// Create the window extent object
-	AIWindowExtent* windowExtent = createAIWindowExtent(aiWindow, NULL);
+	AIWindowExtent* windowExtent = createAIWindowExtent(aiWindow, board, userColorButton, aiLevelButton);
 	if ((NULL == windowExtent) || g_memError || g_guiError)
 	{ // Avoid errors
 		destroyAIWindow(aiWindow);
