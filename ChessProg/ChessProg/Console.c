@@ -1,11 +1,74 @@
+#include "Console.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#include "Chess.h"
 #include "BoardManager.h"
 #include "GameCommands.h"
-#include "Console.h"
+#include "LinkedList.h"
+
+/** -- Console constants -- */
+// (these constants are private to the console so they are declaared here)
+#define PAWN "pawn"
+#define BISHOP "bishop"
+#define ROOK "rook"
+#define KNIGHT "knight"
+#define QUEEN "queen"
+#define KING "king"
+
+#define GAME_MODE_COMMAND "game_mode"
+#define DIFFICULTY_COMMAND "difficulty"
+#define DIFFICULTY_DEPTH "depth"
+#define USER_COLOR_COMMAND "user_color"
+#define LOAD_COMMAND "load"
+#define CLEAR_COMMAND "clear"
+#define NEXT_PLAYER_COMMAND "next_player"
+#define REMOVE_COMMAND "rm"
+#define SET_COMMAND "set"
+#define PRINT_COMMAND "print"
+#define QUIT_COMMAND "quit"
+#define START_COMMAND "start"
+#define MOVE_COMMAND "move"
+#define GET_MOVES_COMMAND "get_moves"
+#define GET_BEST_MOVES_COMMAND "get_best_moves"
+#define GET_SCORE_COMMAND "get_score"
+#define SAVE_COMMAND "save"
+
+#define WELCOME_TO_CHESS "Welcome to Chess!\n\n"
+#define ENTER_SETTINGS "Enter game settings:\n" 
+#define WRONG_GAME_MODE "Wrong game mode\n"
+#define TWO_PLAYERS_GAME_MODE "Running game in 2 players mode\n"
+#define PLAYER_VS_AI_GAME_MODE "Running game in player vs. AI mode\n"
+#define WRONG_BOARD_INITIALIZATION "Wrong board initialization\n"
+#define ENTER_YOUR_MOVE "%s player - enter your move:\n"
+#define COMPUTER_MSG "Computer: move "
+
+#define ILLEGAL_COMMAND "Illegal command, please try again\n"
+#define ILLEGAL_MOVE "Illegal move\n"
+
+#define WRONG_ROOK_POSITION "Wrong position for a rook\n" 
+#define ILLEGAL_CASTLING_MOVE "Illegal castling move\n"  
+
+#define CHECK "Check!\n"
+#define TIE "The game ends in a tie\n"
+#define WIN_MSG "Mate! %s player wins the game\n"
+
+/** -- Forward declarations -- */
+
+bool checkMateTie(char board[BOARD_SIZE][BOARD_SIZE], bool isBlack);
+bool determineGameSettings(char board[BOARD_SIZE][BOARD_SIZE]);
+bool executeUserTurn(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack);
+void executeComputerTurn(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack);
+void getUserInput();
+int breakInputToArgs(char* args[MAX_ARGS]);
+Position argToPosition(char* arg);
+COMMAND_RESULT parseUserSettings(char board[BOARD_SIZE][BOARD_SIZE]);
+COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack);
+void printMove(Move* move);
+void executeConsoleGameLoop(char board[BOARD_SIZE][BOARD_SIZE], int gameMode,
+							bool isNextPlayerBlack, bool isUserBlack);
+
+/** -- Logic functions -- */
 
 /* A "toString()" function for Move structs (for console). */
 void printMove(Move* move)
@@ -459,7 +522,7 @@ COMMAND_RESULT parseUserSettings(char board[BOARD_SIZE][BOARD_SIZE])
 		}
 		else if (0 == strcmp(START_COMMAND, args[0]))
 		{	// Start
-			if (validStart(board))
+			if (isValidStart(board))
 			{	// The program moves to game state
 				commandResult = SUCCESS;
 			}
@@ -487,6 +550,116 @@ COMMAND_RESULT parseUserSettings(char board[BOARD_SIZE][BOARD_SIZE])
 		free(args[i]);
 
 	return commandResult;
+}
+
+/*
+ * Execute Setting state (determine settings).
+ * "board" is the initial game board.
+ * Return true if START_COMMAND was entered; false if QUIT_COMMAND was entered.
+ */
+bool determineGameSettings(char board[BOARD_SIZE][BOARD_SIZE])
+{
+	COMMAND_RESULT command = RETRY;
+
+	// Get settings input loop
+	while (RETRY == command)
+	{
+		printf(ENTER_SETTINGS);
+
+		getUserInput();
+
+		command = parseUserSettings(board);
+	}
+
+	if (QUIT == command)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+/*
+ * Executes the next turn done by the user.
+ * This function will repeat until the user executes a legal move.
+ * Return true if the user quits the game. False if the game continues.
+ */
+bool executeUserTurn(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack)
+{
+	COMMAND_RESULT command = RETRY;
+
+	while (RETRY == command)
+	{
+		printf(ENTER_YOUR_MOVE, isUserBlack ? BLACK_STR : WHITE_STR);
+
+		getUserInput();
+
+		command = parseUserCommand(board, isUserBlack);
+	}
+
+	return (QUIT == command);
+}
+
+/* Executes the next turn done by the computer. */
+void executeComputerTurn(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack)
+{
+	Move* nextMove = executeGetNextComputerMoveCommand(board, isUserBlack);
+	if (NULL == nextMove)
+		return; // Should never happen, but this should protect us from collapsing if it does
+
+	printf(COMPUTER_MSG);
+	printMove(nextMove);
+
+	executeMove(board, nextMove);
+}
+
+/*
+ * Check for checkmate or a tie and return the state of the board.
+ * Note: mate or tie are termination cases.
+ */
+bool checkMateTie(char board[BOARD_SIZE][BOARD_SIZE], bool isBlack)
+{
+	ChessGameState state = executeCheckMateTieCommand(board, isBlack);
+	bool isTerminate = false;
+
+	switch (state)
+	{
+		case(GAME_MATE_BLACK_WINS) :
+		{
+			printf(WIN_MSG, BLACK_STR);
+			isTerminate = true;
+			break;
+		}
+		case(GAME_MATE_WHITE_WINS) :
+		{
+			printf(WIN_MSG, WHITE_STR);
+			isTerminate = true;
+			break;
+		}
+		case(GAME_CHECK) :
+		{
+			printf(CHECK);
+			isTerminate = false;
+			break;
+		}
+		case(GAME_TIE) :
+		{
+			printf(TIE);
+			isTerminate = true;
+			break;
+		}
+		case(GAME_ERROR) :
+		{
+			isTerminate = true;
+			break;
+		}
+		default:
+		{
+			isTerminate = false;
+		}
+	}
+
+	return isTerminate;
 }
 
 /*
@@ -602,4 +775,126 @@ COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserB
 		free(args[i]);
 
 	return commandResult;
+}
+
+/*
+ * Executes the console game loop.
+ * The two users, or the computer in Player Vs. AI mode, each take turns until one of them wins or the user quits.
+ * This function runs an entire single Chess game.
+ * Input:
+ *		board ~ The initial game board.
+ *		isUserBlack ~ Applicable only in Player Vs. AI mode, whether the user is black (true) or white (false).
+ */
+void executeConsoleGameLoop(char board[BOARD_SIZE][BOARD_SIZE], int gameMode, bool isNextPlayerBlack, bool isUserBlack)
+{
+	bool isUserTurn = true;	// By default the game mode is Two Players mode, so it is always the user turn
+	if (gameMode == 2)
+	{	// Player Vs. AI mode
+		isUserTurn = (isUserBlack && isNextPlayerBlack) || (!isUserBlack && !isNextPlayerBlack);
+	}
+	bool isBlackTurn = isNextPlayerBlack;
+	bool isQuit = false;
+
+	// Game loops while the user doesn't quit and there's no victor
+	while (!isQuit)
+	{
+		// Game continues, execute next turn
+		if (isUserTurn)
+		{
+			isQuit = executeUserTurn(board, isBlackTurn);
+		}
+		else
+		{
+			executeComputerTurn(board, isUserBlack);
+		}
+
+		if (g_memError)
+			return;
+
+		if (!isQuit) // If the user doesn't quit, we advance the game loop
+		{
+			print_board(board);
+
+			// Check for victory or tie - to see if game ends
+			isQuit = checkMateTie(board, !isBlackTurn);
+			if (g_memError)
+				return;
+
+			// Change turns. In Two Players mode we don't change the flag isUserTurn
+			if (gameMode == 2)
+			{
+				isUserTurn = !isUserTurn;
+			}
+			isBlackTurn = !isBlackTurn;
+		}
+	}
+}
+
+/* ##### To remove before submission ##### */
+void computerVsComputer(char board[BOARD_SIZE][BOARD_SIZE])
+{
+	bool isQuit = false;
+	while (!isQuit)
+	{
+		if (!g_isNextPlayerBlack)
+			g_minimaxDepth = 4;	// White turn 
+		else
+			g_minimaxDepth = 4;	// Black turn
+
+		executeComputerTurn(board, !g_isNextPlayerBlack);	// executeComputerTurn switches the color
+		if (g_memError)
+			return;
+
+		printf("%d\n", g_boardsCounter);
+
+		if (!isQuit)
+		{
+			print_board(board);
+
+			isQuit = checkMateTie(board, !g_isNextPlayerBlack);
+			if (g_memError)
+				return;
+
+			g_isNextPlayerBlack = !g_isNextPlayerBlack;
+		}
+	}
+}
+
+/*
+ * Initiates the console game loop.
+ * The two users, or the computer in Player Vs. AI mode, each take turns until one of them wins or the user quits.
+ * This function runs an entire single Chess game, after initializing the board and determining game settings.
+ */
+int initConsoleMainLoop()
+{
+	char board[BOARD_SIZE][BOARD_SIZE];
+	init_board(board);
+	print_board(board);
+	printf("\n");
+
+	// Start game settings mode.
+	// If the user doesn't quit, we start the game (determineGameSettings returns true).
+	if (determineGameSettings(board))
+	{
+		// Treat the edge case of a game board where one player immediately loses due to a non-fair game setting.
+		// White wins (or tie)
+		bool stuckResult = checkMateTie(board, true);
+		if (g_memError)
+			return -1;
+		if (stuckResult)
+			return 0;
+
+		// Black wins (or tie)
+		stuckResult = checkMateTie(board, false);
+		if (g_memError)
+			return -1;
+		if (stuckResult)
+			return 0;
+
+		//executeConsoleGameLoop(board, g_gameMode, g_isNextPlayerBlack, g_isUserBlack);
+		computerVsComputer(board);
+	}
+
+	getchar();
+	return 0;
 }

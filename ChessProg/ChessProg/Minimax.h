@@ -2,7 +2,6 @@
 #define MINIMAX_
 
 #include "Types.h"
-#include "Chess.h"
 
 #define PAWN_SCORE 1
 #define BISHOP_SCORE 3

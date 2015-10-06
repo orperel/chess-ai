@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include "Types.h"
-#include "Chess.h"
 
 /* Init the board with the pieces in the beginning of a game. */
 void init_board(char board[BOARD_SIZE][BOARD_SIZE]);

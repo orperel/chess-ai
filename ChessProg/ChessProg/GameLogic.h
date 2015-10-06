@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include "LinkedList.h"
 #include "Types.h"
-#include "Chess.h"
 
 /*
  * Get all possible moves for the given square.

@@ -16,6 +16,6 @@ GuiWindow* createMainMenu();
  *	We always draw to the screen in a framerate of 60 fps (configurable). This is important for animations
  *	and button state effects (on mouse over / click / etc animation).
  */
-int runGuiMainLoop()
+int runGuiMainLoop();
 
 #endif

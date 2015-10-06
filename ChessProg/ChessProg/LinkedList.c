@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "LinkedList.h"
-#include "Chess.h"
 
 /* 
  * Create a new empty linked list. If failed to allocate memory return NULL. 

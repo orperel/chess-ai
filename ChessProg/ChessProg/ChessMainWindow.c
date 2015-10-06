@@ -1,5 +1,4 @@
 #include "ChessMainWindow.h"
-#include "Chess.h"
 #include "ChessGuiCommons.h"
 #include "ChessGuiGameControl.h"
 #include "GameCommands.h"

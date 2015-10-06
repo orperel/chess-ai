@@ -1,5 +1,4 @@
 #include <limits.h>
-#include "Chess.h"
 #include "BoardManager.h"
 #include "GameLogic.h"
 #include "Minimax.h"

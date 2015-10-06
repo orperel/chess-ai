@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "LinkedList.h"
-#include "Chess.h"
 #include "BoardManager.h"
 
 /* Init the board with the pieces in the beginning of a game. */

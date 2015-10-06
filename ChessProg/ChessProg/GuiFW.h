@@ -2,6 +2,7 @@
 #define GUI_FW_
 
 #include "Types.h"
+#include "LinkedList.h"
 #include <SDL.h>
 #include <SDL_video.h>
 

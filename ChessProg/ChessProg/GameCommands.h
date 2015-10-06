@@ -2,7 +2,7 @@
 #define GAME_COMMANDS_
 
 #include "Types.h"
-#include "Chess.h"
+#include "LinkedList.h"
 
 #define DIFFICULTY_BEST_INT -1
 
@@ -24,6 +24,16 @@
 #define ROW_TAG_END "</row_"
 #define WRONG_FORMAT "Wrong XML format\n"
 
+/** Enum for the various states in chess games. */
+typedef enum
+{
+	GAME_ONGOING,
+	GAME_CHECK,
+	GAME_MATE_BLACK_WINS,
+	GAME_MATE_WHITE_WINS,
+	GAME_TIE,
+	GAME_ERROR
+} ChessGameState;
 
 /** Returns true if the move is a legal move by the given player (black or white).
  *  Validation is done by comparing the move to all legal moves, so make sure to query the mem flag on return.
@@ -57,6 +67,14 @@ int executeGetScoreCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack,
  */
 LinkedList* executeGetBestMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, int depth);
 
+/* Fetch the next turn done by the computer. */
+Move* executeGetNextComputerMoveCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack);
+
+/* Check for checkmate or a tie and return the state of the board.
+ * Note: mate or tie are termination cases.
+ */
+ChessGameState executeCheckMateTieCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isBlack);
+
 /*
  * Load the game settings from the file "path", path being the full or relative path to the file.
  * We assume that the file contains valid data and is correctly formatted.
@@ -65,5 +83,8 @@ void executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path);
 
 /* Save the current game state to the file "path". */
 void executeSaveCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path);
+
+/* Validate board initialization. If it is valid the program can move to game state. */
+bool isValidStart(char board[BOARD_SIZE][BOARD_SIZE]);
 
 #endif

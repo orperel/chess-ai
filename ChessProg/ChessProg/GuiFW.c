@@ -1,8 +1,7 @@
+#include "GuiFW.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-#include "GuiFW.h"
-#include "LinkedList.h"
 
 //  ---------------------------------------
 //  -- Constants and globals definitions --

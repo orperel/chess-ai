@@ -2,7 +2,6 @@
 #define CHESS_GUI_GAME_CONTROL_
 
 #include "GuiFW.h"
-#include "Chess.h"
 #include "Types.h"
 
 /** -- This unit represents manages the chess board component, gui and common logic alike. -- */
@@ -27,13 +26,14 @@ typedef struct GameControl GameControl;
 
 /** Information for a single square in the game control board.
  */
-typedef struct
+struct GameSquare
 {
 	int x, y; // Indices of the square
 	GuiButton* chessPiece; // Pointer to the buttons representing potential chess piece and target markers on the square
 	GuiButton* targetButton;
 	GameControl* gameControl; // Pointer to the containing game logic struct
-} GameSquare;
+};
+typedef struct GameSquare GameSquare;
 
 /** A chess board game component, composed of buttons for chess pieces (gui based), target markers and event reactions.
  *	This struct contains all logic needed to manage a chess board component.

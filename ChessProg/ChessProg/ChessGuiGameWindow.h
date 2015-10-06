@@ -2,7 +2,6 @@
 #define CHESS_GUI_GAME_WINDOW_
 
 #include "GuiFW.h"
-#include "Chess.h"
 #include "Types.h"
 
 /** This function builds the game window, the chess game area and the side panel, and attaches

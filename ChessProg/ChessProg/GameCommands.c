@@ -1,7 +1,7 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#include "Chess.h"
 #include "BoardManager.h"
 #include "GameCommands.h"
 #include "GameLogic.h"
@@ -213,6 +213,50 @@ LinkedList* executeGetBestMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool 
 	return bestMoves;
 }
 
+/* Fetch the next turn done by the computer. */
+Move* executeGetNextComputerMoveCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack)
+{
+	// Compute next move by computer using the minimax algorithm
+	bool isComputerBlack = !isUserBlack;
+	Move* nextMove = minimax(board, isComputerBlack);
+	if (g_memError)
+		return NULL;
+
+	return nextMove;
+}
+
+/*
+ * Check for checkmate or a tie and return the state of the board.
+ * Note: mate or tie are termination cases.
+ */
+ChessGameState executeCheckMateTieCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isBlack)
+{
+	LinkedList* moves = getMoves(board, isBlack);
+	if (g_memError)
+		return GAME_ERROR;
+
+	ChessGameState state = GAME_ONGOING;
+
+	if (isCheck(board, isBlack))
+	{
+		if (moves->length == 0)
+		{	// Mate
+			state = isBlack ? GAME_MATE_WHITE_WINS : GAME_MATE_BLACK_WINS;
+		}
+		else
+		{	// Check
+			state = GAME_CHECK;
+		}
+	}
+	else if (moves->length == 0)
+	{	// Tie
+		state = GAME_TIE;
+	}
+
+	deleteList(moves);
+	return state;
+}
+
 /*
  * Load the game settings from the file "path", path being the full or relative path to the file.
  * We assume that the file contains valid data and is correctly formatted.
@@ -416,4 +460,26 @@ void executeSaveCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 	fprintf(fp, "%s\n", GAME_TAG_END);
 
 	fclose(fp);
+}
+
+/* Validate board initialization. If it is valid the program can move to game state. */
+bool isValidStart(char board[BOARD_SIZE][BOARD_SIZE])
+{
+	// Count white and black soldiers
+	Army whiteArmy = getArmy(board, false);
+	int totalWhite = whiteArmy.pawns + whiteArmy.bishops + whiteArmy.rooks
+		+ whiteArmy.knights + whiteArmy.queens + whiteArmy.kings;
+	Army blackArmy = getArmy(board, true);
+	int totalBlack = blackArmy.pawns + blackArmy.bishops + blackArmy.rooks
+		+ blackArmy.knights + blackArmy.queens + blackArmy.kings;
+
+	if ((totalWhite == 0) || (totalBlack == 0)	// The board is empty or there are pieces of only one color
+		|| (whiteArmy.kings == 0) || (blackArmy.kings == 0)	// One of the kings is missing
+		|| (totalWhite > MAX_SOLDIERS) || (totalBlack > MAX_SOLDIERS)	// There are more than 16 pieces of the same color
+		|| (!validEdges(board)))	// There is a pawn in the opponent edge
+	{	// Invalid start
+		return false;
+	}
+
+	return true;
 }
