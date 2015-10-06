@@ -47,7 +47,7 @@ GuiDialog* createDyanmicDialog(GuiWindow* window, int numOfButtons, const char* 
 		dialog->addOption(dialog, fileImg, MAGENTA, &values[i - 1]);
 		if (g_guiError)
 		{
-			g_guiError = true;
+			free(fileImg);
 			return NULL;
 		}
 	}

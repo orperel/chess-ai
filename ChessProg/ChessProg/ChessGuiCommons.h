@@ -21,6 +21,8 @@
 #define BUTTON_MENU_IMG "Resources/button_mainMenu.bmp"
 #define BUTTON_QUIT_IMG "Resources/button_quit.bmp"
 #define BUTTON_QUIT_SMALL_IMG "Resources/button_quit_small.bmp"
+#define BUTTON_BLACK_IMG "Resources/button_black.bmp"
+#define BUTTON_WHITE_IMG "Resources/button_white.bmp"
 
 #define NUM_OF_SAVE_SLOTS 7 // Number of slots for saving / loading
 #define SAVE_GAME_PATH "save_slot" // Generic path for save-games. We add an additional digit for identification of slot

@@ -16,10 +16,10 @@
 #define TITLE_BOARD_EDIT_IMG_WIDTH 150
 #define TITLE_BOARD_EDIT_IMG_HEIGHT 90
 #define TITLE_GAME_MODE_GAP_HEIGHT -10
-#define TITLE_GAME_MODE_IMG_WIDTH 150
+#define TITLE_GAME_MODE_IMG_WIDTH 115
 #define TITLE_GAME_MODE_IMG_HEIGHT 40
 #define TITLE_NEXT_PLAYER_GAP_HEIGHT -10
-#define TITLE_NEXT_PLAYER_IMG_WIDTH 150
+#define TITLE_NEXT_PLAYER_IMG_WIDTH 133
 #define TITLE_NEXT_PLAYER_IMG_HEIGHT 40
 #define GAME_MODE_BUTTON_OFFSET_Y 170
 #define NEXT_PLAYER_BUTTON_OFFSET_Y 256
@@ -32,8 +32,6 @@
 #define IMG_TITLE_NEXT_PLAYER "Resources/title_next_player.bmp"
 #define BUTTON_PLAYER_VS_PLAYER_IMG "Resources/button_player_vs_player.bmp"
 #define BUTTON_PLAYER_VS_AI_IMG "Resources/button_player_vs_ai.bmp"
-#define BUTTON_BLACK_IMG "Resources/button_black.bmp"
-#define BUTTON_WHITE_IMG "Resources/button_white.bmp"
 #define BUTTON_CLEAR_IMG "Resources/button_clear.bmp"
 #define BUTTON_B_PAWN "Resources/button_black_p.bmp"
 #define BUTTON_B_BISHOP "Resources/button_black_b.bmp"
@@ -332,11 +330,26 @@ void onStartGameClick(GuiButton* button)
 	SettingsWindowExtent* settingsWindowExtent = settingsWindow->generalProperties.extent;
 
 	// Create new window and set it as active
-	GuiWindow* gameWindow = createGameWindow(settingsWindowExtent->gameControl->board, g_isNextPlayerBlack);
-	if (NULL == gameWindow)
-		g_guiError = true; // Raise flag if an error occured, main loop will respond accordingly
+	GuiWindow* nextWindow = NULL;
 
-	setActiveWindow(gameWindow); // Switch to game window
+	if (g_gameMode == GAME_MODE_2_PLAYERS)
+	{ // Player VS player continues to game screen
+		GuiWindow* gameWindow = createGameWindow(settingsWindowExtent->gameControl->board, g_isNextPlayerBlack);
+		if (NULL == gameWindow)
+			g_guiError = true; // Raise flag if an error occured, main loop will respond accordingly
+
+		nextWindow = gameWindow;
+	}
+	else
+	{ // Player VS AI continues to ai settings screen
+		GuiWindow* aiWindow = createAISettingsMenu();
+		if (NULL == aiWindow)
+			g_guiError = true; // Raise flag if an error occured, main loop will respond accordingly
+
+		nextWindow = aiWindow;
+	}
+
+	setActiveWindow(nextWindow); // Switch to game window
 }
 
 /** Quits the settings and returns to the main menu. This event is prompted when the cancel button is clicked. */

@@ -3,5 +3,9 @@
 
 #include "GuiFW.h"
 #include "Types.h"
+#include "ChessGuiGameControl.h"
+
+/** Creates the AI settings window of the chess game. */
+GuiWindow* createAISettingsMenu();
 
 #endif

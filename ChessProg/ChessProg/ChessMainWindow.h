@@ -7,7 +7,6 @@
 /** Sets the active window in the system. */
 void setActiveWindow(GuiWindow* window);
 
-/** Creates the main menu window of the chess game. */
 GuiWindow* createMainMenu();
 
 /** The main loop of the gui, maintains a steady framerate and queries events.
