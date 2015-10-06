@@ -185,7 +185,8 @@ struct GuiDialog
 					   // changes
 	int choiceButtonWidth, choiceButtonHeight; // Dimensions common to all choice buttons in the dialog
 
-	int numOfChoices;
+	unsigned int numOfChoices;
+	unsigned int choicesPerColumn; // Number of button slots per column
 	void* choice; // This flag contains the value the user have chosen, otherwise it is NULL
 
 	void(*addOption)(struct GuiDialog* dialog, const char* imageSourcePath,
@@ -220,6 +221,9 @@ extern const GuiColorRGB BROWN;
 /** Framerate of the rendering system. */
 #define FRAME_RATE 60
 extern const unsigned int TIME_BETWEEN_FRAMES_MS;
+
+#define MAX_OPTIONS_PER_DIALOG_COL 7  // Maximum number of buttons per dialog column
+									  // before it starts spreading horizontally
 
 //  --------------------------- 
 //  -- API functions         --

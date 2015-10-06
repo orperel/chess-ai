@@ -16,6 +16,12 @@ GuiDialog* createDyanmicDialog(GuiWindow* window, int numOfButtons, const char* 
 		return NULL;
 	}
 
+	if (numOfButtons == (MAX_OPTIONS_PER_DIALOG_COL))
+	{   // If there are MAX_OPTIONS_PER_DIALOG_COL slots,
+		// we preetify the dialog and squeeze all buttons to the same column (and leave extra room for a cancel button).
+		dialog->choicesPerColumn = MAX_OPTIONS_PER_DIALOG_COL + 1;
+	}
+
 	// Allocate space for an image path string
 	int fileImgLength = strlen(buttonImgPath) + strlen(RESOURCE_IMG_EXT) + 2;
 	char* fileImg = (char*)malloc(sizeof(char)*fileImgLength);
@@ -92,7 +98,11 @@ int showDepthDialog(GuiWindow* window)
 	}
 
 	// Show the dialog and get the results the user have chosen
-	depth = *((int*)dialog->showDialog(dialog));
+	int* dialogResult = (int*)dialog->showDialog(dialog);
+	if (window->isWindowQuit)
+		return (DIFFICULTY_BEST_INT - 2); // Check if user exits the game when the dialog is open
+	depth = *(dialogResult);
+
 	free(values);
 	if ((g_guiError) || (g_memError))
 	{
@@ -136,7 +146,13 @@ char* showLoadSaveDialog(GuiWindow* window)
 	}
 
 	// Show the dialog and get the results the user have chosen
-	int slotNum = *((int*)dialog->showDialog(dialog));
+	int* dialogResult = (int*)dialog->showDialog(dialog);
+	if (g_guiError)
+		return NULL;
+	if (window->isWindowQuit)
+		return NULL; // Check if user exits the game when the dialog is open
+	int slotNum = *(dialogResult);
+
 	free(values);
 	if ((g_guiError) || (g_memError) || (slotNum == cancelValue))
 	{

@@ -143,7 +143,13 @@ char showPromotionDialog(GuiWindow* window, bool isBlackPlayer)
 	if (g_guiError)
 		return BLACK_K;
 
-	char promotion = *((char*)dialog->showDialog(dialog)); // The dialog is automatically destroyed when an option is picked
+	// The dialog is automatically destroyed when an option is picked
+	char* dialogResult = (char*)dialog->showDialog(dialog);
+	if (g_guiError)
+		return BLACK_K;
+	if (window->isWindowQuit)
+		return BLACK_P; // Check if user exits the game when the dialog is open
+	char promotion = *(dialogResult);
 
 	return promotion;
 }

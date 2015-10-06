@@ -4,6 +4,7 @@
 #include "ChessMainWindow.h"
 #include "ChessGuiGameWindow.h"
 #include "ChessGuiAISettingsWindow.h"
+#include "GameCommands.h"
 
 //  -------------------------------- 
 //  -- Constants and type defs    --
@@ -11,19 +12,19 @@
 
 #define SETTINGS_WINDOW_TITLE "Chess game :: Game Settings"
 
-#define TITLE_BOARD_EDIT_IMG_OFFSET_Y 37 // Position of buttons
+#define TITLE_BOARD_EDIT_IMG_OFFSET_Y 20 // Position of buttons
 #define TITLE_BOARD_EDIT_IMG_WIDTH 150
 #define TITLE_BOARD_EDIT_IMG_HEIGHT 90
-#define TITLE_GAME_MODE_GAP_HEIGHT 15
+#define TITLE_GAME_MODE_GAP_HEIGHT -10
 #define TITLE_GAME_MODE_IMG_WIDTH 150
 #define TITLE_GAME_MODE_IMG_HEIGHT 40
-#define TITLE_NEXT_PLAYER_GAP_HEIGHT 15
+#define TITLE_NEXT_PLAYER_GAP_HEIGHT -10
 #define TITLE_NEXT_PLAYER_IMG_WIDTH 150
 #define TITLE_NEXT_PLAYER_IMG_HEIGHT 40
-#define GAME_MODE_BUTTON_OFFSET_Y 120
-#define NEXT_PLAYER_BUTTON_OFFSET_Y 180
-#define START_BUTTON_OFFSET_Y 270
-#define CANCEL_BUTTON_OFFSET_Y 350
+#define GAME_MODE_BUTTON_OFFSET_Y 170
+#define NEXT_PLAYER_BUTTON_OFFSET_Y 256
+#define START_BUTTON_OFFSET_Y 350
+#define CANCEL_BUTTON_OFFSET_Y 400
 
 /** Resources paths */
 #define IMG_TITLE_BOARD_SETTINGS "Resources/title_board_settings.bmp"
@@ -34,6 +35,18 @@
 #define BUTTON_BLACK_IMG "Resources/button_black.bmp"
 #define BUTTON_WHITE_IMG "Resources/button_white.bmp"
 #define BUTTON_CLEAR_IMG "Resources/button_clear.bmp"
+#define BUTTON_B_PAWN "Resources/button_black_p.bmp"
+#define BUTTON_B_BISHOP "Resources/button_black_b.bmp"
+#define BUTTON_B_ROOK "Resources/button_black_r.bmp"
+#define BUTTON_B_KNIGHT "Resources/button_black_n.bmp"
+#define BUTTON_B_QUEEN "Resources/button_black_q.bmp"
+#define BUTTON_B_KING "Resources/button_black_k.bmp"
+#define BUTTON_W_PAWN "Resources/button_white_p.bmp"
+#define BUTTON_W_BISHOP "Resources/button_white_b.bmp"
+#define BUTTON_W_ROOK "Resources/button_white_r.bmp"
+#define BUTTON_W_KNIGHT "Resources/button_white_n.bmp"
+#define BUTTON_W_QUEEN "Resources/button_white_q.bmp"
+#define BUTTON_W_KING "Resources/button_white_k.bmp"
 
 /** Information attached to the settings window, to provide info in events.
  */
@@ -44,6 +57,8 @@ struct SettingsWindowExtent
 	GuiImage* whiteImg;
 	GuiImage* playerVsPlayerImg;
 	GuiImage* playerVsAi;
+
+	GuiButton* startButton; // Pointer to start button to control its sensitivity
 	GameControl* gameControl; // Pointer to the containing game logic struct
 };
 typedef struct SettingsWindowExtent SettingsWindowExtent;
@@ -114,51 +129,27 @@ void showChessPiecesDialog(GuiWindow* window, GameSquare* targetGameSquare)
 	char white_king = WHITE_K;
 	char empty = EMPTY;
 
-	dialog->addOption(dialog, BUTTON_PAWN, MAGENTA, &black_pawn);
+	dialog->addOption(dialog, BUTTON_B_PAWN, MAGENTA, &black_pawn);
 	if (g_guiError)
 		return;
 
-	dialog->addOption(dialog, BUTTON_PAWN, MAGENTA, &white_pawn);
+	dialog->addOption(dialog, BUTTON_B_BISHOP, MAGENTA, &black_bishop);
 	if (g_guiError)
 		return;
 
-	dialog->addOption(dialog, BUTTON_BISHOP, MAGENTA, &black_bishop);
+	dialog->addOption(dialog, BUTTON_B_ROOK, MAGENTA, &black_rook);
 	if (g_guiError)
 		return;
 
-	dialog->addOption(dialog, BUTTON_ROOK, MAGENTA, &white_bishop);
+	dialog->addOption(dialog, BUTTON_B_KNIGHT, MAGENTA, &black_knight);
 	if (g_guiError)
 		return;
 
-	dialog->addOption(dialog, BUTTON_ROOK, MAGENTA, &black_rook);
+	dialog->addOption(dialog, BUTTON_B_QUEEN, MAGENTA, &black_queen);
 	if (g_guiError)
 		return;
 
-	dialog->addOption(dialog, BUTTON_ROOK, MAGENTA, &white_rook);
-	if (g_guiError)
-		return;
-
-	dialog->addOption(dialog, BUTTON_KNIGHT, MAGENTA, &black_knight);
-	if (g_guiError)
-		return;
-
-	dialog->addOption(dialog, BUTTON_KNIGHT, MAGENTA, &white_knight);
-	if (g_guiError)
-		return;
-
-	dialog->addOption(dialog, BUTTON_QUEEN, MAGENTA, &black_queen);
-	if (g_guiError)
-		return;
-
-	dialog->addOption(dialog, BUTTON_QUEEN, MAGENTA, &white_queen);
-	if (g_guiError)
-		return;
-
-	dialog->addOption(dialog, BUTTON_KING, MAGENTA, &black_king);
-	if (g_guiError)
-		return;
-
-	dialog->addOption(dialog, BUTTON_KING, MAGENTA, &white_king);
+	dialog->addOption(dialog, BUTTON_B_KING, MAGENTA, &black_king);
 	if (g_guiError)
 		return;
 
@@ -166,9 +157,38 @@ void showChessPiecesDialog(GuiWindow* window, GameSquare* targetGameSquare)
 	if (g_guiError)
 		return;
 
+	dialog->addOption(dialog, BUTTON_W_PAWN, MAGENTA, &white_pawn);
+	if (g_guiError)
+		return;
+
+	dialog->addOption(dialog, BUTTON_W_BISHOP, MAGENTA, &white_bishop);
+	if (g_guiError)
+		return;
+
+	dialog->addOption(dialog, BUTTON_W_ROOK, MAGENTA, &white_rook);
+	if (g_guiError)
+		return;
+
+	dialog->addOption(dialog, BUTTON_W_KNIGHT, MAGENTA, &white_knight);
+	if (g_guiError)
+		return;
+
+	dialog->addOption(dialog, BUTTON_W_QUEEN, MAGENTA, &white_queen);
+	if (g_guiError)
+		return;
+
+	dialog->addOption(dialog, BUTTON_W_KING, MAGENTA, &white_king);
+	if (g_guiError)
+		return;
+
 	// The dialog is automatically destroyed when an option is picked
 	// The result is the user's choice.
-	char piece = *((char*)dialog->showDialog(dialog));
+	char* dialogResult = (char*)dialog->showDialog(dialog);
+	if (g_guiError)
+		return;
+	if (window->isWindowQuit)
+		return; // Check if user exits the game when the dialog is open
+	char piece = *(dialogResult);
 
 	// Update the gui
 	SettingsWindowExtent* extent = window->generalProperties.extent;
@@ -197,6 +217,9 @@ void showChessPiecesDialog(GuiWindow* window, GameSquare* targetGameSquare)
 	int logicX = guiRowIndexToboardRowIndex(targetGameSquare->x);
 	int logicY = targetGameSquare->y;
 	extent->gameControl->board[logicX][logicY] = piece;
+
+	// Enable / disable start button according to the validity of the chess board
+	extent->startButton->generalProperties.isVisible = isValidStart(extent->gameControl->board);
 }
 
 /** When a chess piece is clicked, this event is prompted (it is attached to every chess piece button's onClick).
@@ -249,9 +272,13 @@ void onGameModeClick(GuiButton* button)
 		return;
 
 	// Update settings with the user choice
-	g_gameMode = *((int*)dialog->showDialog(dialog)); // The dialog is automatically destroyed when an option is picked
+	// The dialog is automatically destroyed when an option is picked
+	int* dialogResult = (int*)dialog->showDialog(dialog);
 	if (g_guiError)
 		return;
+	if (window->isWindowQuit)
+		return; // Check if user exits the game when the dialog is open
+	g_gameMode = *(dialogResult);
 
 	// Update the button look and feel to reflect the user's choice
 	GuiImage* gameModeBGImg = (g_gameMode == GAME_MODE_2_PLAYERS) ? extent->playerVsPlayerImg : extent->playerVsAi;
@@ -284,9 +311,12 @@ void onNextPlayerClick(GuiButton* button)
 
 	// Update settings with the user choice
 	// The dialog is automatically destroyed when an option is picked
-	g_isNextPlayerBlack = *((bool*)dialog->showDialog(dialog));
+	bool* dialogResult = (bool*)dialog->showDialog(dialog);
 	if (g_guiError)
 		return;
+	if (window->isWindowQuit)
+		return; // Check if user exits the game when the dialog is open
+	g_isNextPlayerBlack = *(dialogResult);
 
 	// Update the button look and feel to reflect the user's choice
 	GuiImage* nextPlayerBGImg = (g_isNextPlayerBlack) ? extent->blackImg : extent->whiteImg;
@@ -351,7 +381,7 @@ void destroySettingsWindow(void* component)
 /** Creates the extent object attached to the settings window and contains info useful in events.
  *
  */
-SettingsWindowExtent* createSettingsWindowExtent(GuiWindow* window, GameControl* gameControl)
+SettingsWindowExtent* createSettingsWindowExtent(GuiWindow* window, GameControl* gameControl, GuiButton* startButton)
 {
 	SettingsWindowExtent* settingsWindowExtent = (SettingsWindowExtent*)malloc(sizeof(SettingsWindowExtent));
 	if (NULL == settingsWindowExtent)
@@ -362,6 +392,7 @@ SettingsWindowExtent* createSettingsWindowExtent(GuiWindow* window, GameControl*
 	}
 
 	settingsWindowExtent->gameControl = gameControl;
+	settingsWindowExtent->startButton = startButton;
 
 	// Create resource images (we cache them to switch the button look and feel)
 	Rectangle btnBounds = { 0, 0, BUTTON_W, BUTTON_H };
@@ -457,7 +488,7 @@ GuiWindow* createSettingsWindow(char board[BOARD_SIZE][BOARD_SIZE])
 		return NULL;
 	}
 
-	Rectangle titleBoardEditBounds = { ((WOODPANEL_W - (TITLE_BOARD_EDIT_IMG_WIDTH / 2)) / 2),
+	Rectangle titleBoardEditBounds = { ((WOODPANEL_W - (TITLE_BOARD_EDIT_IMG_WIDTH)) / 2),
 									   TITLE_BOARD_EDIT_IMG_OFFSET_Y,
 									   TITLE_BOARD_EDIT_IMG_WIDTH, TITLE_BOARD_EDIT_IMG_HEIGHT };
 	GuiImage* titleBoardSettings = createImage(sidePanel->generalProperties.wrapper, titleBoardEditBounds,
@@ -468,7 +499,7 @@ GuiWindow* createSettingsWindow(char board[BOARD_SIZE][BOARD_SIZE])
 		return NULL;
 	}
 
-	Rectangle titleGameModeBounds = { ((WOODPANEL_W - (TITLE_GAME_MODE_IMG_WIDTH / 2)) / 2),
+	Rectangle titleGameModeBounds = { ((WOODPANEL_W - (TITLE_GAME_MODE_IMG_WIDTH)) / 2),
 										GAME_MODE_BUTTON_OFFSET_Y - TITLE_GAME_MODE_GAP_HEIGHT - TITLE_GAME_MODE_IMG_HEIGHT,
 										TITLE_GAME_MODE_IMG_WIDTH, TITLE_GAME_MODE_IMG_HEIGHT };
 	GuiImage* titleGameMode = createImage(sidePanel->generalProperties.wrapper, titleGameModeBounds,
@@ -479,7 +510,7 @@ GuiWindow* createSettingsWindow(char board[BOARD_SIZE][BOARD_SIZE])
 		return NULL;
 	}
 
-	Rectangle titleNextPlayerBounds = { ((WOODPANEL_W - (TITLE_NEXT_PLAYER_IMG_WIDTH / 2)) / 2),
+	Rectangle titleNextPlayerBounds = { ((WOODPANEL_W - (TITLE_NEXT_PLAYER_IMG_WIDTH)) / 2),
 										  NEXT_PLAYER_BUTTON_OFFSET_Y - TITLE_NEXT_PLAYER_GAP_HEIGHT -
 										  TITLE_NEXT_PLAYER_IMG_HEIGHT,
 										  TITLE_NEXT_PLAYER_IMG_WIDTH, TITLE_NEXT_PLAYER_IMG_HEIGHT };
@@ -549,7 +580,7 @@ GuiWindow* createSettingsWindow(char board[BOARD_SIZE][BOARD_SIZE])
 	}
 
 	// Create the window extent object
-	SettingsWindowExtent* windowExtent = createSettingsWindowExtent(settingsWindow, gameControl);
+	SettingsWindowExtent* windowExtent = createSettingsWindowExtent(settingsWindow, gameControl, startBtn);
 	if ((NULL == windowExtent) || g_memError || g_guiError)
 	{ // Avoid errors
 		destroySettingsWindow(settingsWindow);
@@ -572,6 +603,9 @@ GuiWindow* createSettingsWindow(char board[BOARD_SIZE][BOARD_SIZE])
 		destroySettingsWindow(settingsWindow);
 		return NULL;
 	}
+
+	// Enable / disable start button according to the validity of the chess board
+	startBtn->generalProperties.isVisible = isValidStart(gameControl->board);
 
 	// Save a reference to the settings window in the button extents.
 	// This makes the game control and other useful info available on events (via the window extent).

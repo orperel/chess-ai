@@ -603,12 +603,18 @@ void onDialogButtonClick(GuiButton* button)
  */
 void addDialogOption(GuiDialog* dialog, const char* imageSourcePath, GuiColorRGB transparentColor, void* choiceData)
 {
-	int offsetX = DIALOG_BUTTON_OFFSET_X; // Constant
 	int singleButtonHeight = (dialog->choiceButtonHeight / 2); // Buttons contain animation of 4 states so we halve by 2
+	int singleButtonWidth = (dialog->choiceButtonWidth / 2);
 
-	// Depends on number of choices,
+	// Every time we cross choicesPerColumn, a new column of buttons is added to the dialog,
+	// so we place the following buttons more to the right
+	int offsetX = DIALOG_BUTTON_OFFSET_X +
+		((dialog->numOfChoices) / dialog->choicesPerColumn) * (singleButtonWidth + DIALOG_BUTTON_OFFSET_GAP);
+
+	// Depends on number of choices, but if we are in a new column, place it according to the beginning of the column.
+	// Thats why we use modulo here.
 	int offsetY = DIALOG_BUTTON_OFFSET_Y +
-		dialog->numOfChoices * (singleButtonHeight + DIALOG_BUTTON_OFFSET_GAP);
+		(dialog->numOfChoices % dialog->choicesPerColumn) * (singleButtonHeight + DIALOG_BUTTON_OFFSET_GAP);
 	Rectangle buttonBounds = { offsetX, offsetY, dialog->choiceButtonWidth, dialog->choiceButtonHeight };
 	GuiButton* dialogButton = 
 		createButton(dialog->dialogPanel->generalProperties.wrapper, buttonBounds, 2, imageSourcePath,
@@ -638,13 +644,26 @@ void addDialogOption(GuiDialog* dialog, const char* imageSourcePath, GuiColorRGB
 	extent->choiceData = choiceData;
 	dialogButton->generalProperties.extent = extent;
 
+	if (dialog->numOfChoices < dialog->choicesPerColumn)
+	{ // Dialog should increase its height until we fill the first column
+		int heightAddition = singleButtonHeight + DIALOG_BUTTON_OFFSET_GAP;
+		dialog->generalProperties.bounds.height += heightAddition;
+		dialog->generalProperties.bounds.y -= (DIALOG_BUTTON_OFFSET_GAP + singleButtonHeight) / 2;
+		dialog->dialogPanel->generalProperties.bounds = dialog->generalProperties.bounds;
+		dialog->bgImage->generalProperties.bounds.height += heightAddition;
+		dialog->bgImage->scissorRegion.height += heightAddition;
+	}
+	else if ((dialog->numOfChoices > 1) && (dialog->numOfChoices % dialog->choicesPerColumn == 1))
+	{ // Dialog should increase its width if we've hit the max per column
+		int widthAddition = singleButtonWidth + DIALOG_BUTTON_OFFSET_GAP;
+		dialog->generalProperties.bounds.width += widthAddition;
+		dialog->generalProperties.bounds.x -= (DIALOG_BUTTON_OFFSET_GAP + singleButtonWidth) / 2;
+		dialog->dialogPanel->generalProperties.bounds = dialog->generalProperties.bounds;
+		dialog->bgImage->generalProperties.bounds.width += widthAddition;
+		dialog->bgImage->scissorRegion.width += widthAddition;
+	}
+
 	dialog->numOfChoices++;
-	int heightAddition = singleButtonHeight + DIALOG_BUTTON_OFFSET_GAP;
-	dialog->generalProperties.bounds.height += heightAddition;
-	dialog->generalProperties.bounds.y -= (DIALOG_BUTTON_OFFSET_GAP + singleButtonHeight) / 2;
-	dialog->dialogPanel->generalProperties.bounds = dialog->generalProperties.bounds;
-	dialog->bgImage->generalProperties.bounds.height += heightAddition;
-	dialog->bgImage->scissorRegion.height += heightAddition;
 }
 
 /** Shows the dialog in a modal way. The app is stuck on the dialog until a choice is made
@@ -737,6 +756,9 @@ GuiDialog* createDialog(GuiWindow* parent, int choiceButtonWidth, int choiceButt
 	dialog->choiceButtonHeight = choiceButtonHeight;
 	dialog->numOfChoices = 0;
 	dialog->choice = NULL; // Signals that no choice have been made in the dialog yet
+
+	// By default use the constant number. Users can override this setting
+	dialog->choicesPerColumn = MAX_OPTIONS_PER_DIALOG_COL;
 
 	// Create a panel at the very back
 	createPanel(dialog->generalProperties.wrapper, dialogBounds, 0, defaultBGColor);
