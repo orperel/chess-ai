@@ -40,8 +40,7 @@ typedef struct GuiDialogButtonExtent
 {
 	GuiDialog* dialog; // The containing dialog
 	void* choiceData; // Data attached to the dialog button
-};
-typedef struct GuiDialogButtonExtent GuiDialogButtonExtent;
+} GuiDialogButtonExtent;
 
 //  ------------------------------ 
 //  -- Forward declerations     --
@@ -53,7 +52,7 @@ void drawButton(void* component, const Rectangle* const container);
 void drawImage(void* component, const Rectangle* const container);
 void drawAnimation(void* component, const Rectangle* const container);
 void drawDialog(void* component, const Rectangle* const container);
-void destroyGuiComponentWrapper(GuiComponentWrapper* wrapper);
+void destroyGuiComponentWrapper(void* wrapper);
 void destroyWindow(void* component);
 void destroyButton(void* component);
 void destroyImage(void* component);
@@ -786,12 +785,12 @@ GuiDialog* createDialog(GuiWindow* parent, int choiceButtonWidth, int choiceButt
 //  ------------------------------
 
 /** Destructor for GuiWrappers. Destroyes the inner component as well and all children under it. */
-void destroyGuiComponentWrapper(GuiComponentWrapper* wrapper)
+void destroyGuiComponentWrapper(void* wrapper)
 {
 	if (NULL == wrapper)
 		return;
 
-	if (NULL != wrapper->component)
+	if (NULL != ((GuiComponentWrapper*)wrapper)->component)
 	{
 		// Find the destructor of the inner component and call it.
 		// We wrap the components to enable "pseudo-polymorphic" access to them.
@@ -799,7 +798,7 @@ void destroyGuiComponentWrapper(GuiComponentWrapper* wrapper)
 
 		if (NULL != properties)
 		{
-			properties->destroy(wrapper->component);
+			properties->destroy(((GuiComponentWrapper*)wrapper)->component);
 		}
 	}
 
@@ -826,7 +825,7 @@ void destroyWindow(void* component)
 	if (NULL != window->generalProperties.wrapper)
 	{
 		window->generalProperties.wrapper->component = NULL; // Avoid recursive destruction
-		destroyGuiComponentWrapper(window->generalProperties.wrapper);
+		destroyGuiComponentWrapper((void*)(window->generalProperties.wrapper));
 	}
 
 	free(window); // Finally free allocate window struct

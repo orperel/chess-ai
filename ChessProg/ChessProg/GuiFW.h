@@ -32,12 +32,11 @@ typedef enum
 /** A general wrapper for all GUI components, to allow storing them in a unified LinkedList.
  *  We use this struct as a basis for "pseudo polymorphism" implementation of functions (e.g: general draw, destroy).
  */
-struct GuiComponentWrapper
+typedef struct GuiComponentWrapper
 {
 	GuiComponentType type;
 	void* component;
-};
-typedef struct GuiComponentWrapper GuiComponentWrapper;
+} GuiComponentWrapper;
 
 /** A rectangle, as used by the applciation's gui FW. */
 struct Rectangle
