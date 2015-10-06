@@ -57,6 +57,9 @@
     <ClInclude Include="ChessGuiPlayerSelectWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ChessGuiAISettingsWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LinkedList.c">
@@ -99,6 +102,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ChessGuiPlayerSelectWindow.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ChessGuiAISettingsWindow.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
