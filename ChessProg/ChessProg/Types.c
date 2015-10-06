@@ -32,12 +32,12 @@ int g_boardsCounter = 0;
 /** Set all the global variables to their default. */
 void initGlobals()
 {
-	int g_gameMode = 1;
-	int g_minimaxDepth = 1;
-	bool g_isDifficultyBest = false;
-	bool g_isUserBlack = false;
-	bool g_isNextPlayerBlack = false;
-	bool g_memError = false;
+	g_gameMode = GAME_MODE_2_PLAYERS;
+	g_minimaxDepth = 1;
+	g_isDifficultyBest = false;
+	g_isUserBlack = false;
+	g_isNextPlayerBlack = false;
+	g_memError = false;
 }
 
 /** A general max function for integers (that doesn't use macros) */

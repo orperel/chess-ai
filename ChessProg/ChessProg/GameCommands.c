@@ -311,9 +311,9 @@ bool executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 			token = strtok(token, "<");
 
 			if (token[0] == '1')
-				g_gameMode = 1;
+				g_gameMode = GAME_MODE_2_PLAYERS;
 			else if (token[0] == '2')
-				g_gameMode = 2;
+				g_gameMode = GAME_MODE_PLAYER_VS_AI;
 			else
 			{	// Should never reach this code
 				printf(WRONG_FORMAT);
@@ -323,7 +323,7 @@ bool executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 		}
 		else if (strcmp(token, DIFFICULTY_TAG_BEGIN) == 0)
 		{	// Difficulty tag
-			if (g_gameMode == 2)
+			if (g_gameMode == GAME_MODE_PLAYER_VS_AI)
 			{	// Difficulty is applicable only in player vs. AI mode
 				token = strtok(NULL, ">");
 				token = strtok(token, "<");
@@ -342,7 +342,7 @@ bool executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 		}
 		else if (strcmp(token, USER_COLOR_TAG_BEGIN) == 0)
 		{	// User color tag
-			if (g_gameMode == 2)
+			if (g_gameMode == GAME_MODE_PLAYER_VS_AI)
 			{	// User color is applicable only in player vs. AI mode
 				token = strtok(NULL, ">");
 				token = strtok(token, "<");
@@ -425,7 +425,7 @@ bool executeSaveCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path, bool isB
 
 	// Write the difficulty
 	fprintf(fp, "\t%s>", DIFFICULTY_TAG_BEGIN);
-	if (g_gameMode == 2)
+	if (g_gameMode == GAME_MODE_PLAYER_VS_AI)
 	{
 		if (g_isDifficultyBest)
 			fprintf(fp, "%s", DIFFICULTY_BEST);
@@ -436,7 +436,7 @@ bool executeSaveCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path, bool isB
 
 	// Write the user color
 	fprintf(fp, "\t%s>", USER_COLOR_TAG_BEGIN);
-	if (g_gameMode == 2)
+	if (g_gameMode == GAME_MODE_PLAYER_VS_AI)
 	{
 		if (g_isUserBlack)
 			fprintf(fp, BLACK_STR);
@@ -475,15 +475,15 @@ bool isValidStart(char board[BOARD_SIZE][BOARD_SIZE])
 {
 	// Count white and black soldiers
 	Army whiteArmy = getArmy(board, false);
-	int totalWhite = whiteArmy.pawns + whiteArmy.bishops + whiteArmy.rooks
-		+ whiteArmy.knights + whiteArmy.queens + whiteArmy.kings;
 	Army blackArmy = getArmy(board, true);
-	int totalBlack = blackArmy.pawns + blackArmy.bishops + blackArmy.rooks
-		+ blackArmy.knights + blackArmy.queens + blackArmy.kings;
 
-	if ((totalWhite == 0) || (totalBlack == 0)	// The board is empty or there are pieces of only one color
-		|| (whiteArmy.kings == 0) || (blackArmy.kings == 0)	// One of the kings is missing
-		|| (totalWhite > MAX_SOLDIERS) || (totalBlack > MAX_SOLDIERS)	// There are more than 16 pieces of the same color
+	if ((whiteArmy.kings == 0) || (blackArmy.kings == 0)	// One of the kings is missing
+		|| (whiteArmy.kings > 1) || (blackArmy.kings > 1)	// There are more than one king
+		|| (whiteArmy.queens > 1) || (blackArmy.queens > 1)	// There are more than one queen
+		|| (whiteArmy.knights > 2) || (blackArmy.knights > 2)	// There are more than two knights
+		|| (whiteArmy.rooks > 2) || (blackArmy.rooks > 2)	// There are more than two rooks
+		|| (whiteArmy.bishops > 2) || (blackArmy.bishops > 2)	// There are more than two bishops
+		|| (whiteArmy.pawns > 8) || (blackArmy.pawns > 8)	// There are more than eight pawns
 		|| (!validEdges(board)))	// There is a pawn in the opponent edge
 	{	// Invalid start
 		return false;

@@ -1,13 +1,14 @@
 #include "Chess.h"
 #include <stdio.h>
+#include <string.h>
 #include "Types.h"
 #include "Console.h"
-#include "ChessMainWindow.h"
+//#include "ChessMainWindow.h"
 
 int main(int argc, char *argv[])
 {
 	// Determine console mode or gui mode
-	bool isGuiMode = true;
+	bool isGuiMode = false;
 	if (argc > 2) {
 		printf("Usage: chessprog [console | gui] or chessprog only (default mode - console)\n");
 		return 0;
@@ -31,7 +32,7 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		return runGuiMainLoop();
+		//return runGuiMainLoop();
 	}
 
 	return 0;

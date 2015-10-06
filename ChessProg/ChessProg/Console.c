@@ -296,12 +296,12 @@ COMMAND_RESULT parseUserSettings(char board[BOARD_SIZE][BOARD_SIZE])
 		if (0 == strcmp(GAME_MODE_COMMAND, args[0]))
 		{	// Game mode
 			int mode = atoi(args[1]);
-			if (mode == 1)
+			if (mode == GAME_MODE_2_PLAYERS)
 			{	// Two players mode
 				g_gameMode = mode;
 				printf(TWO_PLAYERS_GAME_MODE);
 			}
-			else if (mode == 2)
+			else if (mode == GAME_MODE_PLAYER_VS_AI)
 			{	// Player vs. AI mode
 				g_gameMode = mode;
 				printf(PLAYER_VS_AI_GAME_MODE);
@@ -313,7 +313,7 @@ COMMAND_RESULT parseUserSettings(char board[BOARD_SIZE][BOARD_SIZE])
 		}
 		else if (0 == strcmp(DIFFICULTY_COMMAND, args[0]))
 		{	// Minimax depth
-			if (g_gameMode == 2)
+			if (g_gameMode == GAME_MODE_PLAYER_VS_AI)
 			{
 				if (0 == strcmp(DIFFICULTY_DEPTH, args[1]))
 				{
@@ -341,7 +341,7 @@ COMMAND_RESULT parseUserSettings(char board[BOARD_SIZE][BOARD_SIZE])
 		}
 		else if (0 == strcmp(USER_COLOR_COMMAND, args[0]))
 		{	// User color
-			if (g_gameMode == 2)
+			if (g_gameMode == GAME_MODE_PLAYER_VS_AI)
 			{
 				if (0 == strcmp("white", args[1]))
 					g_isUserBlack = false;
@@ -822,9 +822,9 @@ void computerVsComputer(char board[BOARD_SIZE][BOARD_SIZE])
 	while (!isQuit)
 	{
 		if (!g_isNextPlayerBlack)
-			g_minimaxDepth = 4;	// White turn 
+			g_minimaxDepth = 3;	// White turn 
 		else
-			g_minimaxDepth = 4;	// Black turn
+			g_minimaxDepth = 1;	// Black turn
 
 		executeComputerTurn(board, !g_isNextPlayerBlack);	// executeComputerTurn switches the color
 		if (g_memError)
@@ -855,7 +855,6 @@ int initConsoleMainLoop()
 	char board[BOARD_SIZE][BOARD_SIZE];
 	init_board(board);
 	print_board(board);
-	printf("\n");
 
 	// Start game settings mode.
 	// If the user doesn't quit, we start the game (determineGameSettings returns true).
@@ -879,6 +878,5 @@ int initConsoleMainLoop()
 		executeConsoleGameLoop(board, g_gameMode, g_isNextPlayerBlack, g_isUserBlack);
 	}
 
-	getchar();
 	return 0;
 }

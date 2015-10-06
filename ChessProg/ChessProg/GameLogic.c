@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "BoardManager.h"
 #include "GameLogic.h"
+#include "Types.h"
 
 /* -- Functions -- */
 
