@@ -53,5 +53,5 @@ Minimax.o: Types.h Minimax.h BoardManager.h LinkedList.h GameLogic.h Minimax.c
 ChessGuiGameControl.o: GuiFW.h Types.h ChessGuiGameControl.h ChessGuiGameControl.c
 	gcc $(CFLAGS) ChessGuiGameControl.c
 
-ChessGuiAISettingsWindow.o: GuiFW.h ChessGuiAISettingsWindow.h ChessGuiGameControl.h ChessGuiCommons.h GameCommands.h ChessGuiAISettingsWindow.c
+ChessGuiAISettingsWindow.o: GuiFW.h Types.h ChessGuiAISettingsWindow.h ChessGuiGameControl.h ChessGuiCommons.h GameCommands.h ChessGuiGameWindow.h ChessMainWindow.h ChessGuiAISettingsWindow.c
 	gcc $(CFLAGS) ChessGuiAISettingsWindow.c
