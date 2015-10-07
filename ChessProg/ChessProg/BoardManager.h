@@ -91,4 +91,7 @@ bool isSquareOccupiedByBlackPlayer(char board[BOARD_SIZE][BOARD_SIZE], int x, in
 /** Returns true if the square is occupied by a piece of the white player. */
 bool isSquareOccupiedByWhitePlayer(char board[BOARD_SIZE][BOARD_SIZE], int x, int y);
 
+/* Return True if the square <i,j> is a black square, else False. */
+bool isBlackSquare(int i, int j);
+
 #endif

@@ -479,6 +479,53 @@ bool executeSaveCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path, bool isB
 	return true;
 }
 
+/* Return True if every bishop of the same color locates on different color squares, else False. */
+bool validBishops(char board[BOARD_SIZE][BOARD_SIZE])
+{
+	bool isWhiteBishopEncountered = false;
+	bool isWhiteBishopBlackSquare = false;
+	bool isBlackBishopEncountered = false;
+	bool isBlackBishopBlackSquare = false;
+	
+	int i, j;
+	for (i = 0; i < BOARD_SIZE; i++)
+	{
+		for (j = 0; j < BOARD_SIZE; j++)
+		{
+			if (board[i][j] == WHITE_B)
+			{
+				if (!isWhiteBishopEncountered)
+				{	// First white bishop
+					isWhiteBishopEncountered = true;
+					isWhiteBishopBlackSquare = isBlackSquare(i, j);
+				}
+				else
+				{	// Second white bishop encountered
+					if ((isWhiteBishopBlackSquare && (isBlackSquare(i, j))) ||
+						(!isWhiteBishopBlackSquare && (!isBlackSquare(i, j))))
+						return false;
+				}
+			}
+			else if (board[i][j] == BLACK_B)
+			{
+				if (!isBlackBishopEncountered)
+				{	// First black bishop
+					isBlackBishopEncountered = true;
+					isBlackBishopBlackSquare = isBlackSquare(i, j);
+				}
+				else
+				{	// Second black bishop encountered
+					if ((isBlackBishopBlackSquare && (isBlackSquare(i, j))) ||
+						(!isBlackBishopBlackSquare && (!isBlackSquare(i, j))))
+						return false;
+				}
+			}
+		}
+	}
+
+	return true;
+}
+
 /* Validate board initialization. If it is valid the program can move to game state. */
 bool isValidStart(char board[BOARD_SIZE][BOARD_SIZE])
 {
@@ -493,6 +540,7 @@ bool isValidStart(char board[BOARD_SIZE][BOARD_SIZE])
 		|| (whiteArmy.rooks > 2) || (blackArmy.rooks > 2)	// There are more than two rooks
 		|| (whiteArmy.bishops > 2) || (blackArmy.bishops > 2)	// There are more than two bishops
 		|| (whiteArmy.pawns > 8) || (blackArmy.pawns > 8)	// There are more than eight pawns
+		|| (!validBishops(board))	// There are bishops of the same color in the same color of square
 		|| (!validEdges(board)))	// There is a pawn in the opponent edge
 	{	// Invalid start
 		return false;

@@ -521,3 +521,24 @@ bool isSquareOccupiedByWhitePlayer(char board[BOARD_SIZE][BOARD_SIZE], int x, in
 {
 	return isSquareOccupiedByCurrPlayer(board, false, x, y); //If occupied by white, this is true
 }
+
+/* Return True if the square <i,j> is a black square, else False. */
+bool isBlackSquare(int i, int j)
+{
+	if ((i % 2) != 0)
+	{	// Odd row
+		if ((j % 2) != 0)
+			return false;	// Odd column
+		else
+			return true;	// Even column
+	}
+	else
+	{	// Even row
+		if ((j % 2) != 0)
+			return true;	// Odd column
+		else
+			return false;	// Even column
+	}
+
+	return false;	// Should never reach this line
+}

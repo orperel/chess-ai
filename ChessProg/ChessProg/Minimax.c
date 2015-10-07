@@ -71,7 +71,6 @@ int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta
 	}
 
 	int value, alphabetaResult;
-	//bool stuckResult;
 	if ((level % 2) == 0)
 	{	// Max turn
 		value = INT_MIN;
@@ -88,23 +87,6 @@ int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta
 			}
 			doStep(board, currGameStep);
 			g_boardsCounter++;
-
-			// Check if the opponent is stuck. If yes, stop recursion in this branch of the tree
-			//stuckResult = isPlayerStuck(board, !isABlack);
-			//if (g_memError)
-			//{
-			//	undoStep(board, currGameStep);
-			//	deleteGameStep(currGameStep);
-			//	deleteList(moves);
-			//	return INT_MIN;
-			//}
-			//if (stuckResult)
-			//{
-			//	undoStep(board, currGameStep);
-			//	deleteGameStep(currGameStep);
-			//	deleteList(moves);
-			//	return WINNING_SCORE;
-			//}
 
 			// Call alphabeta algorithm on the current move (child)
 			alphabetaResult = alphabeta(board, level + 1, alpha, beta, !isABlack);			
@@ -149,23 +131,6 @@ int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta
 			}
 			doStep(board, currGameStep);
 			g_boardsCounter++;
-
-			// Check if the opponent is stuck. If yes, stop recursion in this branch of the tree
-			//stuckResult = isPlayerStuck(board, !isABlack);
-			//if (g_memError)
-			//{
-			//	undoStep(board, currGameStep);
-			//	deleteGameStep(currGameStep);
-			//	deleteList(moves);
-			//	return INT_MIN;
-			//}
-			//if (stuckResult)
-			//{
-			//	undoStep(board, currGameStep);
-			//	deleteGameStep(currGameStep);
-			//	deleteList(moves);
-			//	return LOOSING_SCORE;
-			//}
 
 			// Call alphabeta algorithm on the current move (child)
 			alphabetaResult = alphabeta(board, level + 1, alpha, beta, !isABlack);
@@ -216,7 +181,6 @@ Move* minimax(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
 	int value;
 	int maxValue = INT_MIN;
 	Move* winMove = NULL;
-	//bool stuckResult;
 	while (currMove != NULL)
 	{
 		Move* currMoveData = (Move*)(currMove->data);
@@ -228,24 +192,6 @@ Move* minimax(char board[BOARD_SIZE][BOARD_SIZE], bool isABlack)
 		}
 		doStep(board, currGameStep);
 		g_boardsCounter++;
-		
-		// Check if the opponent is stuck. If yes, stop recursion in this branch of the tree
-		//stuckResult = isPlayerStuck(board, !isABlack);
-		//if (g_memError)
-		//{
-		//	undoStep(board, currGameStep);
-		//	deleteGameStep(currGameStep);
-		//	deleteList(moves);
-		//	return NULL;
-		//}
-		//if (stuckResult)
-		//{
-		//	undoStep(board, currGameStep);
-		//	deleteGameStep(currGameStep);
-		//	Move* returnedWinMove = cloneMove(currMoveData);
-		//	deleteList(moves);
-		//	return returnedWinMove;	// Win move
-		//}
 	
 		// Call alphabeta algorithm on the current move (child)
 		value = alphabeta(board, 1, INT_MIN, INT_MAX, !isABlack);
