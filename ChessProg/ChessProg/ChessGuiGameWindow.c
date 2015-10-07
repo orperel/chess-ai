@@ -205,8 +205,10 @@ void updateGuiAfterMove(GameControl* gameControl, char promotion, GameSquare* so
 	refreshBoard(gameControl);
 }
 
-/** Execute the move in the logic layer, check for the game state (check, mate, etc) and update the gui accordingly */
-void executeGuiTurn(GuiWindow* window, GameControl* gameControl, Move* move)
+/** Execute the move in the logic layer, check for the game state (check, mate, etc) and update the gui accordingly.
+ *	Returns if the game is over.
+ */
+bool executeGuiTurn(GuiWindow* window, GameControl* gameControl, Move* move)
 {
 	char promotion = move->promotion;
 	Position sourcePos = move->initPos;
@@ -264,6 +266,7 @@ void executeGuiTurn(GuiWindow* window, GameControl* gameControl, Move* move)
 		default:
 		{
 			isGameOver = false;
+			break;
 		}
 	}
 
@@ -296,6 +299,8 @@ void executeGuiTurn(GuiWindow* window, GameControl* gameControl, Move* move)
 
 	// Redraw the frame, so if the AI thinks on the next turn we immediately see the results
 	showWindow(window);
+
+	return isGameOver;
 }
 
 /** Executes the next turn by the computer. */
@@ -368,8 +373,10 @@ void onTargetClick(GuiButton* button)
 
 	GuiWindow* window = (GuiWindow*)button->generalProperties.window;
 
-	// Execute the move and update the gui
-	executeGuiTurn(window, gameControl, move);
+	// Execute the move and update the gui. If the game is over, return.
+	bool isGameOver = executeGuiTurn(window, gameControl, move);
+	if (isGameOver)
+		return;
 
 	// When playing against the AI, execute the next turn
 	if (g_gameMode == GAME_MODE_PLAYER_VS_AI)
