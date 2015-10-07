@@ -67,8 +67,9 @@ typedef struct SettingsWindowExtent SettingsWindowExtent;
 
 /** Initializes the board's buttons (a chess piece button is visible where we have chess pieces, empty squares get
  *  target markers).
+ *  For new game - the board can be editted. For non-new games, chess pieces are visible but the board cannot be editted.
  */
-void refreshSettingsBoard(GameControl* gameControl)
+void refreshSettingsBoard(GameControl* gameControl, bool isNewGame)
 {
 	int i, j;
 	for (i = 0; i < BOARD_SIZE; i++)
@@ -82,8 +83,10 @@ void refreshSettingsBoard(GameControl* gameControl)
 
 			if (gameControl->board[logicX][logicY] == EMPTY)
 			{ // Disable and hide chess piece button, 
-				gameControl->gui_board[i][j].targetButton->isEnabled = true;
-				gameControl->gui_board[i][j].targetButton->generalProperties.isVisible = true;
+
+				bool targetSquareVal = isNewGame;
+				gameControl->gui_board[i][j].targetButton->isEnabled = targetSquareVal;
+				gameControl->gui_board[i][j].targetButton->generalProperties.isVisible = targetSquareVal;
 				gameControl->gui_board[i][j].chessPiece->isEnabled = false;
 				gameControl->gui_board[i][j].chessPiece->generalProperties.isVisible = false;
 			}
@@ -91,7 +94,7 @@ void refreshSettingsBoard(GameControl* gameControl)
 			{ // Disable and hide target button
 				gameControl->gui_board[i][j].targetButton->isEnabled = false;
 				gameControl->gui_board[i][j].targetButton->generalProperties.isVisible = false;
-				gameControl->gui_board[i][j].chessPiece->isEnabled = true;
+				gameControl->gui_board[i][j].chessPiece->isEnabled = isNewGame;
 				gameControl->gui_board[i][j].chessPiece->generalProperties.isVisible = true;
 			}
 		}
@@ -437,8 +440,9 @@ SettingsWindowExtent* createSettingsWindowExtent(GuiWindow* window, GameControl*
  *	all the required logic and gui components to each other. When this method is done we can start processing events
  *	to allow the player to configure the game settings (edit the board and use the buttons to select next player and
  *	game mode).
+ *  For new games only, we allow editing the board.
  */
-GuiWindow* createSettingsWindow(char board[BOARD_SIZE][BOARD_SIZE])
+GuiWindow* createSettingsWindow(char board[BOARD_SIZE][BOARD_SIZE], bool isNewGame)
 {
 	// Z indices under window
 	short boardArePanelZIndex = 1;
@@ -592,7 +596,7 @@ GuiWindow* createSettingsWindow(char board[BOARD_SIZE][BOARD_SIZE])
 	nextPlayerBtn->setBGImage(nextPlayerBtn, nextPlayerBGImg);
 
 	// Initialize the visability and editability of controls within the chess component
-	refreshSettingsBoard(gameControl);
+	refreshSettingsBoard(gameControl, isNewGame);
 	if (g_memError)
 	{ // Avoid errors
 		destroySettingsWindow(settingsWindow);

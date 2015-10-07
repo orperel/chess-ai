@@ -29,6 +29,16 @@ GuiWindow* g_activeWindow = NULL;
 //  -- Logic functions       --
 //  ---------------------------
 
+void changeToSettingsScreen(char board[BOARD_SIZE][BOARD_SIZE], bool isNewGame)
+{
+	// Create new window and set it as active
+	GuiWindow* settingsWindow = createSettingsWindow(board, isNewGame);
+	if (NULL == settingsWindow)
+		g_guiError = true; // Raise flag if an error occured, main loop will respond accordingly
+
+	setActiveWindow(settingsWindow); // Switch to settings window
+}
+
 /** Starts a new game (starts the matching screen flow). This event is prompted when the new game button is clicked.
  *	(it actually takes us to the settings screen for the game)
  */
@@ -39,11 +49,7 @@ void onNewGameClick(GuiButton* button)
 	init_board(board);
 
 	// Create new window and set it as active
-	GuiWindow* settingsWindow = createSettingsWindow(board);
-	if (NULL == settingsWindow)
-		g_guiError = true; // Raise flag if an error occured, main loop will respond accordingly
-	
-	setActiveWindow(settingsWindow); // Switch to settings window
+	changeToSettingsScreen(board, true);
 }
 
 /**Shows the load game dialog. This event is prompted when the load button is clicked. */
@@ -63,11 +69,7 @@ void onLoadGameClick(GuiButton* button)
 		return;
 
 	// Create new window and set it as active
-	GuiWindow* gameWindow = createGameWindow(board, g_isNextPlayerBlack);
-	if (NULL == gameWindow)
-		g_guiError = true; // Raise flag if an error occured, main loop will respond accordingly
-
-	setActiveWindow(gameWindow); // Switch to game window
+	changeToSettingsScreen(board, false);
 }
 
 /** Quit the game entirely. This event is prompted when the quit button is clicked. */
