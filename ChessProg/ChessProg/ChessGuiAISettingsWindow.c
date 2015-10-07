@@ -65,7 +65,7 @@ void onUserColorClick(GuiButton* button)
 
 	// Update the gui button state
 	GuiImage* newButtonImage = g_isUserBlack ? extent->blackImg : extent->whiteImg;
-	setBGImage(extent->userColorButton, newButtonImage);
+	button->setBGImage(extent->userColorButton, newButtonImage);
 }
 
 /** Opens the dynamic depth AI selection dialog. This dialog is buily according to MAX_DEPTH. */
@@ -99,7 +99,7 @@ void onAILevelClick(GuiButton* button)
 	}
 
 	// Update the gui button state
-	setBGImage(extent->aiLevelButton, newButtonImage);
+	button->setBGImage(extent->aiLevelButton, newButtonImage);
 }
 
 /** Starts the game with the defined settings. */

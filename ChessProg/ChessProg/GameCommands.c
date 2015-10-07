@@ -415,10 +415,10 @@ bool executeSaveCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path, bool isB
 
 	// Write the next turn
 	fprintf(fp, "\t%s>", NEXT_TURN_TAG_BEGIN);
-	if (isBlackTurn)
-		fprintf(fp, "%s%s\n", WHITE_STR, NEXT_TURN_TAG_END);	// The next player is white
+	if (isBlackTurn)	// The player who saved the game is the next player
+		fprintf(fp, "%s%s\n", BLACK_STR, NEXT_TURN_TAG_END);
 	else
-		fprintf(fp, "%s%s\n", BLACK_STR, NEXT_TURN_TAG_END);	// The next player is black
+		fprintf(fp, "%s%s\n", WHITE_STR, NEXT_TURN_TAG_END);
 
 	// Write the game mode
 	fprintf(fp, "\t%s>%d%s\n", GAME_MODE_TAG_BEGIN, g_gameMode, GAME_MODE_TAG_END);
