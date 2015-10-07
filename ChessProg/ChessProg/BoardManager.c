@@ -34,16 +34,16 @@ void init_board(char board[BOARD_SIZE][BOARD_SIZE]){
 				board[7][j] = BLACK_B;
 				break;
 			}
-			case(3):
-			{ // Init kings
-				board[0][j] = WHITE_K;
-				board[7][j] = BLACK_K;
-				break;
-			}
-			case(4):
+			case(3) :
 			{ // Init queens
 				board[0][j] = WHITE_Q;
 				board[7][j] = BLACK_Q;
+				break;
+			}
+			case(4):
+			{ // Init kings
+				board[0][j] = WHITE_K;
+				board[7][j] = BLACK_K;
 				break;
 			}
 			default:
@@ -66,7 +66,7 @@ void init_board(char board[BOARD_SIZE][BOARD_SIZE]){
 /* Print to console a single line of the state of the board. */
 void print_line(){
 	int i;
-	printf("  |");
+	printf(" |");
 	for (i = 1; i < BOARD_SIZE * 4; i++){
 		printf("-");
 	}
@@ -80,14 +80,14 @@ void print_board(char board[BOARD_SIZE][BOARD_SIZE])
 	print_line();
 	for (i = BOARD_SIZE - 1; i >= 0; i--)
 	{
-		printf((i < 9 ? " %d" : "%d"), i + 1);
+		printf("%d", i + 1);
 		for (j = 0; j < BOARD_SIZE; j++){
 			printf("| %c ", board[i][j]);
 		}
 		printf("|\n");
 		print_line();
 	}
-	printf("   ");
+	printf("  ");
 	for (j = 0; j < BOARD_SIZE; j++){
 		printf(" %c  ", (char)('a' + j));
 	}
