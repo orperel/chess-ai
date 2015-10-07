@@ -270,6 +270,9 @@ bool executeGuiTurn(GuiWindow* window, GameControl* gameControl, Move* move)
 		}
 	}
 
+	// Update the gui to reflect the most recent move
+	updateGuiAfterMove(gameControl, promotion, sourceSquare, targetSquare);
+
 	// Show state image
 	if (stateImage != NULL)
 	{
@@ -285,9 +288,6 @@ bool executeGuiTurn(GuiWindow* window, GameControl* gameControl, Move* move)
 		gui_delay(STATE_MESSAGE_APPERANCE_TIME);
 		stateImage->generalProperties.isVisible = false;
 	}
-
-	// Update the gui to reflect the most recent move
-	updateGuiAfterMove(gameControl, promotion, sourceSquare, targetSquare);
 
 	// If it is over, disable the board
 	if (isGameOver)
