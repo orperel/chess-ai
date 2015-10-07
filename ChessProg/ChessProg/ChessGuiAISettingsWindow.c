@@ -172,7 +172,8 @@ AIWindowExtent* createAIWindowExtent(GuiWindow* window, char board[BOARD_SIZE][B
 
 	// We load a dynamic number of depth images
 	// Allocate space for an depth image path string
-	int fileImgLength = strlen(MINMAX_DEPTH_IMG_PATH) + strlen(RESOURCE_IMG_EXT) + 2; // Leave space for /0 and depth index
+	// Leave space for /0 and depth index
+	int fileImgLength = strlen(MINMAX_DEPTH_IMG_PATH) + strlen(RESOURCE_IMG_EXT) + (NUM_OF_SLOT_DIGITS_SUPPORTED + 1);
 	char* fileImg = (char*)malloc(sizeof(char)*fileImgLength);
 	if (NULL == fileImg)
 	{
@@ -181,7 +182,7 @@ AIWindowExtent* createAIWindowExtent(GuiWindow* window, char board[BOARD_SIZE][B
 	}
 
 	// Create number of buttons in a generic way
-	char slotStr[2];
+	char slotStr[NUM_OF_SLOT_DIGITS_SUPPORTED + 1];
 	int i;
 	for (i = 1; i <= MAX_DEPTH; i++)
 	{

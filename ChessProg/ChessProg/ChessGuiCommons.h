@@ -32,6 +32,9 @@
 #define MINMAX_DEPTH_IMG_PATH "Resources/button_depth" // Image of "Depth #" button
 #define MINMAX_BEST_DEPTH_IMG_PATH "Resources/button_depthbest.bmp" // Image of "BEST DEPTH" button
 
+#define NUM_OF_SLOT_DIGITS_SUPPORTED 2 // Number of digits we support for slots in dialogs.
+									   // (no point raising this above 2, there's no room on screen)
+
 /** Show the "depth" dialog, for choosing a depth for minmax.
  *	The depth chosen by the user is returned.
  *	DIFFICULTY_BEST_INT is returned if BEST is chosen.

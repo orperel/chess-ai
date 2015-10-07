@@ -338,7 +338,7 @@ void onTargetClick(GuiButton* button)
 	Position initPos = { guiStartX, gameControl->selectedSquare->y };
 	Position nextPos = { guiTargetX, gameSquare->y };
 	Move* move = createMove(&initPos, &nextPos);
-	if (g_memError)
+	if ((g_memError) || (NULL == move))
 		return;
 
 	// If a pawn have reached the other edge, we have a promotion move.
@@ -352,13 +352,17 @@ void onTargetClick(GuiButton* button)
 
 	// Black king is an error value of showPromotionDialog (this is an invalid promotion). We quit on errors.
 	if (g_guiError || g_memError || (move->promotion == BLACK_K))
+	{
+		deleteMove(move);
 		return;
+	}
 
 	// Validate the move is legal
 	bool isValidMove = validateMove(gameControl->board, gameControl->isBlackPlayerEditable, move);
 	if (!isValidMove)
 	{
 		printf("Warning: Gui allowed user to interact with illegal move, but logic protected from executing this move.\n");
+		deleteMove(move);
 		return;
 	}
 
@@ -420,6 +424,8 @@ void onBestMoveClick(GuiButton* button)
 	gameControl->gui_board[guiTargetX][guiTargetY].targetButton->isEnabled = false;
 	gameControl->gui_board[guiStartX][guiStartY].targetButton->generalProperties.isVisible = true;
 	gameControl->gui_board[guiTargetX][guiTargetY].targetButton->generalProperties.isVisible = true;
+
+	deleteList(bestMoves);
 }
 
 /** Open the save game to slots dialog. This event is prompted when the save button is clicked. */

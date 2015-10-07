@@ -23,7 +23,7 @@ GuiDialog* createDyanmicDialog(GuiWindow* window, int numOfButtons, const char* 
 	}
 
 	// Allocate space for an image path string
-	int fileImgLength = strlen(buttonImgPath) + strlen(RESOURCE_IMG_EXT) + 2;
+	int fileImgLength = strlen(buttonImgPath) + strlen(RESOURCE_IMG_EXT) + (NUM_OF_SLOT_DIGITS_SUPPORTED + 1);
 	char* fileImg = (char*)malloc(sizeof(char)*fileImgLength);
 	if (NULL == fileImg)
 	{
@@ -32,7 +32,7 @@ GuiDialog* createDyanmicDialog(GuiWindow* window, int numOfButtons, const char* 
 	}
 
 	// Create number of buttons buttons in a generic way
-	char slotStr[2];
+	char slotStr[NUM_OF_SLOT_DIGITS_SUPPORTED + 1];
 	int i;
 	for (i = 1; i <= numOfButtons; i++)
 	{
@@ -160,8 +160,8 @@ char* showLoadSaveDialog(GuiWindow* window)
 	}
 
 	// Save the file to the disk. We use a predetermined file path for each slot
-	char slotStr[2];
-	int saveFileLength = strlen(SAVE_GAME_PATH) + strlen(SAVE_FILE_EXTENSION) + 2;
+	char slotStr[NUM_OF_SLOT_DIGITS_SUPPORTED + 1];
+	int saveFileLength = strlen(SAVE_GAME_PATH) + strlen(SAVE_FILE_EXTENSION) + NUM_OF_SLOT_DIGITS_SUPPORTED + 1;
 	char* saveFilePath = (char*)malloc(sizeof(char)*saveFileLength);
 	if (NULL == saveFilePath)
 		return NULL;
