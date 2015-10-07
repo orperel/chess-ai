@@ -53,9 +53,9 @@ int alphabeta(char board[BOARD_SIZE][BOARD_SIZE], int level, int alpha, int beta
 		deleteList(moves);
 
 		if ((level % 2) == 0)
-			return -TIE_SCORE_ABS;	// Max turn
+			return TIE_SCORE_ABS;	// Max turn
 		else
-			return TIE_SCORE_ABS;	// Min turn
+			return -TIE_SCORE_ABS;	// Min turn
 	}
 
 	// Check Minimax depth (leaf)
