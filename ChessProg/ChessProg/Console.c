@@ -822,36 +822,6 @@ void executeConsoleGameLoop(char board[BOARD_SIZE][BOARD_SIZE], int gameMode, bo
 	}
 }
 
-/* ##### To remove before submission ##### */
-void computerVsComputer(char board[BOARD_SIZE][BOARD_SIZE])
-{
-	bool isQuit = false;
-	while (!isQuit)
-	{
-		if (!g_isNextPlayerBlack)
-			g_minimaxDepth = 3;	// White turn 
-		else
-			g_minimaxDepth = 1;	// Black turn
-
-		executeComputerTurn(board, !g_isNextPlayerBlack);	// executeComputerTurn switches the color
-		if (g_memError)
-			return;
-
-		printf("%d\n", g_boardsCounter);
-
-		if (!isQuit)
-		{
-			print_board(board);
-
-			isQuit = checkMateTie(board, !g_isNextPlayerBlack);
-			if (g_memError)
-				return;
-
-			g_isNextPlayerBlack = !g_isNextPlayerBlack;
-		}
-	}
-}
-
 /*
  * Initiates the console game loop.
  * The two users, or the computer in Player Vs. AI mode, each take turns until one of them wins or the user quits.
