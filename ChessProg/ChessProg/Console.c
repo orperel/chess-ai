@@ -305,6 +305,9 @@ COMMAND_RESULT parseUserSettings(char board[BOARD_SIZE][BOARD_SIZE])
 			{	// Player vs. AI mode
 				g_gameMode = mode;
 				printf(PLAYER_VS_AI_GAME_MODE);
+				g_minimaxDepth = 1;
+				g_isDifficultyBest = false;
+				g_isUserBlack = false;
 			}
 			else	// Illegal mode
 				printf(WRONG_GAME_MODE);
@@ -777,7 +780,7 @@ bool checkMateTie(char board[BOARD_SIZE][BOARD_SIZE], bool isBlack)
 void executeConsoleGameLoop(char board[BOARD_SIZE][BOARD_SIZE], int gameMode, bool isNextPlayerBlack, bool isUserBlack)
 {
 	bool isUserTurn = true;	// By default the game mode is Two Players mode, so it is always the user turn
-	if (gameMode == 2)
+	if (gameMode == GAME_MODE_PLAYER_VS_AI)
 	{	// Player Vs. AI mode
 		isUserTurn = (isUserBlack && isNextPlayerBlack) || (!isUserBlack && !isNextPlayerBlack);
 	}

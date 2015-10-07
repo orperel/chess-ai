@@ -339,6 +339,11 @@ bool executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 					g_isDifficultyBest = false;
 				}
 			}
+			else
+			{
+				g_minimaxDepth = 1;
+				g_isDifficultyBest = false;
+			}
 		}
 		else if (strcmp(token, USER_COLOR_TAG_BEGIN) == 0)
 		{	// User color tag
@@ -357,6 +362,10 @@ bool executeLoadCommand(char board[BOARD_SIZE][BOARD_SIZE], char* path)
 					fclose(fp);
 					return false;
 				}
+			}
+			else
+			{
+				g_isUserBlack = false;
 			}
 		}
 		else if (strcmp(token, BOARD_TAG_BEGIN) == 0)
