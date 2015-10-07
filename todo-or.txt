@@ -1,8 +1,4 @@
-
 Tomer:
-
-- Optional: Test case (diff chess2.xml):
-http://moodle.tau.ac.il/2014/mod/forum/discuss.php?d=76502
 - Valgrind (console)
 - Optional: 2 bishops can't be on the same square color
 
