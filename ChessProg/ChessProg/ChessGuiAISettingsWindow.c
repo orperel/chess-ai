@@ -40,7 +40,6 @@ struct AIWindowExtent
 
 	GuiButton* userColorButton; // Pointer to the buttons that may change their appearance (for quick acess in events)
 	GuiButton* aiLevelButton;
-	GameControl* gameControl; // Pointer to the containing game logic struct
 };
 typedef struct AIWindowExtent AIWindowExtent;
 
@@ -212,10 +211,22 @@ AIWindowExtent* createAIWindowExtent(GuiWindow* window, char board[BOARD_SIZE][B
 /** Override destructor to enhance it and release additional resources if needed.
  *  We always call destroyWindow in the end.
  */
-void destroyAIWindow(void* mainMenu)
+void destroyAIWindow(void* component)
 {
+	if (NULL == component)
+		return;
+
+	GuiWindow* aiWindow = (GuiWindow*)component;
+
+	// Dispose nicely of the extent
+	if (NULL != aiWindow->generalProperties.extent)
+	{
+		AIWindowExtent* extent = (AIWindowExtent*)aiWindow->generalProperties.extent;
+		free(extent);
+	}
+
 	// All image resources in the extent are destroyed as part of the window (Gui ownership)
-	destroyWindow(mainMenu);
+	destroyWindow(aiWindow);
 }
 
 /** Creates the AI settings window of the chess game. */

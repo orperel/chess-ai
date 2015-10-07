@@ -315,6 +315,7 @@ void onStartGameClick(GuiButton* button)
 
 	if (g_gameMode == GAME_MODE_2_PLAYERS)
 	{ // Player VS player continues to game screen
+
 		GuiWindow* gameWindow = createGameWindow(settingsWindowExtent->gameControl->board, g_isNextPlayerBlack);
 		if (NULL == gameWindow)
 			g_guiError = true; // Raise flag if an error occured, main loop will respond accordingly

@@ -11,6 +11,11 @@
 //  -- Constants			    --
 //  ------------------------------
 
+#define AI_THINKING_FREEZE_TIME 150 // Amount of time in milliseconds we wait for the computer to make turn, so the
+									// user can see it executing a move..
+
+#define STATE_MESSAGE_APPERANCE_TIME 1000 // Time it takes for messages like "CHECK" to dissappear (in ms)
+
 #define BESTMOVE_BUTTON_OFFSET_Y 37 // Position of buttons
 #define SAVE_BUTTON_OFFSET_Y 100
 #define MENU_BUTTON_OFFSET_Y 163
@@ -19,6 +24,16 @@
 /** Resources paths */
 #define BUTTON_BESTMOVE_IMG "Resources/button_bestmove.bmp"
 #define BUTTON_SAVE_IMG "Resources/button_save.bmp"
+#define IMG_TIE "Resources/image_tie.bmp"
+#define IMG_CHECK "Resources/image_check.bmp"
+#define IMG_MATE "Resources/image_mate.bmp"
+#define STATE_IMG_HEIGHT 480
+#define STATE_IMG_WIDTH 480
+
+GuiImage* g_checkImg = NULL;
+GuiImage* g_mateImg = NULL;
+GuiImage* g_tieImg = NULL;
+GuiButton* g_bestMoveButton = NULL;
 
 //  ------------------------------ 
 //  -- Game Logic functions     --
@@ -70,16 +85,24 @@ void onChessPieceClick(GuiButton* button)
 }
 
 /** Disables all target markers and enables only chess pieces controlled by the given user (isUserBlack).
-*  This method prepares the gui board for a next user's turn.
-*/
-void refreshBoard(GameControl* gameControl, bool isUserBlack)
+ *  This method prepares the gui board for a next user's turn.
+ */
+void refreshBoard(GameControl* gameControl)
 {
-	gameControl->isBlackPlayerEditable = isUserBlack;
-	gameControl->isWhitePlayerEditable = !isUserBlack;
+	gameControl->isBlackPlayerEditable = (g_isNextPlayerBlack &&
+										  (g_gameMode == GAME_MODE_2_PLAYERS ||
+										  (g_gameMode == GAME_MODE_PLAYER_VS_AI) && g_isUserBlack));
+	gameControl->isWhitePlayerEditable = (!g_isNextPlayerBlack &&
+										  (g_gameMode == GAME_MODE_2_PLAYERS ||
+										  (g_gameMode == GAME_MODE_PLAYER_VS_AI) && !g_isUserBlack));
 
 	gameControl->selectedSquare = NULL;
 	disableAllTargetSquares(gameControl);
 	disableAllChessPieces(gameControl);
+
+	// The board can't be editted by the user
+	if (!gameControl->isBlackPlayerEditable && !gameControl->isWhitePlayerEditable)
+		return;
 
 	// Enable chess pieces that can move
 	int i, j;
@@ -87,11 +110,11 @@ void refreshBoard(GameControl* gameControl, bool isUserBlack)
 	{
 		for (j = 0; j < BOARD_SIZE; j++) {
 
-			if (!isSquareOccupiedByCurrPlayer(gameControl->board, isUserBlack, i, j))
+			if (!isSquareOccupiedByCurrPlayer(gameControl->board, gameControl->isBlackPlayerEditable, i, j))
 				continue; // Skip squares that don't contain the player's pieces
 
 			Position pos = { i, j };
-			LinkedList* moves = executeGetMovesForPosCommand(gameControl->board, isUserBlack, pos);
+			LinkedList* moves = executeGetMovesForPosCommand(gameControl->board, gameControl->isBlackPlayerEditable, pos);
 			if (g_memError)
 				return;
 
@@ -154,6 +177,131 @@ char showPromotionDialog(GuiWindow* window, bool isBlackPlayer)
 	return promotion;
 }
 
+/** Refresh and update the gui board after a move has been executed. */
+void updateGuiAfterMove(GameControl* gameControl, char promotion, GameSquare* source, GameSquare* target)
+{
+	// Update the gui
+	GuiImage* finalPieceImg = NULL;
+	if (EMPTY != promotion)
+		finalPieceImg = getImageForChessPiece(gameControl, promotion); // Promote piece
+	else
+		finalPieceImg = source->chessPiece->bgImage; // Move piece to square
+
+	target->chessPiece->setBGImage(target->chessPiece, finalPieceImg);
+	target->chessPiece->generalProperties.isVisible = true;
+	source->chessPiece->bgImage = NULL;
+	source->chessPiece->generalProperties.isVisible = false;
+	refreshBoard(gameControl);
+}
+
+/** Execute the move in the logic layer, check for the game state (check, mate, etc) and update the gui accordingly */
+void executeGuiTurn(GuiWindow* window, GameControl* gameControl, Move* move)
+{
+	char promotion = move->promotion;
+	Position sourcePos = move->initPos;
+	Position targetePos = move->nextPos;
+	int guiSourceX = boardRowIndexToGuiRowIndex(sourcePos.x);
+	int guiTargetX = boardRowIndexToGuiRowIndex(targetePos.x);
+	GameSquare* sourceSquare = &(gameControl->gui_board[guiSourceX][sourcePos.y]);
+	GameSquare* targetSquare = &(gameControl->gui_board[guiTargetX][targetePos.y]);
+
+	// Execute the move on the board
+	if (!executeMoveCommand(gameControl->board, move))
+		g_guiError = true;
+
+	move = NULL; // Move have been destroyed, so we explicitly set the pointer to NULL here for readability.
+
+	g_isNextPlayerBlack = !g_isNextPlayerBlack; // Switch to next player
+
+	// Check for check / mate / tie
+	ChessGameState gameState = executeCheckMateTieCommand(gameControl->board, g_isNextPlayerBlack);
+	bool isGameOver = false;
+	GuiImage* stateImage = NULL;
+
+	switch (gameState)
+	{
+		case(GAME_MATE_BLACK_WINS) :
+		{
+			stateImage = g_mateImg;
+			isGameOver = true;
+			break;
+		}
+		case(GAME_MATE_WHITE_WINS) :
+		{
+			stateImage = g_mateImg;
+			isGameOver = true;
+			break;
+		}
+		case(GAME_CHECK) :
+		{
+			stateImage = g_checkImg;
+			isGameOver = false;
+			break;
+		}
+		case(GAME_TIE) :
+		{
+			stateImage = g_tieImg;
+			isGameOver = true;
+			break;
+		}
+		case(GAME_ERROR) :
+		{
+			isGameOver = true;
+			break;
+		}
+		default:
+		{
+			isGameOver = false;
+		}
+	}
+
+	// Show state image
+	if (stateImage != NULL)
+	{
+		stateImage->generalProperties.isVisible = true;
+	}
+
+	// Redraw the frame, so if the AI thinks on the next turn we immediately see the results
+	showWindow(window);
+
+	// If the game is not over, show the state image for a short period
+	if ((stateImage != NULL) && (!isGameOver))
+	{
+		gui_delay(STATE_MESSAGE_APPERANCE_TIME);
+		stateImage->generalProperties.isVisible = false;
+	}
+
+	// Update the gui if the game is not over.
+	// If it is over, disable the board
+	if (!isGameOver)
+	{
+		updateGuiAfterMove(gameControl, promotion, sourceSquare, targetSquare);
+	}
+	else
+	{
+		disableAllChessPieces(gameControl);
+		disableAllTargetSquares(gameControl);
+		g_bestMoveButton->isEnabled = false;
+	}
+}
+
+/** Executes the next turn by the computer. */
+void executeGuiNextComputerMove(GuiWindow* gameWindow)
+{
+	GameControl* gameControl = (GameControl*)gameWindow->generalProperties.extent;
+
+	gui_delay(AI_THINKING_FREEZE_TIME); // Wait minimal amount of time for computer turn
+	Move* nextComputerMove = executeGetNextComputerMoveCommand(gameControl->board, g_isUserBlack);
+	if (NULL == nextComputerMove)
+	{
+		g_guiError = true;
+		return;
+	}
+
+	// Execute the move and update the gui
+	executeGuiTurn(gameWindow, gameControl, nextComputerMove);
+}
+
 /** When a target square is clicked, this event is prompted
 *  (it is attached to every enabled target square button's onClick).
 *	We execute the given move for the selected chess piece and clicked target using the
@@ -181,6 +329,7 @@ void onTargetClick(GuiButton* button)
 
 	// If a pawn have reached the other edge, we have a promotion move.
 	// Show the promotion dialog and wait for results.
+	// Since this event can only be prompted by a player, we can count on the isBlackPlayerEditable property
 	if (isSquareOnOppositeEdge(gameControl->isBlackPlayerEditable, nextPos.x) &&
 		isSquareOccupiedByPawn(gameControl->board, gameControl->isBlackPlayerEditable, initPos.x, initPos.y))
 	{
@@ -199,27 +348,15 @@ void onTargetClick(GuiButton* button)
 		return;
 	}
 
-	char promotion = move->promotion; // Save if this was a promotion move and its type, since after executing the move
-	// it will be destroyed.
+	GuiWindow* window = (GuiWindow*)button->generalProperties.window;
 
-	// Execute the move on the board
-	executeMoveCommand(gameControl->board, gameControl->isBlackPlayerEditable, move);
-	move = NULL; // Move have been destroyed, so we explicitly set the pointer to NULL here for readability.
+	// Execute the move and update the gui
+	executeGuiTurn(window, gameControl, move);
 
-	// Update the gui
-	GuiImage* finalPieceImg = NULL;
-	if (EMPTY != promotion)
-		finalPieceImg = getImageForChessPiece(gameControl, promotion); // Promote piece
-	else
-		finalPieceImg = gameControl->selectedSquare->chessPiece->bgImage; // Move piece to square
-
-	gameSquare->chessPiece->setBGImage(gameSquare->chessPiece, finalPieceImg);
-	gameSquare->chessPiece->generalProperties.isVisible = true;
-	gameControl->selectedSquare->chessPiece->bgImage = NULL;
-	gameControl->selectedSquare->chessPiece->generalProperties.isVisible = false;
-	refreshBoard(gameControl, !gameControl->isBlackPlayerEditable);
+	// When playing against the AI, execute the next turn
+	if (g_gameMode == GAME_MODE_PLAYER_VS_AI)
+		executeGuiNextComputerMove(window);
 }
-
 
 //  -------------------------------- 
 //  -- Side Panel Logic functions --
@@ -282,7 +419,7 @@ void onSaveClick(GuiButton* button)
 
 	// Execute the save command in the logic layer
 	GameControl* gameControl = (GameControl*)button->generalProperties.extent;
-	executeSaveCommand(gameControl->board, saveFilePath, gameControl->isBlackPlayerEditable);
+	executeSaveCommand(gameControl->board, saveFilePath, g_isNextPlayerBlack);
 	free(saveFilePath);
 }
 
@@ -308,6 +445,15 @@ void onQuit(GuiButton* button)
 /** -- -- -- -- -- -- -- -- -- -- -- */
 /** -- Gui window initialization  -- */
 /** -- -- -- -- -- -- -- -- -- -- -- */
+
+void onGameWindowShow(GuiWindow* window)
+{
+	// If we're playing against the AI and the AI starts
+	if ((g_gameMode == GAME_MODE_PLAYER_VS_AI) && (g_isUserBlack != g_isNextPlayerBlack))
+	{
+		executeGuiNextComputerMove(window);
+	}
+}
 
 /** Destroys the game window and all objects associated with it (e.g: the game control component). */
 void destroyGameWindow(void* component)
@@ -344,6 +490,9 @@ GuiWindow* createGameWindow(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack
 	short saveButtonZIndex = 1;
 	short menuButtonZIndex = 2;
 	short quitButtonZIndex = 3;
+
+	// Z indices under board
+	short stateImagesZIndex = 9000;
 
 	GuiColorRGB bgcolor = WHITE;
 	GuiWindow* gameWindow = createWindow(WIN_W, WIN_H, GAME_WINDOW_TITLE, bgcolor);
@@ -429,7 +578,38 @@ GuiWindow* createGameWindow(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack
 		return NULL;
 	}
 
-	refreshBoard(gameControl, isUserBlack);
+	Rectangle stateImgBounds = { 0, 0, STATE_IMG_WIDTH, STATE_IMG_HEIGHT };
+	GuiImage* tieImg = createImage(gameAreaPanel->generalProperties.wrapper, stateImgBounds,
+		stateImagesZIndex, IMG_TIE, MAGENTA);
+	if ((NULL == tieImg) || g_guiError)
+	{
+		destroyWindow(gameWindow);
+		destroyGameControl(gameControl);
+		return NULL;
+	}
+	tieImg->generalProperties.isVisible = false;
+
+	GuiImage* checkImg = createImage(gameAreaPanel->generalProperties.wrapper, stateImgBounds,
+		stateImagesZIndex, IMG_CHECK, MAGENTA);
+	if ((NULL == checkImg) || g_guiError)
+	{
+		destroyWindow(gameWindow);
+		destroyGameControl(gameControl);
+		return NULL;
+	}
+	checkImg->generalProperties.isVisible = false;
+
+	GuiImage* mateImg = createImage(gameAreaPanel->generalProperties.wrapper, stateImgBounds,
+		stateImagesZIndex, IMG_MATE, MAGENTA);
+	if ((NULL == mateImg) || g_guiError)
+	{
+		destroyWindow(gameWindow);
+		destroyGameControl(gameControl);
+		return NULL;
+	}
+	mateImg->generalProperties.isVisible = false;
+
+	refreshBoard(gameControl);
 	if (g_memError)
 	{ // Avoid errors
 		destroyWindow(gameWindow);
@@ -437,12 +617,20 @@ GuiWindow* createGameWindow(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack
 		return NULL;
 	}
 
+	// Save components for quick access in the end of the game
+	g_checkImg = checkImg;
+	g_mateImg = mateImg;
+	g_tieImg = tieImg;
+	g_bestMoveButton = bestMoveBtn;
+
 	saveBtn->generalProperties.extent = gameControl; // Save a reference to the game control /window in the button extents.
 	// This makes the game control available on events.
 	bestMoveBtn->generalProperties.extent = gameControl;
 	mainMenuBtn->generalProperties.extent = gameWindow;
 	quitBtn->generalProperties.extent = gameWindow;
 	gameWindow->generalProperties.extent = gameControl;
+
+	gameWindow->onShow = onGameWindowShow; // Set the onShow event, so when the window is drawn we can start playing
 
 	return gameWindow;
 }

@@ -588,7 +588,7 @@ COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserB
 		if (0 == strcmp(MOVE_COMMAND, args[0]))
 		{	// Move
 			Move* move = parseAndBuildMove(board, isUserBlack, args);
-			bool isMoveExecuted = executeMoveCommand(board, isUserBlack, move);
+			bool isMoveExecuted = executeMoveCommand(board, move);
 			if (g_memError)
 				return QUIT;
 
@@ -724,39 +724,39 @@ bool checkMateTie(char board[BOARD_SIZE][BOARD_SIZE], bool isBlack)
 
 	switch (state)
 	{
-	case(GAME_MATE_BLACK_WINS) :
-	{
-		printf(WIN_MSG, BLACK_STR);
-		isTerminate = true;
-		break;
-	}
-	case(GAME_MATE_WHITE_WINS) :
-	{
-		printf(WIN_MSG, WHITE_STR);
-		isTerminate = true;
-		break;
-	}
-	case(GAME_CHECK) :
-	{
-		printf(CHECK);
-		isTerminate = false;
-		break;
-	}
-	case(GAME_TIE) :
-	{
-		printf(TIE);
-		isTerminate = true;
-		break;
-	}
-	case(GAME_ERROR) :
-	{
-		isTerminate = true;
-		break;
-	}
-	default:
-	{
-		isTerminate = false;
-	}
+		case(GAME_MATE_BLACK_WINS) :
+		{
+			printf(WIN_MSG, BLACK_STR);
+			isTerminate = true;
+			break;
+		}
+		case(GAME_MATE_WHITE_WINS) :
+		{
+			printf(WIN_MSG, WHITE_STR);
+			isTerminate = true;
+			break;
+		}
+		case(GAME_CHECK) :
+		{
+			printf(CHECK);
+			isTerminate = false;
+			break;
+		}
+		case(GAME_TIE) :
+		{
+			printf(TIE);
+			isTerminate = true;
+			break;
+		}
+		case(GAME_ERROR) :
+		{
+			isTerminate = true;
+			break;
+		}
+		default:
+		{
+			isTerminate = false;
+		}
 	}
 
 	return isTerminate;

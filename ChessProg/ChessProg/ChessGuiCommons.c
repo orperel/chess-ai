@@ -180,7 +180,7 @@ bool showBlackWhiteDialog(GuiWindow* window)
 {
 	GuiDialog* dialog = createDialog(window, BUTTON_W, BUTTON_H, DIALOG_BGIMAGE, GREEN, BLACK);
 	if ((NULL == dialog) || (g_guiError))
-		return;
+		return false;
 
 	// The dialog only lives inside this scope, so it is safe to pass a pointer to the local variables.
 	// (the dialog values will simply point to values that live on the stack).

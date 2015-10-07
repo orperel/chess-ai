@@ -255,6 +255,7 @@ void addChildComponent(GuiComponentWrapper* wrapper, GuiComponentWrapper* parent
 void showWindow(GuiWindow* window)
 {
 	drawWindow(window, &window->generalProperties.bounds);
+	window->isOnShowPrompted = true;
 }
 
 void setBGImage(GuiButton* button, GuiImage* image)
@@ -282,6 +283,7 @@ void setBGImage(GuiButton* button, GuiImage* image)
  *  Width, height - dimensions of the window.
  *	Title - the title at the top of the window.
  *	bgColor - the background color of the window
+ *	onShow event is set manually (assuming most windows don't override this event by default).
  */
 GuiWindow* createWindow(int width, int height, const char* title, GuiColorRGB bgColor)
 {
@@ -315,7 +317,10 @@ GuiWindow* createWindow(int width, int height, const char* title, GuiColorRGB bg
 		return NULL;
 	}
 
+	window->isOnShowPrompted = false;
 	window->show = showWindow;
+	window->onShow = NULL;
+
 
 	// SDL initialization
 	SDL_WM_SetCaption(window->title, window->title); // Set window caption
@@ -1005,6 +1010,10 @@ void drawWindow(void* component, const Rectangle* const container)
 		g_guiError = true;
 		printf("ERROR: failed to flip SDL framebuffers: %s\n", SDL_GetError());
 	}
+
+	// Prompt onShow event if one was set by the user and this is the first time we show the window
+	if ((!window->isOnShowPrompted) && (window->onShow != NULL))
+		window->onShow(window);
 }
 
 /** Calculates the absolute coordinates of a control in the window, after taking into consideration the coordinates of the
@@ -1486,4 +1495,10 @@ int initGui()
 
 	atexit(SDL_Quit); // Make sure SDL quits upon program termination
 	return OK_EXIT_CODE;
+}
+
+/** Waits the amount of milliseconds requested*/
+void gui_delay(int timeMs)
+{
+	SDL_Delay(timeMs);
 }

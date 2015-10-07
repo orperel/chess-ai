@@ -64,7 +64,7 @@ bool validateMove(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, Move* mo
  * Returns True if the move is legal and executed successfully.
  * If this move failed to execute (due to an unexpected memory error), False is returned.
  */
-bool executeMoveCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack, Move* move)
+bool executeMoveCommand(char board[BOARD_SIZE][BOARD_SIZE], Move* move)
 {
 	if (NULL == move) // Illegal move
 		return false;

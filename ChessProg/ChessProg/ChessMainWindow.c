@@ -206,7 +206,7 @@ int runGuiMainLoop()
 		if (g_guiError || g_memError)
 			break;
 
-		SDL_Delay(TIME_BETWEEN_FRAMES_MS); // Maintain framerate
+		gui_delay(TIME_BETWEEN_FRAMES_MS); // Maintain framerate
 	}
 
 	// Free all gui resources, SDL is released on quitting the app

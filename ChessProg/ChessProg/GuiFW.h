@@ -79,8 +79,13 @@ struct GuiWindow
 	bool isWindowQuit; // This flag is turned on when the user asks to close the window
 
 	SDL_Surface* surface; // The SDL surface that this window represents
+	bool isOnShowPrompted; // Makes sure the onShow event only prompts once
 
+	// Control methods
 	void(*show)(struct GuiWindow* window); // Draws the windows and all inner components in the UI tree
+
+	// Events
+	void(*onShow)(struct GuiWindow* window);
 };
 
 /** A panel in the Gui FW is a simple container for other components.
@@ -325,5 +330,8 @@ void restartAnimation(GuiAnimation* animation);
  *  (e.g: GuiButton was clicked).
  */
 bool processGuiEvents(GuiWindow* activeWindow);
+
+/** Waits the amount of milliseconds requested*/
+void gui_delay(int timeMs);
 
 #endif
