@@ -1,7 +1,21 @@
 TODO:
 
-- Chess, mate, tie
-- game over (disable all controls)
-
 - More slots / depth pictures (until 10)
 - recheck g_gui, g_mem errors 
+
+
+
+- Re-read instructions
+- Valgrind
+- To play a game
+- Read forum posts
+- Thorough tests for gui
+- Make sure Chess.c starts on console
+- Override save game slots
+
+
+- Optional: grascale disabled
+
+
+Done:
+- Run input / output sanity tests

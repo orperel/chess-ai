@@ -26,14 +26,25 @@
 #define BUTTON_SAVE_IMG "Resources/button_save.bmp"
 #define IMG_TIE "Resources/image_tie.bmp"
 #define IMG_CHECK "Resources/image_check.bmp"
-#define IMG_MATE "Resources/image_mate.bmp"
+#define IMG_MATE_BLACK_WINS "Resources/image_mate_black_wins.bmp"
+#define IMG_MATE_WHITE_WINS "Resources/image_mate_white_wins.bmp"
 #define STATE_IMG_HEIGHT 480
 #define STATE_IMG_WIDTH 480
 
-GuiImage* g_checkImg = NULL;
-GuiImage* g_mateImg = NULL;
-GuiImage* g_tieImg = NULL;
-GuiButton* g_bestMoveButton = NULL;
+/** Information attached to the game window, to provide info in events.
+*/
+struct GameWindowExtent
+{
+
+	// Pointer to the button images that may change as user alters settings
+	GuiImage* checkImg;
+	GuiImage* mateBlackWinsImg;
+	GuiImage* mateWhiteWinsImg;
+	GuiImage* tieImg;
+	GuiButton* bestMoveButton;
+	GameControl* gameControl;
+};
+typedef struct GameWindowExtent GameWindowExtent;
 
 //  ------------------------------ 
 //  -- Game Logic functions     --
@@ -217,30 +228,31 @@ void executeGuiTurn(GuiWindow* window, GameControl* gameControl, Move* move)
 	ChessGameState gameState = executeCheckMateTieCommand(gameControl->board, g_isNextPlayerBlack);
 	bool isGameOver = false;
 	GuiImage* stateImage = NULL;
+	GameWindowExtent* gameWindowExtent = (GameWindowExtent*)window->generalProperties.extent;
 
 	switch (gameState)
 	{
 		case(GAME_MATE_BLACK_WINS) :
 		{
-			stateImage = g_mateImg;
+			stateImage = gameWindowExtent->mateBlackWinsImg;
 			isGameOver = true;
 			break;
 		}
 		case(GAME_MATE_WHITE_WINS) :
 		{
-			stateImage = g_mateImg;
+			stateImage = gameWindowExtent->mateWhiteWinsImg;
 			isGameOver = true;
 			break;
 		}
 		case(GAME_CHECK) :
 		{
-			stateImage = g_checkImg;
+			stateImage = gameWindowExtent->checkImg;
 			isGameOver = false;
 			break;
 		}
 		case(GAME_TIE) :
 		{
-			stateImage = g_tieImg;
+			stateImage = gameWindowExtent->tieImg;
 			isGameOver = true;
 			break;
 		}
@@ -261,7 +273,7 @@ void executeGuiTurn(GuiWindow* window, GameControl* gameControl, Move* move)
 		stateImage->generalProperties.isVisible = true;
 	}
 
-	// Redraw the frame, so if the AI thinks on the next turn we immediately see the results
+	// Redraw the frame, so we immediately see the temporary state image
 	showWindow(window);
 
 	// If the game is not over, show the state image for a short period
@@ -271,24 +283,26 @@ void executeGuiTurn(GuiWindow* window, GameControl* gameControl, Move* move)
 		stateImage->generalProperties.isVisible = false;
 	}
 
-	// Update the gui if the game is not over.
+	// Update the gui to reflect the most recent move
+	updateGuiAfterMove(gameControl, promotion, sourceSquare, targetSquare);
+
 	// If it is over, disable the board
-	if (!isGameOver)
-	{
-		updateGuiAfterMove(gameControl, promotion, sourceSquare, targetSquare);
-	}
-	else
+	if (isGameOver)
 	{
 		disableAllChessPieces(gameControl);
 		disableAllTargetSquares(gameControl);
-		g_bestMoveButton->isEnabled = false;
+		gameWindowExtent->bestMoveButton->isEnabled = false;
 	}
+
+	// Redraw the frame, so if the AI thinks on the next turn we immediately see the results
+	showWindow(window);
 }
 
 /** Executes the next turn by the computer. */
 void executeGuiNextComputerMove(GuiWindow* gameWindow)
 {
-	GameControl* gameControl = (GameControl*)gameWindow->generalProperties.extent;
+	GameWindowExtent* windowExtent = (GameWindowExtent*)gameWindow->generalProperties.extent;
+	GameControl* gameControl = windowExtent->gameControl;
 
 	gui_delay(AI_THINKING_FREEZE_TIME); // Wait minimal amount of time for computer turn
 	Move* nextComputerMove = executeGetNextComputerMoveCommand(gameControl->board, g_isUserBlack);
@@ -366,7 +380,8 @@ void onTargetClick(GuiButton* button)
 void onBestMoveClick(GuiButton* button)
 {
 	GuiWindow* window = button->generalProperties.window;
-	GameControl* gameControl = (GameControl*)button->generalProperties.extent;
+	GameWindowExtent* windowExtent = (GameWindowExtent*)window->generalProperties.extent;
+	GameControl* gameControl = windowExtent->gameControl;
 	int depth;
 
 	// For AI we use the configured min max depth
@@ -446,6 +461,7 @@ void onQuit(GuiButton* button)
 /** -- Gui window initialization  -- */
 /** -- -- -- -- -- -- -- -- -- -- -- */
 
+/** Triggered when the window is showen for the first time */
 void onGameWindowShow(GuiWindow* window)
 {
 	// If we're playing against the AI and the AI starts
@@ -464,15 +480,99 @@ void destroyGameWindow(void* component)
 	GuiWindow* gameWindow = (GuiWindow*)component;
 
 	// Dispose nicely of the game control and the game window
-	// The game control is saved in the window's extent so it is available everywhere the window is available.
+	// The game control is saved in the game window's extent so it is available everywhere the window is available.
 	// This way we avoid unneccessary use of globals.
 	if (NULL != gameWindow->generalProperties.extent)
 	{
-		GameControl* gameControl = (GameControl*)gameWindow->generalProperties.extent;
-		destroyGameControl(gameControl);
+		GameWindowExtent* extent = (GameWindowExtent*)gameWindow->generalProperties.extent;
+		
+		if (NULL != extent->gameControl)
+			destroyGameControl(extent->gameControl);
+		
+		free(extent);
 	}
 
 	destroyWindow(gameWindow);
+}
+
+/** Creates the game window extent, containing additional data about the game window (e.g: game control, quick
+ *	access to components).
+ */
+GameWindowExtent* createGameWindowExtent(GuiWindow* gameWindow, GuiPanel* gameAreaPanel, GuiButton* bestButton,
+										 char board[BOARD_SIZE][BOARD_SIZE])
+{
+	GameWindowExtent* gameWindowExtent = (GameWindowExtent*)malloc(sizeof(GameWindowExtent));
+	if (NULL == gameWindowExtent)
+	{
+		g_memError = true;
+		g_guiError = true;
+		return NULL;
+	}
+
+	// Game board control creation
+
+	GameControl* gameControl = createGameControl(board, gameAreaPanel, onChessPieceClick, onTargetClick);
+	if ((NULL == gameControl) || g_guiError)
+	{
+		destroyWindow(gameWindow);
+		destroyGameControl(gameControl);
+		return NULL;
+	}
+
+	gameWindowExtent->gameControl = gameControl;
+
+	// Z indices under board
+	short stateImagesZIndex = 9000;
+
+	Rectangle stateImgBounds = { 0, 0, STATE_IMG_WIDTH, STATE_IMG_HEIGHT };
+	GuiImage* tieImg = createImage(gameAreaPanel->generalProperties.wrapper, stateImgBounds,
+		stateImagesZIndex, IMG_TIE, MAGENTA);
+	if ((NULL == tieImg) || g_guiError)
+	{
+		destroyWindow(gameWindow);
+		destroyGameControl(gameControl);
+		return NULL;
+	}
+	tieImg->generalProperties.isVisible = false;
+
+	GuiImage* checkImg = createImage(gameAreaPanel->generalProperties.wrapper, stateImgBounds,
+		stateImagesZIndex, IMG_CHECK, MAGENTA);
+	if ((NULL == checkImg) || g_guiError)
+	{
+		destroyWindow(gameWindow);
+		destroyGameControl(gameControl);
+		return NULL;
+	}
+	checkImg->generalProperties.isVisible = false;
+
+	GuiImage* mateBlackWinsImg = createImage(gameAreaPanel->generalProperties.wrapper, stateImgBounds,
+		stateImagesZIndex, IMG_MATE_BLACK_WINS, MAGENTA);
+	if ((NULL == mateBlackWinsImg) || g_guiError)
+	{
+		destroyWindow(gameWindow);
+		destroyGameControl(gameControl);
+		return NULL;
+	}
+	mateBlackWinsImg->generalProperties.isVisible = false;
+
+	GuiImage* mateWhiteWinsImg = createImage(gameAreaPanel->generalProperties.wrapper, stateImgBounds,
+		stateImagesZIndex, IMG_MATE_WHITE_WINS, MAGENTA);
+	if ((NULL == mateWhiteWinsImg) || g_guiError)
+	{
+		destroyWindow(gameWindow);
+		destroyGameControl(gameControl);
+		return NULL;
+	}
+	mateWhiteWinsImg->generalProperties.isVisible = false;
+
+	// Save components for quick access in the end of the game
+	gameWindowExtent->checkImg = checkImg;
+	gameWindowExtent->mateBlackWinsImg = mateBlackWinsImg;
+	gameWindowExtent->mateWhiteWinsImg = mateWhiteWinsImg;
+	gameWindowExtent->tieImg = tieImg;
+	gameWindowExtent->bestMoveButton = bestButton;
+
+	return gameWindowExtent;
 }
 
 /** This function builds the game window, the chess game area and the side panel, and attaches
@@ -490,9 +590,6 @@ GuiWindow* createGameWindow(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack
 	short saveButtonZIndex = 1;
 	short menuButtonZIndex = 2;
 	short quitButtonZIndex = 3;
-
-	// Z indices under board
-	short stateImagesZIndex = 9000;
 
 	GuiColorRGB bgcolor = WHITE;
 	GuiWindow* gameWindow = createWindow(WIN_W, WIN_H, GAME_WINDOW_TITLE, bgcolor);
@@ -568,67 +665,28 @@ GuiWindow* createGameWindow(char board[BOARD_SIZE][BOARD_SIZE], bool isUserBlack
 		return NULL;
 	}
 
-	// Game board control creation
-
-	GameControl* gameControl = createGameControl(board, gameAreaPanel, onChessPieceClick, onTargetClick);
-	if ((NULL == gameControl) || g_guiError)
+	// Create the game window extent
+	GameWindowExtent* windowExtent = createGameWindowExtent(gameWindow, gameAreaPanel, bestMoveBtn, board);
+	if (NULL == windowExtent)
 	{
-		destroyWindow(gameWindow);
-		destroyGameControl(gameControl);
+		gameWindow->generalProperties.destroy(gameWindow);
 		return NULL;
 	}
-
-	Rectangle stateImgBounds = { 0, 0, STATE_IMG_WIDTH, STATE_IMG_HEIGHT };
-	GuiImage* tieImg = createImage(gameAreaPanel->generalProperties.wrapper, stateImgBounds,
-		stateImagesZIndex, IMG_TIE, MAGENTA);
-	if ((NULL == tieImg) || g_guiError)
-	{
-		destroyWindow(gameWindow);
-		destroyGameControl(gameControl);
-		return NULL;
-	}
-	tieImg->generalProperties.isVisible = false;
-
-	GuiImage* checkImg = createImage(gameAreaPanel->generalProperties.wrapper, stateImgBounds,
-		stateImagesZIndex, IMG_CHECK, MAGENTA);
-	if ((NULL == checkImg) || g_guiError)
-	{
-		destroyWindow(gameWindow);
-		destroyGameControl(gameControl);
-		return NULL;
-	}
-	checkImg->generalProperties.isVisible = false;
-
-	GuiImage* mateImg = createImage(gameAreaPanel->generalProperties.wrapper, stateImgBounds,
-		stateImagesZIndex, IMG_MATE, MAGENTA);
-	if ((NULL == mateImg) || g_guiError)
-	{
-		destroyWindow(gameWindow);
-		destroyGameControl(gameControl);
-		return NULL;
-	}
-	mateImg->generalProperties.isVisible = false;
+	gameWindow->generalProperties.extent = windowExtent;
+	GameControl* gameControl = windowExtent->gameControl;
 
 	refreshBoard(gameControl);
 	if (g_memError)
 	{ // Avoid errors
-		destroyWindow(gameWindow);
-		destroyGameControl(gameControl);
+		gameWindow->generalProperties.destroy(gameWindow);
 		return NULL;
 	}
 
-	// Save components for quick access in the end of the game
-	g_checkImg = checkImg;
-	g_mateImg = mateImg;
-	g_tieImg = tieImg;
-	g_bestMoveButton = bestMoveBtn;
-
-	saveBtn->generalProperties.extent = gameControl; // Save a reference to the game control /window in the button extents.
+	saveBtn->generalProperties.extent = gameControl; // Save a reference to the game control / window in the button extents.
 	// This makes the game control available on events.
 	bestMoveBtn->generalProperties.extent = gameControl;
 	mainMenuBtn->generalProperties.extent = gameWindow;
 	quitBtn->generalProperties.extent = gameWindow;
-	gameWindow->generalProperties.extent = gameControl;
 
 	gameWindow->onShow = onGameWindowShow; // Set the onShow event, so when the window is drawn we can start playing
 
