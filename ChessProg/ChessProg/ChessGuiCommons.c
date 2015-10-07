@@ -81,6 +81,7 @@ int showDepthDialog(GuiWindow* window)
 	GuiDialog* dialog = createDyanmicDialog(window, MAX_DEPTH, MINMAX_DEPTH_IMG_PATH, values);
 	if ((g_guiError) || (g_memError) || (NULL == dialog))
 	{
+		free(values);
 		return (DIFFICULTY_BEST_INT - 2);
 	}
 
@@ -89,18 +90,24 @@ int showDepthDialog(GuiWindow* window)
 	dialog->addOption(dialog, MINMAX_BEST_DEPTH_IMG_PATH, MAGENTA, &bestValue);
 	if (g_guiError)
 	{
+		free(values);
 		return (DIFFICULTY_BEST_INT - 2);
 	}
 	dialog->addOption(dialog, BUTTON_CANCEL_IMG, MAGENTA, &cancelValue);
 	if (g_guiError)
 	{
+		free(values);
 		return (DIFFICULTY_BEST_INT - 2);
 	}
 
 	// Show the dialog and get the results the user have chosen
 	int* dialogResult = (int*)dialog->showDialog(dialog);
 	if (window->isWindowQuit)
+	{
+		free(values);
 		return (DIFFICULTY_BEST_INT - 2); // Check if user exits the game when the dialog is open
+	}
+
 	depth = *(dialogResult);
 
 	free(values);
