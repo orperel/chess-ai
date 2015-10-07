@@ -861,15 +861,7 @@ int initConsoleMainLoop()
 	if (determineGameSettings(board))
 	{
 		// Treat the edge case of a game board where one player immediately loses due to a non-fair game setting.
-		// White wins (or tie)
-		bool stuckResult = checkMateTie(board, true);
-		if (g_memError)
-			return -1;
-		if (stuckResult)
-			return 0;
-
-		// Black wins (or tie)
-		stuckResult = checkMateTie(board, false);
+		bool stuckResult = checkMateTie(board, g_isNextPlayerBlack);
 		if (g_memError)
 			return -1;
 		if (stuckResult)
