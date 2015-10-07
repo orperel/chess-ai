@@ -101,11 +101,11 @@ void onChessPieceClick(GuiButton* button)
 void refreshBoard(GameControl* gameControl)
 {
 	gameControl->isBlackPlayerEditable = (g_isNextPlayerBlack &&
-										  (g_gameMode == GAME_MODE_2_PLAYERS ||
-										  (g_gameMode == GAME_MODE_PLAYER_VS_AI) && g_isUserBlack));
+										  ((g_gameMode == GAME_MODE_2_PLAYERS) ||
+										  ((g_gameMode == GAME_MODE_PLAYER_VS_AI) && g_isUserBlack)));
 	gameControl->isWhitePlayerEditable = (!g_isNextPlayerBlack &&
-										  (g_gameMode == GAME_MODE_2_PLAYERS ||
-										  (g_gameMode == GAME_MODE_PLAYER_VS_AI) && !g_isUserBlack));
+										  ((g_gameMode == GAME_MODE_2_PLAYERS) ||
+										  ((g_gameMode == GAME_MODE_PLAYER_VS_AI) && !g_isUserBlack)));
 
 	gameControl->selectedSquare = NULL;
 	disableAllTargetSquares(gameControl);
