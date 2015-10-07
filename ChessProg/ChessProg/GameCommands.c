@@ -148,7 +148,7 @@ LinkedList* executeGetBestMovesCommand(char board[BOARD_SIZE][BOARD_SIZE], bool 
 	int* scores = (int*)malloc(sizeof(int) * possibleMoves->length);
 	if (scores == NULL)
 	{
-		perror("Error: standard function malloc has failed");
+		printf("Error: standard function malloc has failed");
 		g_memError = true;
 		deleteList(possibleMoves);
 		return NULL;

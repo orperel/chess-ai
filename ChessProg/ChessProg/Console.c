@@ -143,7 +143,7 @@ int breakInputToArgs(char* args[MAX_ARGS])
 
 		if (nextArg == NULL)
 		{ // Check allocation succeeded
-			perror("Error: standard function malloc has failed");
+			printf("Error: standard function malloc has failed");
 			g_memError = true;
 			return -1;
 		}
@@ -604,8 +604,12 @@ COMMAND_RESULT parseUserCommand(char board[BOARD_SIZE][BOARD_SIZE], bool isUserB
 			if (g_memError)
 				return QUIT;
 
-			printListOfMoves(possibleMoves);
-			deleteList(possibleMoves);
+			if (NULL != possibleMoves)
+			{
+				printListOfMoves(possibleMoves);
+				deleteList(possibleMoves);
+			}
+
 			commandResult = RETRY;
 		}
 		else if (0 == strcmp(GET_BEST_MOVES_COMMAND, args[0]))

@@ -366,7 +366,7 @@ void onTargetClick(GuiButton* button)
 	bool isValidMove = validateMove(gameControl->board, gameControl->isBlackPlayerEditable, move);
 	if (!isValidMove)
 	{
-		printf("Warning: Gui allowed user to interact with illegal move, but logic protected from executing this move.\n");
+		printf("Error: Gui allowed user to interact with illegal move, but logic protected from executing this move.\n");
 		deleteMove(move);
 		return;
 	}

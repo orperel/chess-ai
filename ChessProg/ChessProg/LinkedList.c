@@ -12,7 +12,7 @@ LinkedList* createList(destructor freeData)
 	LinkedList* list = (LinkedList*)malloc(sizeof(LinkedList));
 	if (list == NULL)
 	{
-		perror("Error: standard function malloc has failed");
+		printf("Error: standard function malloc has failed");
 		g_memError = true;
 		return NULL;
 	}
@@ -69,7 +69,7 @@ void insertLast(LinkedList* list, void* data)
 	Node* newNode = (Node*)malloc(sizeof(Node));
 	if (newNode == NULL)
 	{
-		perror("Error: standard function malloc has failed");
+		printf("Error: standard function malloc has failed");
 		g_memError = true;
 		return;
 	}
@@ -103,7 +103,7 @@ void insertAfter(LinkedList* list, Node* prev, void* data)
 	Node* newNode = (Node*)malloc(sizeof(Node));
 	if (newNode == NULL)
 	{
-		perror("Error: standard function malloc has failed");
+		printf("Error: standard function malloc has failed");
 		g_memError = true;
 		return;
 	}

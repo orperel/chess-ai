@@ -111,7 +111,7 @@ Position* createPosition(int x, int y)
 	Position* newPos = (Position*)malloc(sizeof(Position));
 	if (newPos == NULL)
 	{
-		perror("Error: standard function malloc has failed");
+		printf("Error: standard function malloc has failed");
 		g_memError = true;
 		return NULL;
 	}
@@ -128,7 +128,7 @@ Move* createMove(Position* startPos, Position* targetPos)
 	Move* newMove = (Move*)malloc(sizeof(Move));
 	if (newMove == NULL)
 	{
-		perror("Error: standard function malloc has failed");
+		printf("Error: standard function malloc has failed");
 		g_memError = true;
 		return NULL;
 	}
@@ -185,7 +185,7 @@ GameStep* createGameStep(char board[BOARD_SIZE][BOARD_SIZE], Move* move)
 	GameStep* step = (GameStep*)malloc(sizeof(GameStep));
 	if (step == NULL)
 	{
-		perror("Error: standard function malloc has failed");
+		printf("Error: standard function malloc has failed");
 		g_memError = true;
 		return NULL;
 	}

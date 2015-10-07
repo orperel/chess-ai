@@ -117,7 +117,7 @@ GuiGeneralProperties* getComponentGeneralProperties(GuiComponentWrapper* compone
 		}
 		default:
 		{
-			printf("ERROR: Undefined component type in getComponentGeneralProperties.\n");
+			printf("Error: Undefined component type in getComponentGeneralProperties.\n");
 			g_guiError = true;
 			properties = NULL;
 		}
@@ -244,7 +244,7 @@ void addChildComponent(GuiComponentWrapper* wrapper, GuiComponentWrapper* parent
 		}
 		default:
 		{
-			printf("ERROR: Undefined parent component type in addChildComponent.\n");
+			printf("Error: Undefined parent component type in addChildComponent.\n");
 			g_guiError = true;
 			break;
 		}
@@ -329,7 +329,7 @@ GuiWindow* createWindow(int width, int height, const char* title, GuiColorRGB bg
 	if (NULL == window->surface)
 	{
 		g_guiError = true;
-		printf("ERROR: unable to create SDL surface: %s\n", SDL_GetError());
+		printf("Error: unable to create SDL surface: %s\n", SDL_GetError());
 		return NULL;
 	}
 
@@ -438,7 +438,7 @@ GuiImage* createImage(GuiComponentWrapper* parent, Rectangle bounds, short zOrde
 	if (NULL == image->surface)
 	{
 		g_guiError = true;
-		printf("ERROR: unable to load bitmap \"%s\" to SDL surface: %s\n", sourcePath, SDL_GetError());
+		printf("Error: unable to load bitmap \"%s\" to SDL surface: %s\n", sourcePath, SDL_GetError());
 		return NULL;
 	}
 
@@ -1009,7 +1009,7 @@ void drawWindow(void* component, const Rectangle* const container)
 	if (SDL_Flip(window->surface) != 0)
 	{
 		g_guiError = true;
-		printf("ERROR: failed to flip SDL framebuffers: %s\n", SDL_GetError());
+		printf("Error: failed to flip SDL framebuffers: %s\n", SDL_GetError());
 	}
 
 	// Prompt onShow event if one was set by the user and this is the first time we show the window
@@ -1079,7 +1079,7 @@ void drawImage(void* component, const Rectangle* const container)
 	if (SDL_SetColorKey(image->surface, SDL_SRCCOLORKEY, transparentColor) != 0)
 	{
 		g_guiError = true;
-		printf("ERROR: failed to set SDL color key (transparent image background color): %s\n", SDL_GetError());
+		printf("Error: failed to set SDL color key (transparent image background color): %s\n", SDL_GetError());
 	}
 
 	Rectangle relativeBounds = { image->generalProperties.bounds.x,
@@ -1107,7 +1107,7 @@ void drawImage(void* component, const Rectangle* const container)
 		if (0 != blit)
 		{ // Query blit successness
 			g_guiError = true;
-			printf("ERROR: failed to blit SDL surface while drawing image: %s\n", SDL_GetError());
+			printf("Error: failed to blit SDL surface while drawing image: %s\n", SDL_GetError());
 			SDL_FreeSurface(image->surface);
 			image->surface = NULL;
 		}
@@ -1490,7 +1490,7 @@ int initGui()
 {
 	// Initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-		printf("ERROR: unable to init SDL: %s\n", SDL_GetError());
+		printf("Error: unable to init SDL: %s\n", SDL_GetError());
 		return SDL_FAILURE_EXIT_CODE;
 	}
 
