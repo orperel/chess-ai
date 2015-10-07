@@ -155,9 +155,15 @@ char* showLoadSaveDialog(GuiWindow* window)
 	// Show the dialog and get the results the user have chosen
 	int* dialogResult = (int*)dialog->showDialog(dialog);
 	if (g_guiError)
+	{
+		free(values);
 		return NULL;
+	}
 	if (window->isWindowQuit)
+	{
+		free(values);
 		return NULL; // Check if user exits the game when the dialog is open
+	}
 	int slotNum = *(dialogResult);
 
 	free(values);
