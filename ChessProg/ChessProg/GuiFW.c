@@ -878,7 +878,7 @@ void destroyButton(void* component)
 	// Release image only if button owns it
 	if (button->isSurfaceOwner)
 	{
-		destroyImage(button->bgImage);
+		destroyGuiComponentWrapper(button->bgImage->generalProperties.wrapper);
 	}
 
 	free(button);
@@ -892,7 +892,7 @@ void destroyAnimation(void* component)
 
 	GuiAnimation* animation = (GuiAnimation*)component;
 
-	destroyImage(animation->clips);
+	destroyGuiComponentWrapper(animation->clips->generalProperties.wrapper);
 	free(animation);
 }
 
@@ -954,8 +954,9 @@ void destroyDialog(void* component)
 
 	GuiDialog* dialog = (GuiDialog*)component;
 
+	// Should free all son dialog buttons, bg image, etc
 	if (NULL != dialog->dialogPanel)
-		destroyPanel(dialog->dialogPanel); // Should free all son dialog buttons, bg image, etc
+		destroyGuiComponentWrapper(dialog->dialogPanel->generalProperties.wrapper);
 
 	free(dialog);
 }
