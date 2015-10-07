@@ -46,6 +46,11 @@
 #define BUTTON_W_QUEEN "Resources/button_white_q.bmp"
 #define BUTTON_W_KING "Resources/button_white_k.bmp"
 
+// Message box definitions
+#define MSG_INVALID_BOARD_IMG "Resources/msg_invalid_board.bmp"
+#define MSG_INVALID_BOARD_W 320
+#define MSG_INVALID_BOARD_H 40
+
 /** Information attached to the settings window, to provide info in events.
  */
 struct SettingsWindowExtent
@@ -56,7 +61,6 @@ struct SettingsWindowExtent
 	GuiImage* playerVsPlayerImg;
 	GuiImage* playerVsAi;
 
-	GuiButton* startButton; // Pointer to start button to control its sensitivity
 	GameControl* gameControl; // Pointer to the containing game logic struct
 };
 typedef struct SettingsWindowExtent SettingsWindowExtent;
@@ -218,9 +222,6 @@ void showChessPiecesDialog(GuiWindow* window, GameSquare* targetGameSquare)
 	int logicX = guiRowIndexToboardRowIndex(targetGameSquare->x);
 	int logicY = targetGameSquare->y;
 	extent->gameControl->board[logicX][logicY] = piece;
-
-	// Enable / disable start button according to the validity of the chess board
-	extent->startButton->generalProperties.isVisible = isValidStart(extent->gameControl->board);
 }
 
 /** When a chess piece is clicked, this event is prompted (it is attached to every chess piece button's onClick).
@@ -313,6 +314,15 @@ void onStartGameClick(GuiButton* button)
 	GuiWindow* settingsWindow = button->generalProperties.window;
 	SettingsWindowExtent* settingsWindowExtent = settingsWindow->generalProperties.extent;
 
+	bool isBoardValid = isValidStart(settingsWindowExtent->gameControl->board);
+
+	// Show error message when board initialization is illegal
+	if (!isBoardValid)
+	{
+		showMessageBox(settingsWindow, MSG_INVALID_BOARD_W, MSG_INVALID_BOARD_H, MSG_INVALID_BOARD_IMG, MAGENTA);
+		return;
+	}
+
 	// Create new window and set it as active
 	GuiWindow* nextWindow = NULL;
 
@@ -379,7 +389,7 @@ void destroySettingsWindow(void* component)
 /** Creates the extent object attached to the settings window and contains info useful in events.
  *
  */
-SettingsWindowExtent* createSettingsWindowExtent(GuiWindow* window, GameControl* gameControl, GuiButton* startButton)
+SettingsWindowExtent* createSettingsWindowExtent(GuiWindow* window, GameControl* gameControl)
 {
 	SettingsWindowExtent* settingsWindowExtent = (SettingsWindowExtent*)malloc(sizeof(SettingsWindowExtent));
 	if (NULL == settingsWindowExtent)
@@ -390,7 +400,6 @@ SettingsWindowExtent* createSettingsWindowExtent(GuiWindow* window, GameControl*
 	}
 
 	settingsWindowExtent->gameControl = gameControl;
-	settingsWindowExtent->startButton = startButton;
 
 	// Create resource images (we cache them to switch the button look and feel)
 	Rectangle btnBounds = { 0, 0, BUTTON_W, BUTTON_H };
@@ -579,7 +588,7 @@ GuiWindow* createSettingsWindow(char board[BOARD_SIZE][BOARD_SIZE], bool isNewGa
 	}
 
 	// Create the window extent object
-	SettingsWindowExtent* windowExtent = createSettingsWindowExtent(settingsWindow, gameControl, startBtn);
+	SettingsWindowExtent* windowExtent = createSettingsWindowExtent(settingsWindow, gameControl);
 	if ((NULL == windowExtent) || g_memError || g_guiError)
 	{ // Avoid errors
 		destroySettingsWindow(settingsWindow);
@@ -602,9 +611,6 @@ GuiWindow* createSettingsWindow(char board[BOARD_SIZE][BOARD_SIZE], bool isNewGa
 		destroySettingsWindow(settingsWindow);
 		return NULL;
 	}
-
-	// Enable / disable start button according to the validity of the chess board
-	startBtn->generalProperties.isVisible = isValidStart(gameControl->board);
 
 	// Save a reference to the settings window in the button extents.
 	// This makes the game control and other useful info available on events (via the window extent).

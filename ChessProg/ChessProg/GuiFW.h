@@ -193,8 +193,8 @@ struct GuiDialog
 	unsigned int choicesPerColumn; // Number of button slots per column
 	void* choice; // This flag contains the value the user have chosen, otherwise it is NULL
 
-	void(*addOption)(struct GuiDialog* dialog, const char* imageSourcePath,
-					 GuiColorRGB transparentColor, void* choiceData);
+	GuiButton*(*addOption)(struct GuiDialog* dialog, const char* imageSourcePath,
+						   GuiColorRGB transparentColor, void* choiceData);
 	void*(*showDialog)(struct GuiDialog* dialog); // Shows the modal dialog
 };
 typedef struct GuiDialog GuiDialog;
@@ -307,13 +307,24 @@ GuiDialog* createDialog(GuiWindow* parent, int choiceButtonWidth, int choiceButt
 /** Adds an option to the dialog. The option will be added as a button with the image as background
  *  (transparency belongs to the image of the button's background). choiceData is the results returned if
  *	the button option is picked. Options appear in the order they are added in.
+ *	Returns the button added to the dialog (mostly unused).
  */
-void addDialogOption(GuiDialog* dialog, const char* imageSourcePath, GuiColorRGB transparentColor, void* choiceData);
+GuiButton* addDialogOption(GuiDialog* dialog, const char* imageSourcePath, GuiColorRGB transparentColor, void* choiceData);
 
 /** Shows the dialog in a modal way. The app is stuck on the dialog until a choice is made
  *	(to give a "modal window" effect).
  */
 void* showDialog(GuiDialog* dialog);
+
+/** Creates and shows a modal dialog message with a button. ON error, g_guiError is set.
+ *  When the message is shown, the rest of the window is disabled.
+ *  parent - Window over which the message box is shown.
+ *  msgImgWidth, msgImgHeight - dimensions of the image message.
+ *  msgSourcePath - relative path of the bitmap to be drawn inside the image.
+ *	msgImgTransparentColor - The color that represents transparency in the message image bitmap.
+ */
+void showMessageBox(GuiWindow* parent, int msgImgWidth, int msgImgHeight,
+	const char* msgSourcePath, GuiColorRGB msgImgTransparentColor);
 
 /** Destructor for Gui windows.
  *	Destroys all inner components as well.

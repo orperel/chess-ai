@@ -34,6 +34,12 @@ const unsigned int DIALOG_BUTTON_OFFSET_Y = 20; // Initial Y for first button
 const unsigned int DIALOG_BUTTON_OFFSET_GAP = 7; // Gap in Y axis between dialog buttons
 const unsigned int DIALOG_FRAME_MARGIN = 2;
 
+// Constants for message box (these are common for all message boxes)
+#define MSGBOX_BG "Resources/msgbox_background.bmp" // Message box background image (dynamic image size is ok)
+#define BUTTON_OK_IMG "Resources/button_ok.bmp"
+#define OK_BUTTON_W 200 // Dimensions for ok button
+#define OK_BUTTON_H 80
+
 // The extent additional info attached to each button in gui dialogs.
 // This is used for proper processing of dialog choices (this extent should be private to outside users).
 typedef struct GuiDialogButtonExtent
@@ -604,8 +610,9 @@ void onDialogButtonClick(GuiButton* button)
 /** Adds an option to the dialog. The option will be added as a button with the image as background
  *  (transparency belongs to the image of the button's background). choiceData is the results returned if
  *	the button option is picked. Options appear in the order they are added in.
+ *	Returns the button added to the dialog (mostly unused).
  */
-void addDialogOption(GuiDialog* dialog, const char* imageSourcePath, GuiColorRGB transparentColor, void* choiceData)
+GuiButton* addDialogOption(GuiDialog* dialog, const char* imageSourcePath, GuiColorRGB transparentColor, void* choiceData)
 {
 	int singleButtonHeight = (dialog->choiceButtonHeight / 2); // Buttons contain animation of 4 states so we halve by 2
 	int singleButtonWidth = (dialog->choiceButtonWidth / 2);
@@ -627,7 +634,7 @@ void addDialogOption(GuiDialog* dialog, const char* imageSourcePath, GuiColorRGB
 	if (NULL == dialogButton)
 	{
 		g_guiError = true;
-		return;
+		return NULL;
 	}
 
 	// Override button type to dialog - this should ensure the right destructor is called when the button is deallocated
@@ -640,7 +647,7 @@ void addDialogOption(GuiDialog* dialog, const char* imageSourcePath, GuiColorRGB
 	{
 		g_guiError = true;
 		printf("Error: standard function malloc has failed");
-		return;
+		return NULL;
 	}
 
 	// Store data in extent for future events
@@ -668,6 +675,8 @@ void addDialogOption(GuiDialog* dialog, const char* imageSourcePath, GuiColorRGB
 	}
 
 	dialog->numOfChoices++;
+
+	return dialogButton;
 }
 
 /** Shows the dialog in a modal way. The app is stuck on the dialog until a choice is made
@@ -783,6 +792,86 @@ GuiDialog* createDialog(GuiWindow* parent, int choiceButtonWidth, int choiceButt
 	addChildComponent(dialog->generalProperties.wrapper, parent->generalProperties.wrapper);
 
 	return dialog;
+}
+
+/** Creates and shows a modal dialog message with a button. ON error, g_guiError is set.
+ *  When the message is shown, the rest of the window is disabled.
+ *  parent - Window over which the message box is shown.
+ *  msgImgWidth, msgImgHeight - dimensions of the image message.
+ *  msgSourcePath - relative path of the bitmap to be drawn inside the image.
+ *	msgImgTransparentColor - The color that represents transparency in the message image bitmap.
+ */
+void showMessageBox(GuiWindow* parent, int msgImgWidth, int msgImgHeight,
+	const char* msgSourcePath, GuiColorRGB msgImgTransparentColor)
+{
+	// We use a dialog with 1 button to show error messages
+	GuiDialog* dialog = createDialog(parent, OK_BUTTON_W, OK_BUTTON_H, MSGBOX_BG, MAGENTA, BLACK);
+	if ((NULL == dialog) || (g_guiError))
+	{
+		g_guiError = true;
+		return;
+	}
+
+	int okVal = 0; // Dummy value
+
+	GuiButton* dialogButton = dialog->addOption(dialog, BUTTON_OK_IMG, MAGENTA, &okVal);
+	if (g_guiError)
+		return;
+
+	// We create the msg as image (z-order is defined as one after the bg image, explicitly hard-coded!)
+	Rectangle msgBounds = { 0, 0, msgImgWidth, msgImgHeight };
+	GuiImage* msg = createImage(dialog->dialogPanel->generalProperties.wrapper, msgBounds, 1,
+								msgSourcePath, msgImgTransparentColor);
+	if ((NULL == msg) || (g_guiError))
+	{
+		g_guiError = true;
+		return;
+	}
+
+	// We resize the dialog components to best fit everything together
+	// Width is determined by the longer control (button or message)
+	int boxWidth = maxi(msgImgWidth, (OK_BUTTON_W / 2)) + (DIALOG_BUTTON_OFFSET_GAP * 2);
+	int boxHeight = msgImgHeight + (DIALOG_BUTTON_OFFSET_GAP * 2) + (OK_BUTTON_H / 2);
+
+	Rectangle bounds; // These are the basic bounds according to we place the inner components.
+	bounds.width = boxWidth;
+	bounds.height = boxHeight;
+	bounds.x = (parent->generalProperties.bounds.width / 2) - (bounds.width / 2); // Center the dialog
+	bounds.y = (parent->generalProperties.bounds.height / 2) - (bounds.height / 2);
+
+	Rectangle dialogBounds = bounds;
+	dialogBounds.x -= DIALOG_FRAME_MARGIN;
+	dialogBounds.y -= DIALOG_FRAME_MARGIN;
+	dialogBounds.width += DIALOG_FRAME_MARGIN * 2;
+	dialogBounds.height += DIALOG_FRAME_MARGIN * 2;
+
+	// Set the bounds for the dialog and its inner panel
+	dialog->generalProperties.bounds = dialogBounds;
+	dialog->dialogPanel->generalProperties.bounds = dialogBounds;
+
+	// Resize the bg image
+	bounds.x = DIALOG_FRAME_MARGIN;
+	bounds.y = DIALOG_FRAME_MARGIN;
+	dialog->bgImage->generalProperties.bounds = bounds;
+	dialog->bgImage->scissorRegion.x = 0;
+	dialog->bgImage->scissorRegion.y = 0;
+	dialog->bgImage->scissorRegion.width = bounds.width;
+	dialog->bgImage->scissorRegion.height = bounds.height;
+
+	// Center the message image
+	msg->generalProperties.bounds.x = (dialogBounds.width / 2) - (msgImgWidth / 2);
+	msg->generalProperties.bounds.y = DIALOG_FRAME_MARGIN + DIALOG_BUTTON_OFFSET_GAP;
+
+	// Center the button (remember button width is x 2 since it contains info for all 4 button states)
+	dialogButton->generalProperties.bounds.x = (dialogBounds.width / 2) - (OK_BUTTON_W / 4);
+	dialogButton->generalProperties.bounds.y = msg->generalProperties.bounds.y + msgImgHeight;
+	dialogButton->bgImage->generalProperties.bounds = dialogButton->generalProperties.bounds;
+
+	// Show the dialog in a modal way. The message box blocks here until the user presses ok.
+	dialog->showDialog(dialog);
+
+	// After the choice have been made the dialog and its inner components are destroyed.
+	// Users should check if user exits the game when the dialog is open, or if error occured
 }
 
 //  ------------------------------ 

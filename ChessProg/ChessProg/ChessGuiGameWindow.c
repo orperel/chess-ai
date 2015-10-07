@@ -31,6 +31,11 @@
 #define STATE_IMG_HEIGHT 480
 #define STATE_IMG_WIDTH 480
 
+// Message box definitions
+#define MSG_SAVE_FAILED_IMG "Resources/msg_save_failed.bmp"
+#define MSG_SAVE_FAILED_W 320
+#define MSG_SAVE_FAILED_H 40
+
 /** Information attached to the game window, to provide info in events.
 */
 struct GameWindowExtent
@@ -447,8 +452,15 @@ void onSaveClick(GuiButton* button)
 
 	// Execute the save command in the logic layer
 	GameControl* gameControl = (GameControl*)button->generalProperties.extent;
-	executeSaveCommand(gameControl->board, saveFilePath, g_isNextPlayerBlack);
+	bool success = executeSaveCommand(gameControl->board, saveFilePath, g_isNextPlayerBlack);
 	free(saveFilePath);
+
+	// Show error message when load fails
+	if (!success)
+	{
+		showMessageBox(window, MSG_SAVE_FAILED_W, MSG_SAVE_FAILED_H, MSG_SAVE_FAILED_IMG, MAGENTA);
+		return;
+	}
 }
 
 /** Quits the game and returns to the main menu. This event is prompted when the menu button is clicked. */

@@ -1,18 +1,16 @@
 
 Tomer:
 
-- Optional: Test case (diff chess2.xml):
-http://moodle.tau.ac.il/2014/mod/forum/discuss.php?d=76502
 - Valgrind (console)
-- Optional: 2 bishops can't be on the same square color
 
 
 Or:
 - abort load on bool false (same for save)
 	Gui: What happens when files are missing.
 	VERY OPTIONAL: Show error dialog on errors (when save, load fail, invalid start).
-- To play a game (gui high level)
 - Valgrind (console + gui)
+
+
 - Optional: recheck g_gui, g_mem errors and possible malloc misses
 - Gui: Should window open in different position
 
@@ -36,6 +34,9 @@ Tomer:
 http://moodle.tau.ac.il/2014/mod/forum/discuss.php?d=73930
 - Switching game mode and going back (what happens to default ai_level / user_color):
 http://moodle.tau.ac.il/2014/mod/forum/discuss.php?d=76374
+- Optional: Test case (diff chess2.xml):
+http://moodle.tau.ac.il/2014/mod/forum/discuss.php?d=76502
+- Optional: 2 bishops can't be on the same square color
 
 Or:
 - Gui: After load can we go back to settings

@@ -2,7 +2,6 @@
 #include "ChessGuiCommons.h"
 #include "ChessGuiGameControl.h"
 #include "GameCommands.h"
-#include "ChessGuiGameWindow.h"
 #include "BoardManager.h"
 #include "ChessGuiPlayerSelectWindow.h"
 
@@ -14,11 +13,16 @@
 #define BUTTON_NEW_IMG "Resources/button_newgame.bmp"
 #define BUTTON_LOAD_IMG "Resources/button_load.bmp"
 #define MAIN_MENU_BG_IMG "Resources/main_window_background.bmp"
+#define MSG_LOAD_FAILED_IMG "Resources/msg_load_failed.bmp"
 
 // Locations for buttons on screen
 #define NEW_BUTTON_OFFSET_Y 120
 #define LOAD_BUTTON_OFFSET_Y 180
 #define QUIT_BUTTON_OFFSET_Y 290
+
+// Dimensions of message
+#define MSG_LOAD_FAILED_W 320
+#define MSG_LOAD_FAILED_H 40
 
 // A global for keeping which window is active in the system at the moment.
 // We make it private here and control it via the "setActiveWindow" function.
@@ -63,10 +67,18 @@ void onLoadGameClick(GuiButton* button)
 
 	// Execute the load command in the logic layer
 	char board[BOARD_SIZE][BOARD_SIZE];
-	executeLoadCommand(board, saveFilePath);
+	bool success = executeLoadCommand(board, saveFilePath);
+
 	free(saveFilePath);
 	if (g_memError)
 		return;
+
+	// Show error message when load fails
+	if (!success)
+	{
+		showMessageBox(window, MSG_LOAD_FAILED_W, MSG_LOAD_FAILED_H, MSG_LOAD_FAILED_IMG, MAGENTA);
+		return;
+	}
 
 	// Create new window and set it as active
 	changeToSettingsScreen(board, false);
